@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: UniCare Connect API
+  version: 1.0.0
+  description: API documentation for UniCare Connect platform.
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/users:
+    get:
+      summary: List users
+      responses:
+        "200":
+          description: Users list
+    post:
+      summary: Create user
+      responses:
+        "201":
+          description: User created
+  /api/scholarships:
+    get:
+      summary: List scholarships
+      responses:
+        "200":
+          description: Scholarships list
+  /api/jobs:
+    get:
+      summary: List job listings
+      responses:
+        "200":
+          description: Job listings
+  /api/health-logs:
+    get:
+      summary: List health logs
+      responses:
+        "200":
+          description: Health logs
+  /api/mentorship-sessions:
+    get:
+      summary: List mentorship sessions
+      responses:
+        "200":
+          description: Mentorship sessions
+  /api/aid-requests:
+    get:
+      summary: List aid requests
+      responses:
+        "200":
+          description: Aid requests
+  /api/notifications:
+    get:
+      summary: List notifications
+      responses:
+        "200":
+          description: Notifications
+  /api/analytics:
+    get:
+      summary: Analytics summary
+      responses:
+        "200":
+          description: Analytics data
