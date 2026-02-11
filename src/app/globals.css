@@ -89,3 +89,134 @@ textarea:focus-visible {
     transform: translateX(-50%);
   }
 }
+
+.wireframe-stage {
+  perspective: 1000px;
+}
+
+.wireframe-globe {
+  animation: wireframe-rotate 26s linear infinite;
+  transform-style: preserve-3d;
+}
+
+.wireframe-line {
+  fill: none;
+  stroke: rgb(186 230 253 / 0.22);
+  stroke-width: 0.7;
+}
+
+.wireframe-dot {
+  animation: wireframe-blink 3.4s ease-in-out infinite;
+  fill: rgb(103 232 249 / 0.85);
+}
+
+@keyframes wireframe-rotate {
+  from {
+    transform: rotateX(18deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(18deg) rotateZ(360deg);
+  }
+}
+
+@keyframes wireframe-blink {
+  0%,
+  100% {
+    opacity: 0.22;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+.journey-runner {
+  animation: journey-run 900ms ease-in-out infinite;
+}
+
+.walking-avatar .walk-arm-left,
+.walking-avatar .walk-arm-right,
+.walking-avatar .walk-leg-left,
+.walking-avatar .walk-leg-right {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.walking-avatar .walk-arm-left {
+  animation: walk-arm-left 650ms ease-in-out infinite;
+}
+
+.walking-avatar .walk-arm-right {
+  animation: walk-arm-right 650ms ease-in-out infinite;
+}
+
+.walking-avatar .walk-leg-left {
+  animation: walk-leg-left 650ms ease-in-out infinite;
+}
+
+.walking-avatar .walk-leg-right {
+  animation: walk-leg-right 650ms ease-in-out infinite;
+}
+
+.journey-unicare {
+  animation: journey-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes journey-run {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes journey-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.28);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+  }
+}
+
+@keyframes walk-arm-left {
+  0%,
+  100% {
+    transform: rotate(20deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-18deg) translateY(-1px);
+  }
+}
+
+@keyframes walk-arm-right {
+  0%,
+  100% {
+    transform: rotate(-18deg) translateY(-1px);
+  }
+  50% {
+    transform: rotate(20deg) translateY(0);
+  }
+}
+
+@keyframes walk-leg-left {
+  0%,
+  100% {
+    transform: rotate(-18deg);
+  }
+  50% {
+    transform: rotate(16deg);
+  }
+}
+
+@keyframes walk-leg-right {
+  0%,
+  100% {
+    transform: rotate(16deg);
+  }
+  50% {
+    transform: rotate(-18deg);
+  }
+}

@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
@@ -10,6 +11,33 @@ import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 export function TopNav() {
   const { user, signOutUser } = useAuth();
   const pathname = usePathname();
+  const [isVisible, setIsVisible] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - lastScrollYRef.current;
+
+      setIsScrolled(currentScrollY > 8);
+
+      if (currentScrollY <= 8) {
+        setIsVisible(true);
+      } else if (scrollDelta > 6) {
+        setIsVisible(false);
+      } else if (scrollDelta < -6) {
+        setIsVisible(true);
+      }
+
+      lastScrollYRef.current = currentScrollY;
+    };
+
+    lastScrollYRef.current = window.scrollY;
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const isRouteActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const isSupportActive = ["/financial-aid", "/career", "/mentorship", "/wellness"].some((path) =>
@@ -25,9 +53,21 @@ export function TopNav() {
     );
 
   return (
-    <header className="sticky top-0 z-40 bg-transparent">
+    <header
+      className={clsx(
+        "sticky top-0 z-40 bg-transparent transition-transform duration-300",
+        isVisible ? "translate-y-0" : "-translate-y-[120%]"
+      )}
+    >
       <div className="mx-auto w-full max-w-6xl px-4 py-4">
-        <div className="flex items-center justify-between rounded-full border border-slate-200 bg-white/90 px-5 py-3 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+        <div
+          className={clsx(
+            "flex items-center justify-between rounded-full px-5 py-3 transition-all duration-300",
+            isScrolled
+              ? "translate-y-2 border border-white/15 bg-white/65 shadow-lg backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/65"
+              : "translate-y-0 border border-slate-200 bg-white/90 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/80"
+          )}
+        >
           <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
             <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
               UC

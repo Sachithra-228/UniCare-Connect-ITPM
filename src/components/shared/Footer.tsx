@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { Github, Linkedin, Music2, Youtube } from "lucide-react";
 
 const primaryNav = [
@@ -104,7 +104,7 @@ export function Footer() {
           </div>
 
           <div className="mt-8 border-t border-slate-200 pt-4 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-            <p>© 2026 UniCare Connect. Built for IT3040 IT Project Management.</p>
+            <p>� 2026 UniCare Connect. Built for IT3040 IT Project Management.</p>
           </div>
         </div>
       </div>
