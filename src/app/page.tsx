@@ -6,19 +6,22 @@ import { Card } from "@/components/shared/Card";
 export default function HomePage() {
   return (
     <div>
-      <section className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-14">
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-          <div className="space-y-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
+      <section
+        id="overview"
+        className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-16"
+      >
+        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div className="space-y-6">
+            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
               Holistic student support platform
-            </p>
+            </span>
             <h1 className="text-4xl font-semibold leading-tight md:text-5xl">
               UniCare Connect helps Sri Lankan students thrive academically, financially, and
               emotionally.
             </h1>
             <p className="text-base text-slate-600 dark:text-slate-300">
-              Find financial aid, part-time jobs, wellness services, and mentorship in one secure
-              platform aligned with university needs.
+              Bring financial aid, career growth, wellness services, and mentorship together in one
+              secure platform aligned with university needs.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -34,8 +37,14 @@ export default function HomePage() {
                 Apply for aid
               </Link>
             </div>
+            <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
+              <span>For students</span>
+              <span>For parents</span>
+              <span>For staff</span>
+              <span>For alumni</span>
+            </div>
           </div>
-          <Card className="space-y-4">
+          <Card id="impact" className="space-y-4">
             <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
               Live platform snapshot
             </p>
@@ -49,7 +58,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-slate-50 py-14 dark:bg-slate-900/50">
+      <section id="modules" className="bg-slate-50 py-14 dark:bg-slate-900/50">
         <div className="mx-auto w-full max-w-6xl space-y-8 px-4">
           <SectionHeading
             eyebrow="Core modules"
@@ -84,9 +93,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl space-y-8 px-4 py-14">
+      <section id="stories" className="mx-auto w-full max-w-6xl space-y-8 px-4 py-14">
         <SectionHeading
-          eyebrow="Testimonials"
           title="Real stories from Sri Lankan campuses"
           subtitle="Impact-focused outcomes for students and universities."
         />

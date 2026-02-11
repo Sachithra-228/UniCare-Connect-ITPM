@@ -21,3 +21,71 @@ select:focus-visible,
 textarea:focus-visible {
   @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-slate-950;
 }
+
+.marquee-wrap:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 1rem;
+  padding-inline: 1rem;
+  animation: university-marquee 56s linear infinite;
+}
+
+.marquee-item {
+  align-items: center;
+  display: flex;
+  min-width: 84px;
+  overflow: hidden;
+  transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease;
+  width: 84px;
+}
+
+.marquee-item-inner {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.marquee-name {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateX(-6px);
+  transition: max-width 260ms ease, opacity 260ms ease, transform 260ms ease;
+  white-space: nowrap;
+}
+
+.marquee-item:hover {
+  border-color: rgb(59 130 246 / 0.35);
+  box-shadow: 0 16px 28px rgb(15 23 42 / 0.12);
+  min-width: 320px;
+  transform: translateY(-6px) scale(1.04);
+  width: 320px;
+  z-index: 5;
+}
+
+.marquee-logo {
+  transition: transform 260ms ease;
+}
+
+.marquee-item:hover .marquee-logo {
+  transform: scale(1.18);
+}
+
+.marquee-item:hover .marquee-name {
+  max-width: 240px;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@keyframes university-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
