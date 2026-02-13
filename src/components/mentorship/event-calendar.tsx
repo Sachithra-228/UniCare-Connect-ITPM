@@ -1,5 +1,5 @@
-import { Card } from "@/components/shared/Card";
-import { Badge } from "@/components/shared/Badge";
+import { Card } from "@/components/shared/card";
+import { Badge } from "@/components/shared/badge";
 
 const events = [
   { id: "e1", title: "Career Fair 2026", date: "Feb 20", type: "Campus" },

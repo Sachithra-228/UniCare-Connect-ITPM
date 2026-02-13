@@ -1,5 +1,5 @@
-import { Card } from "@/components/shared/Card";
-import { Button } from "@/components/shared/Button";
+import { Card } from "@/components/shared/card";
+import { Button } from "@/components/shared/button";
 
 const threads = [
   { id: "p1", title: "Managing exam stress", replies: 12 },

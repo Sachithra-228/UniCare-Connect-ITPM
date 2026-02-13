@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@/components/shared/Card";
-import { Button } from "@/components/shared/Button";
-import { Select } from "@/components/shared/Select";
-import { Input } from "@/components/shared/Input";
+import { Card } from "@/components/shared/card";
+import { Button } from "@/components/shared/button";
+import { Select } from "@/components/shared/select";
+import { Input } from "@/components/shared/input";
 
 export function MoodTracker() {
   const [message, setMessage] = useState<string | null>(null);

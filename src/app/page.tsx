@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { CoreModulesJourney } from "@/components/shared/CoreModulesJourney";
-import { FaqMiniAccordion } from "@/components/shared/FaqMiniAccordion";
-import { StoriesStack } from "@/components/shared/StoriesStack";
-import { SupportWorkspacePanels } from "@/components/shared/SupportWorkspacePanels";
-import { WireframeGlobe } from "@/components/shared/WireframeGlobe";
+import { CoreModulesJourney } from "@/components/shared/core-modules-journey";
+import { FaqMiniAccordion } from "@/components/shared/faq-mini-accordion";
+import { StoriesStack } from "@/components/shared/stories-stack";
+import { SupportWorkspacePanels } from "@/components/shared/support-workspace-panels";
+import { WireframeGlobe } from "@/components/shared/wireframe-globe";
 
 export default function HomePage() {
   return (

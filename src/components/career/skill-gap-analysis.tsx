@@ -1,4 +1,4 @@
-import { Card } from "@/components/shared/Card";
+import { Card } from "@/components/shared/card";
 
 const skills = [
   { skill: "React", level: "Intermediate", action: "Complete React Hooks module" },

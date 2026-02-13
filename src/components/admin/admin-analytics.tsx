@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@/components/shared/Card";
+import { Card } from "@/components/shared/card";
 import {
   Bar,
   BarChart,

@@ -1,5 +1,5 @@
-import { Card } from "@/components/shared/Card";
-import { Badge } from "@/components/shared/Badge";
+import { Card } from "@/components/shared/card";
+import { Badge } from "@/components/shared/badge";
 
 const applications = [
   { id: "a1", title: "Women in Tech Grant", status: "Under Review", deadline: "2026-03-10" },

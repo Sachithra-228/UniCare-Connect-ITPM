@@ -22,11 +22,11 @@ type DistrictLocation = {
 const DISTRICT_IMAGES: Record<string, string> = {
   Colombo: "/colombo.jpg",
   Gampaha: "/gampaha.jpg",
-  Kalutara: "/top_hero.png",
+  Kalutara: "/top-hero.png",
   Kandy: "/peradeniya.jpg",
   Matale: "/peradeniya.jpg",
-  "Nuwara Eliya": "/top_hero.png",
-  Galle: "/top_hero.png",
+  "Nuwara Eliya": "/top-hero.png",
+  Galle: "/top-hero.png",
   Matara: "/ruhuna.jpg",
   Hambantota: "/southeastern.jpg",
   Jaffna: "/jaffna.jpg",
@@ -150,7 +150,7 @@ export function SriLankaDistrictMap({
           >
             <div className="relative h-28 w-full">
               <Image
-                src={DISTRICT_IMAGES[hoveredDistrict] ?? "/top_hero.png"}
+                src={DISTRICT_IMAGES[hoveredDistrict] ?? "/top-hero.png"}
                 alt={hoveredDistrict}
                 fill
                 className="object-cover"

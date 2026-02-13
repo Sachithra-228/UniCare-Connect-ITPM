@@ -61,6 +61,7 @@ Set `NEXT_PUBLIC_DEMO_MODE=true` to use sample data without MongoDB/Firebase con
 - `docs/db-schema.md` - Database schema
 - `docs/components.md` - Component library
 - `docs/deployment.md` - Deployment guide
+- `docs/naming-convention.md` - Project naming rules
 
 ## Project Structure
 

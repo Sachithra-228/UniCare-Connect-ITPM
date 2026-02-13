@@ -52,7 +52,7 @@ const stories: StoryCard[] = [
     role: "IT student",
     quote: "I found mentorship, scholarship alerts, and deadlines in one dashboard.",
     tone: "from-[#1f4d9f] to-[#1e3a8a] text-white",
-    image: "/top_hero.png"
+    image: "/top-hero.png"
   },
   {
     name: "Nethmi R.",

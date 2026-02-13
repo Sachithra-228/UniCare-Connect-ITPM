@@ -1,5 +1,5 @@
-import { Card } from "@/components/shared/Card";
-import { Button } from "@/components/shared/Button";
+import { Card } from "@/components/shared/card";
+import { Button } from "@/components/shared/button";
 
 const counselors = [
   { id: "c1", name: "Dr. A. Senanayake", specialty: "Stress management", slots: "Mon/Wed" },

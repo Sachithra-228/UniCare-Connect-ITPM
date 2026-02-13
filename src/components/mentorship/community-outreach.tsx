@@ -1,5 +1,5 @@
-import { Card } from "@/components/shared/Card";
-import { Button } from "@/components/shared/Button";
+import { Card } from "@/components/shared/card";
+import { Button } from "@/components/shared/button";
 
 const outreach = [
   { id: "o1", title: "Coastal cleanup", date: "Feb 18", hours: 4 },

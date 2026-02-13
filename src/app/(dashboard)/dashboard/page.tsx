@@ -1,10 +1,10 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
-import { Card } from "@/components/shared/Card";
-import { SectionHeading } from "@/components/shared/SectionHeading";
-import { StatCard } from "@/components/shared/StatCard";
-import { Badge } from "@/components/shared/Badge";
+import { useAuth } from "@/context/auth-context";
+import { Card } from "@/components/shared/card";
+import { SectionHeading } from "@/components/shared/section-heading";
+import { StatCard } from "@/components/shared/stat-card";
+import { Badge } from "@/components/shared/badge";
 import { useAppStore } from "@/lib/store";
 import Link from "next/link";
 

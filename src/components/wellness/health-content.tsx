@@ -1,5 +1,5 @@
-import { Card } from "@/components/shared/Card";
-import { Badge } from "@/components/shared/Badge";
+import { Card } from "@/components/shared/card";
+import { Badge } from "@/components/shared/badge";
 
 const content = [
   { id: "h1", title: "Mindfulness basics", language: "Sinhala" },

@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 
 import clsx from "clsx";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { ThemeToggle } from "@/components/shared/ThemeToggle";
-import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
+import { useAuth } from "@/context/auth-context";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
 
 export function TopNav() {
   const { user, signOutUser } = useAuth();

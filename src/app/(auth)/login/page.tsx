@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/shared/Button";
-import { Input } from "@/components/shared/Input";
+import { useAuth } from "@/context/auth-context";
+import { Button } from "@/components/shared/button";
+import { Input } from "@/components/shared/input";
 import { loginSchema, registerSchema } from "@/lib/validation";
 
 type AuthMode = "signin" | "signup";

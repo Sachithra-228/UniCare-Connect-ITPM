@@ -1,5 +1,5 @@
-import { Card } from "@/components/shared/Card";
-import { Badge } from "@/components/shared/Badge";
+import { Card } from "@/components/shared/card";
+import { Badge } from "@/components/shared/badge";
 import { demoScholarships } from "@/lib/demo-data";
 
 export function ScholarshipMatcher() {

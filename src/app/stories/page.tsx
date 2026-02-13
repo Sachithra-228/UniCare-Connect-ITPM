@@ -1,5 +1,5 @@
-import { SectionHeading } from "@/components/shared/SectionHeading";
-import { Card } from "@/components/shared/Card";
+import { SectionHeading } from "@/components/shared/section-heading";
+import { Card } from "@/components/shared/card";
 
 export default function StoriesPage() {
   return (

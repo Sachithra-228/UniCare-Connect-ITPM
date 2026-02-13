@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { SriLankaDistrictMap } from "@/components/shared/SriLankaDistrictMap";
+import { SriLankaDistrictMap } from "@/components/shared/sri-lanka-district-map";
 import { SRI_LANKA_DISTRICTS } from "@/lib/data/theme-mappings";
 
 type DirectoryItem = {
@@ -88,7 +88,7 @@ const sections: DirectorySection[] = [
     label: "Government Universities",
     title: "Public university network",
     subtitle: "Select a university card to view details.",
-    fallbackImage: "/top_hero.png",
+    fallbackImage: "/top-hero.png",
     items: governmentUniversities
   },
   {

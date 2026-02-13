@@ -1,5 +1,5 @@
-import { Card } from "@/components/shared/Card";
-import { Button } from "@/components/shared/Button";
+import { Card } from "@/components/shared/card";
+import { Button } from "@/components/shared/button";
 
 const mentors = [
   { id: "m1", name: "Ravindu Fernando", expertise: "Product Management", availability: "Thu 6PM" },

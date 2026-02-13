@@ -1,8 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Footer } from "@/components/shared/Footer";
-import { TopNav } from "@/components/shared/TopNav";
+import { Footer } from "@/components/shared/footer";
+import { TopNav } from "@/components/shared/top-nav";
 
 const AUTH_ROUTES = new Set(["/login", "/register", "/forgot-password"]);
 

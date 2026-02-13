@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Card } from "@/components/shared/Card";
-import { Input } from "@/components/shared/Input";
-import { Select } from "@/components/shared/Select";
-import { Badge } from "@/components/shared/Badge";
-import { Button } from "@/components/shared/Button";
+import { Card } from "@/components/shared/card";
+import { Input } from "@/components/shared/input";
+import { Select } from "@/components/shared/select";
+import { Badge } from "@/components/shared/badge";
+import { Button } from "@/components/shared/button";
 import { demoJobs } from "@/lib/demo-data";
 
 const PAGE_SIZE = 4;

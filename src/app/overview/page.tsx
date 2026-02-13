@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SectionHeading } from "@/components/shared/SectionHeading";
-import { ImpactStats } from "@/components/shared/ImpactStats";
-import { TestimonialsCarousel } from "@/components/shared/TestimonialsCarousel";
-import { EcosystemShowcase } from "@/components/shared/EcosystemShowcase";
-import { ScrollSwap } from "@/components/shared/ScrollSwap";
+import { SectionHeading } from "@/components/shared/section-heading";
+import { ImpactStats } from "@/components/shared/impact-stats";
+import { TestimonialsCarousel } from "@/components/shared/testimonials-carousel";
+import { EcosystemShowcase } from "@/components/shared/ecosystem-showcase";
+import { ScrollSwap } from "@/components/shared/scroll-swap";
 
 const partnerUniversities = [
   { name: "University of Colombo", logo: "/colombo.jpg" },
@@ -61,7 +61,7 @@ export default function OverviewPage() {
         </div>
         <div className="flex items-center justify-center">
           <Image
-            src="/top_hero.png"
+            src="/top-hero.png"
             alt="Student with laptop and bag"
             width={420}
             height={520}

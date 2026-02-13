@@ -1,5 +1,5 @@
-import { Card } from "@/components/shared/Card";
-import { Badge } from "@/components/shared/Badge";
+import { Card } from "@/components/shared/card";
+import { Badge } from "@/components/shared/badge";
 
 const challenges = [
   { id: "w1", title: "7-day sleep reset", status: "Active" },

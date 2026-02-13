@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
-import { FeatureOrbit, orbitFeatures, type OrbitFeature } from "@/components/shared/FeatureOrbit";
-import { SectionHeading } from "@/components/shared/SectionHeading";
+import { FeatureOrbit, orbitFeatures, type OrbitFeature } from "@/components/shared/feature-orbit";
+import { SectionHeading } from "@/components/shared/section-heading";
 
 type FeatureKey = OrbitFeature["key"];
 

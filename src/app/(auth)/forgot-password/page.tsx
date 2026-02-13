@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/shared/Button";
-import { Input } from "@/components/shared/Input";
+import { useAuth } from "@/context/auth-context";
+import { Button } from "@/components/shared/button";
+import { Input } from "@/components/shared/input";
 
 export default function ForgotPasswordPage() {
   const { requestPasswordReset } = useAuth();

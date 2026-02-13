@@ -1,9 +1,9 @@
-import { SectionHeading } from "@/components/shared/SectionHeading";
-import { MentorMatch } from "@/components/mentorship/MentorMatch";
-import { EventCalendar } from "@/components/mentorship/EventCalendar";
-import { CampusPartners } from "@/components/mentorship/CampusPartners";
-import { CommunityOutreach } from "@/components/mentorship/CommunityOutreach";
-import { Card } from "@/components/shared/Card";
+import { SectionHeading } from "@/components/shared/section-heading";
+import { MentorMatch } from "@/components/mentorship/mentor-match";
+import { EventCalendar } from "@/components/mentorship/event-calendar";
+import { CampusPartners } from "@/components/mentorship/campus-partners";
+import { CommunityOutreach } from "@/components/mentorship/community-outreach";
+import { Card } from "@/components/shared/card";
 
 export default function MentorshipPage() {
   return (
