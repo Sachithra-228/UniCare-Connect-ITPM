@@ -39,41 +39,6 @@ const stories: StoryCard[] = [
     quote: "Emergency bursary support arrived on time and helped me continue my semester.",
     tone: "from-[#0f3b74] to-[#1e3a8a] text-white",
     image: "/imasha.jpeg"
-  },
-  {
-    name: "M. Fernando",
-    role: "Career office",
-    quote: "Internship routing is now clean and transparent for students and faculty.",
-    tone: "from-[#0b2a4d] to-[#17457a] text-white",
-    image: "/hero-student.png"
-  },
-  {
-    name: "Kavindu S.",
-    role: "IT student",
-    quote: "I found mentorship, scholarship alerts, and deadlines in one dashboard.",
-    tone: "from-[#1f4d9f] to-[#1e3a8a] text-white",
-    image: "/top-hero.png"
-  },
-  {
-    name: "Nethmi R.",
-    role: "Medicine student",
-    quote: "Wellness booking removed long waiting times and reduced stress before exams.",
-    tone: "from-[#164a8a] to-[#1d4ed8] text-white",
-    image: "/imasha.jpeg"
-  },
-  {
-    name: "Campus Welfare Team",
-    role: "University administration",
-    quote: "With UniCare, we can identify urgent student risks and intervene much earlier.",
-    tone: "from-[#12315c] to-[#1f4d9f] text-white",
-    image: "/parent.png"
-  },
-  {
-    name: "Parent Community",
-    role: "Family network",
-    quote: "We finally have clarity on student support progress and key outcomes.",
-    tone: "from-[#1f3f7a] to-[#2563eb] text-white",
-    image: "/kusum.jpeg"
   }
 ];
 

@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
+import { Libre_Baskerville } from "next/font/google";
 
 type JourneySlide = {
   step: string;
@@ -49,6 +50,11 @@ const slides: JourneySlide[] = [
     accent: "from-primary/20 to-primary/5"
   }
 ];
+
+const libreBaskerville = Libre_Baskerville({
+  subsets: ["latin"],
+  weight: ["400", "700"]
+});
 
 function WalkingAvatar() {
   return (
@@ -156,23 +162,32 @@ export function CoreModulesJourney() {
   };
 
   return (
-    <section id="modules" ref={sectionRef} className="py-16">
-      <div className="mx-auto w-full max-w-6xl space-y-8 px-4">
+    <section id="modules" ref={sectionRef} className="core-journey-section relative overflow-hidden py-16">
+      <div className="pointer-events-none absolute inset-0 core-journey-grid opacity-100" />
+      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-blue-400/18 blur-3xl core-journey-aurora-a" />
+      <div className="pointer-events-none absolute right-8 top-20 h-80 w-80 rounded-full bg-cyan-300/16 blur-3xl core-journey-aurora-b" />
+      <div className="pointer-events-none absolute left-1/3 top-44 h-64 w-64 rounded-full bg-indigo-300/14 blur-3xl core-journey-aurora-c" />
+
+      <div className="relative z-10 mx-auto w-full max-w-6xl space-y-8 px-4">
         <div
-          className={`mx-auto max-w-4xl text-center transition-all duration-700 ${
+          className={`mx-auto w-full text-center transition-all duration-700 ${
             entered ? "translate-y-0 opacity-100" : "-translate-y-12 opacity-0"
           }`}
         >
-          <h2 className="text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+          <h2
+            className={`${libreBaskerville.className} text-4xl font-bold leading-tight tracking-tight text-[#13203f] md:text-5xl lg:whitespace-nowrap`}
+          >
             Everything students need in one place
           </h2>
-          <p className="mt-4 text-base text-slate-600 md:text-lg">
+          <p
+            className={`${libreBaskerville.className} mt-4 text-base text-slate-600 md:text-lg lg:whitespace-nowrap`}
+          >
             Follow one student story module-by-module. Use arrows to move through each thought and
             resolution.
           </p>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-white to-slate-50 p-6 shadow-sm md:p-8">
+        <div className="rounded-3xl border border-blue-200/90 bg-gradient-to-br from-[#e8f0ff] via-[#dde8ff] to-[#d2e1ff] p-6 shadow-[0_22px_58px_-34px_rgba(30,64,175,0.5)] md:p-8">
           <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
             <div className="relative min-h-[360px] overflow-hidden p-1">
               <div className="p-2">

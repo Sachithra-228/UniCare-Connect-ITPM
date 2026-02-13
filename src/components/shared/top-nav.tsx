@@ -11,6 +11,7 @@ import { LanguageSwitcher } from "@/components/shared/language-switcher";
 export function TopNav() {
   const { user, signOutUser } = useAuth();
   const pathname = usePathname();
+  const isHomePage = pathname === "/";
   const [isVisible, setIsVisible] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
   const lastScrollYRef = useRef(0);
@@ -40,8 +41,8 @@ export function TopNav() {
   }, []);
 
   const isRouteActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-  const isSupportActive = ["/financial-aid", "/career", "/mentorship", "/wellness"].some((path) =>
-    pathname === path || pathname.startsWith(`${path}/`)
+  const isSupportActive = ["/financial-aid", "/career", "/mentorship", "/wellness"].some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`)
   );
 
   const navLinkClass = (href: string) =>
@@ -55,7 +56,8 @@ export function TopNav() {
   return (
     <header
       className={clsx(
-        "sticky top-0 z-40 bg-transparent transition-transform duration-300",
+        "sticky top-0 z-40 transition-transform duration-300",
+        isHomePage ? "bg-[#0b1732]" : "bg-transparent",
         isVisible ? "translate-y-0" : "-translate-y-[120%]"
       )}
     >
@@ -96,7 +98,7 @@ export function TopNav() {
                 )}
               >
                 Student Support
-                <span className="text-xs">▾</span>
+                <span className="text-xs">v</span>
               </button>
               <div className="invisible absolute left-0 top-full z-10 mt-3 w-52 rounded-2xl border border-slate-200 bg-white p-2 opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 dark:border-slate-800 dark:bg-slate-950">
                 <Link

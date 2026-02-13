@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarCheck2, GraduationCap, HandCoins, HeartPulse } from "lucide-react";
+import { Libre_Baskerville } from "next/font/google";
 import { useEffect, useRef, useState } from "react";
 
 const H_MIN = 32;
@@ -10,6 +11,11 @@ const V_MAX = 72;
 const STEP = 2;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const libreBaskerville = Libre_Baskerville({
+  subsets: ["latin"],
+  weight: ["400", "700"]
+});
 
 export function SupportWorkspacePanels() {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -122,53 +128,65 @@ export function SupportWorkspacePanels() {
   };
 
   return (
-    <section ref={sectionRef} className="mx-auto w-full max-w-6xl px-4 pb-16">
-      <div
-        className={`mx-auto max-w-4xl text-center transition-all duration-700 ${
-          headingVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-        }`}
-      >
-        <h3 className="text-4xl font-semibold tracking-tight md:text-5xl">
-          Resize panels to prioritize support operations
-        </h3>
-        <p className="mt-3 text-base text-slate-600 md:text-lg">
-          Drag separators, or focus a handle and use arrow keys, Home, and End.
-        </p>
-      </div>
+    <section
+      ref={sectionRef}
+      className="relative w-full overflow-hidden bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] py-16"
+    >
+      <div className="pointer-events-none absolute -right-16 -top-20 h-72 w-72 rounded-full bg-cyan-400/12 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.05)_1px,transparent_1px)] bg-[size:38px_38px] opacity-35" />
 
-      <div
-        ref={horizontalRef}
-        className="mt-8 hidden h-[460px] rounded-2xl border border-blue-200 bg-gradient-to-br from-[#f8fbff] to-[#edf4ff] p-3 md:flex"
-      >
-        <section
-          id="student-overview-panel"
-          aria-label="Student overview"
-          className="h-full overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-br from-[#eef4ff] to-[#e4edff] p-5"
-          style={{ width: `${leftSize}%` }}
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-4">
+        <div
+          className={`mx-auto w-full text-center transition-all duration-700 ${
+            headingVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+          }`}
         >
+          <h3
+            className={`${libreBaskerville.className} text-4xl font-bold tracking-tight text-white md:text-5xl lg:whitespace-nowrap`}
+          >
+            Resize panels to prioritize support operations
+          </h3>
+          <p
+            className={`${libreBaskerville.className} mt-3 text-base text-slate-300 md:text-lg lg:whitespace-nowrap`}
+          >
+            Drag separators, or focus a handle and use arrow keys, Home, and End.
+          </p>
+        </div>
+
+        <div
+          ref={horizontalRef}
+          className="mt-8 hidden h-[460px] rounded-2xl border border-white/25 bg-[linear-gradient(135deg,rgba(255,255,255,0.24),rgba(255,255,255,0.1))] p-3 shadow-[0_24px_60px_-30px_rgba(8,47,110,0.65)] backdrop-blur-xl md:flex"
+        >
+          <section
+            id="student-overview-panel"
+            aria-label="Student overview"
+            className="h-full overflow-hidden rounded-xl border border-blue-200 bg-white p-5"
+            style={{ width: `${leftSize}%` }}
+          >
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">Student Snapshot</p>
           <h4 className="mt-2 text-xl font-semibold">Semester health at a glance</h4>
           <div className="mt-5 grid gap-3">
-            <div className="rounded-xl border border-blue-200 bg-white/80 p-4">
+            <div className="rounded-xl border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-4">
               <div className="flex items-center gap-3">
-                <HandCoins className="h-4 w-4 text-primary" />
-                <p className="text-sm font-medium">Financial requests pending review</p>
+                <HandCoins className="h-4 w-4 text-blue-200" />
+                <p className="text-sm font-medium text-slate-100">Financial requests pending review</p>
               </div>
-              <p className="mt-2 text-2xl font-semibold">12</p>
+              <p className="mt-2 text-2xl font-semibold text-white">12</p>
             </div>
-            <div className="rounded-xl border border-blue-200 bg-white/80 p-4">
+            <div className="rounded-xl border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-4">
               <div className="flex items-center gap-3">
-                <GraduationCap className="h-4 w-4 text-primary" />
-                <p className="text-sm font-medium">Career matches generated this week</p>
+                <GraduationCap className="h-4 w-4 text-blue-200" />
+                <p className="text-sm font-medium text-slate-100">Career matches generated this week</p>
               </div>
-              <p className="mt-2 text-2xl font-semibold">38</p>
+              <p className="mt-2 text-2xl font-semibold text-white">38</p>
             </div>
-            <div className="rounded-xl border border-blue-200 bg-white/80 p-4">
+            <div className="rounded-xl border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-4">
               <div className="flex items-center gap-3">
-                <HeartPulse className="h-4 w-4 text-primary" />
-                <p className="text-sm font-medium">Wellness check-ins completed</p>
+                <HeartPulse className="h-4 w-4 text-blue-200" />
+                <p className="text-sm font-medium text-slate-100">Wellness check-ins completed</p>
               </div>
-              <p className="mt-2 text-2xl font-semibold">27</p>
+              <p className="mt-2 text-2xl font-semibold text-white">27</p>
             </div>
           </div>
         </section>
@@ -196,24 +214,24 @@ export function SupportWorkspacePanels() {
           id="support-operations-panel"
           ref={verticalRef}
           aria-label="Support operations"
-          className="flex h-full overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-br from-[#eef4ff] to-[#e4edff]"
+          className="flex h-full overflow-hidden rounded-xl border border-blue-200 bg-white"
           style={{ width: `${100 - leftSize}%` }}
         >
           <div className="flex w-full flex-col p-3">
             <div
               id="priority-queue-panel"
-              className="overflow-hidden rounded-xl border border-blue-200 bg-white/85 p-5"
+              className="overflow-hidden rounded-xl border border-blue-200 bg-white p-5"
               style={{ height: `${topSize}%` }}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">Priority Queue</p>
               <div className="mt-3 space-y-3">
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
+                <div className="rounded-lg border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-3 text-sm text-slate-100">
                   Emergency tuition case requires same-day approval.
                 </div>
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
+                <div className="rounded-lg border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-3 text-sm text-slate-100">
                   6 students waiting for internship placement confirmation.
                 </div>
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
+                <div className="rounded-lg border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-3 text-sm text-slate-100">
                   Mentor reassignment needed for 2 high-risk students.
                 </div>
               </div>
@@ -240,7 +258,7 @@ export function SupportWorkspacePanels() {
 
             <div
               id="action-planner-panel"
-              className="overflow-hidden rounded-xl border border-blue-200 bg-white/85 p-5"
+              className="overflow-hidden rounded-xl border border-blue-200 bg-white p-5"
               style={{ height: `${100 - topSize}%` }}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">Action Planner</p>
@@ -261,20 +279,21 @@ export function SupportWorkspacePanels() {
             </div>
           </div>
         </section>
-      </div>
+        </div>
 
-      <div className="mt-6 grid gap-3 md:hidden">
-        <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-[#eef4ff] to-white p-4">
-          <p className="text-sm font-semibold">Student Snapshot</p>
-          <p className="mt-1 text-sm text-slate-600">Desktop view has keyboard-resizable panels.</p>
-        </div>
-        <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-[#eef4ff] to-white p-4">
-          <p className="text-sm font-semibold">Priority Queue</p>
-          <p className="mt-1 text-sm text-slate-600">Emergency tuition case requires same-day approval.</p>
-        </div>
-        <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-[#eef4ff] to-white p-4">
-          <p className="text-sm font-semibold">Action Planner</p>
-          <p className="mt-1 text-sm text-slate-600">Approve aid batch and finalize mentor pairing.</p>
+        <div className="mt-6 grid gap-3 md:hidden">
+          <div className="rounded-xl border border-blue-200 bg-white p-4">
+            <p className="text-sm font-semibold">Student Snapshot</p>
+            <p className="mt-1 text-sm text-slate-600">Desktop view has keyboard-resizable panels.</p>
+          </div>
+          <div className="rounded-xl border border-blue-200 bg-white p-4">
+            <p className="text-sm font-semibold">Priority Queue</p>
+            <p className="mt-1 text-sm text-slate-600">Emergency tuition case requires same-day approval.</p>
+          </div>
+          <div className="rounded-xl border border-blue-200 bg-white p-4">
+            <p className="text-sm font-semibold">Action Planner</p>
+            <p className="mt-1 text-sm text-slate-600">Approve aid batch and finalize mentor pairing.</p>
+          </div>
         </div>
       </div>
     </section>

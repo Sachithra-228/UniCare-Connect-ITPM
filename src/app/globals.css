@@ -161,6 +161,143 @@ textarea:focus-visible {
   animation: journey-pulse 1.5s ease-in-out infinite;
 }
 
+.faq-skw-left {
+  clip-path: polygon(0 0, 94% 0, 100% 100%, 0 100%);
+}
+
+.faq-skw-right {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 6% 100%);
+}
+
+.faq-left-up {
+  animation: faq-left-up 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-left-down {
+  animation: faq-left-down 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-right-down {
+  animation: faq-right-down 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-right-up {
+  animation: faq-right-up 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes faq-left-up {
+  from {
+    opacity: 0;
+    transform: translateY(34px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes faq-left-down {
+  from {
+    opacity: 0;
+    transform: translateY(-34px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes faq-right-down {
+  from {
+    opacity: 0;
+    transform: translateY(-34px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes faq-right-up {
+  from {
+    opacity: 0;
+    transform: translateY(34px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.core-journey-section {
+  background: linear-gradient(180deg, #f7faff 0%, #ffffff 62%);
+}
+
+.core-journey-grid {
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.2) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.16) 1px, transparent 1px);
+  background-size: 34px 34px;
+  animation: core-journey-grid-drift 22s linear infinite;
+}
+
+.core-journey-aurora-a {
+  animation: core-journey-aurora-a 18s ease-in-out infinite;
+}
+
+.core-journey-aurora-b {
+  animation: core-journey-aurora-b 24s ease-in-out infinite;
+}
+
+.core-journey-aurora-c {
+  animation: core-journey-aurora-c 20s ease-in-out infinite;
+}
+
+@keyframes core-journey-grid-drift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 42px 0, 0 42px;
+  }
+}
+
+@keyframes core-journey-aurora-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.42;
+  }
+  50% {
+    transform: translate3d(28px, -18px, 0) scale(1.08);
+    opacity: 0.6;
+  }
+}
+
+@keyframes core-journey-aurora-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.36;
+  }
+  50% {
+    transform: translate3d(-22px, 16px, 0) scale(1.12);
+    opacity: 0.52;
+  }
+}
+
+@keyframes core-journey-aurora-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.28;
+  }
+  50% {
+    transform: translate3d(16px, -14px, 0) scale(1.14);
+    opacity: 0.44;
+  }
+}
+
 @keyframes journey-run {
   0%,
   100% {
@@ -218,5 +355,18 @@ textarea:focus-visible {
   }
   50% {
     transform: rotate(-18deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core-journey-grid,
+  .core-journey-aurora-a,
+  .core-journey-aurora-b,
+  .core-journey-aurora-c,
+  .faq-left-up,
+  .faq-left-down,
+  .faq-right-down,
+  .faq-right-up {
+    animation: none;
   }
 }
