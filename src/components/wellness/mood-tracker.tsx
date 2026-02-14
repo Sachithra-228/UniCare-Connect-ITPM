@@ -9,7 +9,7 @@ import { Input } from "@/components/shared/input";
 export function MoodTracker() {
   const [message, setMessage] = useState<string | null>(null);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage(null);
     const formData = new FormData(event.currentTarget);
@@ -22,8 +22,30 @@ export function MoodTracker() {
       return;
     }
 
-    setMessage("Mood log saved. Personalized tips added to your dashboard.");
-    event.currentTarget.reset();
+    try {
+      const response = await fetch("/api/health-logs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          mood,
+          sleepHours,
+          stressLevel,
+          date: new Date().toISOString().split("T")[0]
+        })
+      });
+
+      if (!response.ok) {
+        setMessage("Unable to save mood log. Please try again.");
+        return;
+      }
+
+      setMessage("Mood log saved. Personalized tips added to your dashboard.");
+      event.currentTarget.reset();
+    } catch {
+      setMessage("Unable to save mood log. Please check your connection and try again.");
+    }
   };
 
   return (

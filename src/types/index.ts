@@ -1,16 +1,36 @@
-export type UserRole = "student" | "mentor" | "donor" | "admin" | "super_admin";
+export type UserRole =
+  | "student"
+  | "mentor"
+  | "donor"
+  | "admin"
+  | "super_admin"
+  | "employer"
+  | "ngo"
+  | "parent";
 
 export type UserProfile = {
   _id: string;
   email: string;
   name: string;
   role: UserRole;
+  firebaseUid?: string;
   university?: string;
   contact?: string;
   profilePic?: string;
+  roleDetails?: Record<string, string>;
+  status?: "active" | "blocked" | "pending";
+  isDeleted?: boolean;
+  deletedAt?: Date | string;
+  subscription?: {
+    plan?: string;
+    status?: "trialing" | "active" | "blocked" | "expired";
+    trialEndsAt?: Date | string;
+  };
   financialNeedLevel?: "low" | "medium" | "high";
   healthPreferences?: string[];
   careerInterests?: string[];
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 };
 
 export type Scholarship = {

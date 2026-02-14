@@ -10,7 +10,7 @@ import { TextArea } from "@/components/shared/text-area";
 export function AidRequestForm() {
   const [message, setMessage] = useState<string | null>(null);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage(null);
     const formData = new FormData(event.currentTarget);
@@ -26,8 +26,25 @@ export function AidRequestForm() {
       return;
     }
 
-    setMessage("Your application has been submitted for university verification.");
-    event.currentTarget.reset();
+    try {
+      const response = await fetch("/api/aid-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(result.data)
+      });
+
+      if (!response.ok) {
+        setMessage("Unable to submit your request. Please try again.");
+        return;
+      }
+
+      setMessage("Your application has been submitted for university verification.");
+      event.currentTarget.reset();
+    } catch {
+      setMessage("Unable to submit your request. Please check your connection and try again.");
+    }
   };
 
   return (

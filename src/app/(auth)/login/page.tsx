@@ -2,21 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/shared/button";
 import { Input } from "@/components/shared/input";
+import { getDashboardPathForRole } from "@/lib/auth-redirect";
 import { loginSchema, registerSchema } from "@/lib/validation";
+import { UserRole as AppUserRole } from "@/types";
 
 type AuthMode = "signin" | "signup";
-type UserRole =
-  | "student"
-  | "admin"
-  | "mentor"
-  | "donor"
-  | "employer"
-  | "ngo"
-  | "parent";
+type UserRole = Exclude<AppUserRole, "super_admin">;
 
 type RoleField = {
   key: "fieldA" | "fieldB" | "fieldC";
@@ -123,17 +118,128 @@ const INITIAL_SIGNUP_DATA: SignUpData = {
 
 export default function LoginPage() {
   const { signInWithEmail, signInWithGoogle, registerWithEmail } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const defaultMode = searchParams.get("mode") === "signup" ? "signup" : "signin";
+  const isVerifiedRedirect = searchParams.get("verified") === "1";
   const [mode, setMode] = useState<AuthMode>(defaultMode);
   const [signInError, setSignInError] = useState<string | null>(null);
   const [signUpError, setSignUpError] = useState<string | null>(null);
   const [signUpSuccess, setSignUpSuccess] = useState<string | null>(null);
+  const [signUpPopupMessage, setSignUpPopupMessage] = useState<string | null>(null);
   const [signUpStep, setSignUpStep] = useState(1);
   const [signUpData, setSignUpData] = useState<SignUpData>(INITIAL_SIGNUP_DATA);
   const [recentlyRegisteredEmail, setRecentlyRegisteredEmail] = useState<string | null>(null);
 
   const selectedRoleConfig = signUpData.role ? ROLE_CONFIGS[signUpData.role] : null;
+
+  const isDatabaseErrorMessage = (msg: string) =>
+    /Mongo|MONGODB|connection|ECONNREFUSED|ETIMEDOUT|timed out|not configured/i.test(msg);
+
+  const getReadableAuthError = (error: unknown) => {
+    if (error instanceof Error && error.message === "EMAIL_NOT_VERIFIED") {
+      return "Please verify your email first, then sign in.";
+    }
+    if (error instanceof Error && error.message === "USER_NOT_FOUND") {
+      return "No account profile found. Please contact support.";
+    }
+    if (error instanceof Error && error.message === "ACCOUNT_DELETED") {
+      return "This account has been deleted.";
+    }
+    if (error instanceof Error && error.message === "ACCOUNT_BLOCKED") {
+      return "Your account is blocked. Please contact support.";
+    }
+    if (error instanceof Error && error.message === "DB_CONNECTION_FAILED") {
+      return "Database connection failed. Please try again in a minute.";
+    }
+    if (error instanceof Error && isDatabaseErrorMessage(error.message)) {
+      return `Database connection failed. ${error.message}`;
+    }
+    if (error instanceof Error && error.message === "SIGNIN_PRECHECK_FAILED") {
+      return "Unable to validate account status right now. Please try again.";
+    }
+
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof (error as { code?: unknown }).code === "string"
+    ) {
+      const code = (error as { code: string }).code;
+
+      if (code === "auth/invalid-credential") {
+        return "Incorrect email or password. Please try again.";
+      }
+      if (code === "auth/user-not-found") {
+        return "No account found for this email.";
+      }
+      if (code === "auth/wrong-password") {
+        return "Incorrect password. Please try again.";
+      }
+      if (code === "auth/too-many-requests") {
+        return "Too many login attempts. Please wait and try again.";
+      }
+      if (code === "auth/network-request-failed") {
+        return "Network issue. Check your connection and try again.";
+      }
+      if (code === "auth/invalid-email") {
+        return "Please enter a valid email address.";
+      }
+    }
+
+    return "Unable to sign in. Please try again.";
+  };
+
+  const getPostSignInPath = async () => {
+    const response = await fetch("/api/auth/session", { cache: "no-store" });
+    if (!response.ok) {
+      return "/dashboard";
+    }
+
+    const data = (await response.json()) as {
+      user?: { role?: string };
+    };
+    return getDashboardPathForRole(data.user?.role);
+  };
+
+  const getReadableSignUpError = (error: unknown) => {
+    if (error instanceof Error && error.message === "ACCOUNT_SYNC_FAILED") {
+      return "Account creation failed while saving your profile. Please try again.";
+    }
+    if (error instanceof Error && error.message === "DB_CONNECTION_FAILED") {
+      return "Database connection failed. Please try again in a minute.";
+    }
+    if (error instanceof Error && isDatabaseErrorMessage(error.message)) {
+      return `Database connection failed. ${error.message}`;
+    }
+    if (error instanceof Error && error.message === "VERIFICATION_EMAIL_SEND_FAILED") {
+      return "Your account was created, but verification email failed. Please try again.";
+    }
+
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof (error as { code?: unknown }).code === "string"
+    ) {
+      const code = (error as { code: string }).code;
+
+      if (code === "auth/email-already-in-use") {
+        return "An account with this email already exists.";
+      }
+      if (code === "auth/invalid-email") {
+        return "Please enter a valid email address.";
+      }
+      if (code === "auth/weak-password") {
+        return "Use a stronger password (at least 6 characters).";
+      }
+      if (code === "auth/network-request-failed") {
+        return "Network issue. Check your connection and try again.";
+      }
+    }
+
+    return "Unable to create account. Please try again.";
+  };
 
   const handleSignInSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -153,8 +259,21 @@ export default function LoginPage() {
 
     try {
       await signInWithEmail(result.data.email, result.data.password);
+      const nextPath = await getPostSignInPath();
+      router.push(nextPath);
     } catch (error) {
-      setSignInError("Unable to sign in. Please try again.");
+      setSignInError(getReadableAuthError(error));
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setSignInError(null);
+    try {
+      await signInWithGoogle();
+      const nextPath = await getPostSignInPath();
+      router.push(nextPath);
+    } catch (error) {
+      setSignInError(getReadableAuthError(error));
     }
   };
 
@@ -227,14 +346,23 @@ export default function LoginPage() {
     }
 
     try {
-      await registerWithEmail(signUpData.email, signUpData.password);
+      await registerWithEmail(signUpData.email, signUpData.password, {
+        name: signUpData.name,
+        role: signUpData.role || undefined,
+        fieldA: signUpData.fieldA,
+        fieldB: signUpData.fieldB,
+        fieldC: signUpData.fieldC
+      });
+      const successMessage =
+        "Your account was created successfully. Please check your email and verify your account before signing in.";
       setRecentlyRegisteredEmail(signUpData.email);
-      setSignUpSuccess("Account created successfully. Please sign in with your new account.");
+      setSignUpSuccess(successMessage);
+      setSignUpPopupMessage(successMessage);
       setMode("signin");
       setSignUpStep(1);
       setSignUpData(INITIAL_SIGNUP_DATA);
     } catch (error) {
-      setSignUpError("Unable to create account. Please try again.");
+      setSignUpError(getReadableSignUpError(error));
     }
   };
 
@@ -362,7 +490,10 @@ export default function LoginPage() {
           <input
             type="checkbox"
             checked={signUpData.acceptedTerms}
-            onChange={(event) => updateSignUpField("acceptedTerms", event.target.checked)}
+            onChange={(event) => {
+              updateSignUpField("acceptedTerms", event.target.checked);
+              if (signUpError === "Please accept the terms to create your account.") setSignUpError(null);
+            }}
             className="mt-1 h-4 w-4 rounded border-slate-300"
           />
           I agree to UniCare Connect terms and understand this account is for verified support access.
@@ -427,11 +558,16 @@ export default function LoginPage() {
                 </label>
                 <Input id="password" name="password" type="password" required aria-required="true" />
               </div>
+              {isVerifiedRedirect ? (
+                <p className="text-sm text-green-600">
+                  Email verified successfully. You can now sign in.
+                </p>
+              ) : null}
               {signUpSuccess ? <p className="text-sm text-green-600">{signUpSuccess}</p> : null}
               {signInError ? <p className="text-sm text-red-500">{signInError}</p> : null}
               <div className="grid gap-2 sm:grid-cols-2">
                 <Button type="submit">Sign in</Button>
-                <Button type="button" variant="secondary" onClick={signInWithGoogle}>
+                <Button type="button" variant="secondary" onClick={handleGoogleSignIn}>
                   Sign in with Google
                 </Button>
               </div>
@@ -500,6 +636,20 @@ export default function LoginPage() {
           )}
         </div>
       </div>
+
+      {signUpPopupMessage ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/45 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold text-slate-900">Account Created</h2>
+            <p className="mt-2 text-sm text-slate-600">{signUpPopupMessage}</p>
+            <div className="mt-5 flex justify-end">
+              <Button type="button" onClick={() => setSignUpPopupMessage(null)}>
+                OK
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
