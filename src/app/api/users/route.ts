@@ -14,6 +14,7 @@ type UserPayload = {
   university?: string;
   contact?: string;
   roleDetails?: Record<string, string>;
+  needsProfileCompletion?: boolean;
   status?: "active" | "blocked" | "pending";
   isDeleted?: boolean;
   deletedAt?: Date | string;
@@ -33,6 +34,7 @@ type DbUserDocument = {
   university?: string;
   contact?: string;
   roleDetails?: Record<string, string>;
+  needsProfileCompletion?: boolean;
   status?: "active" | "blocked" | "pending";
   isDeleted?: boolean;
   deletedAt?: Date | string;
@@ -56,6 +58,7 @@ function mapUserDocument(document: WithId<DbUserInput>) {
     university: document.university,
     contact: document.contact,
     roleDetails: document.roleDetails,
+    needsProfileCompletion: document.needsProfileCompletion,
     firebaseUid: document.firebaseUid,
     status: document.status,
     isDeleted: document.isDeleted,
@@ -209,6 +212,8 @@ export async function POST(request: NextRequest) {
         ? (isPrivileged || !existingUser || isSelf ? payloadRole : undefined)
         : undefined;
     const roleToSet = roleFromPayload ?? (!existingUser ? "student" : undefined);
+    const isNewUserWithoutRole = !existingUser && payloadRole == null;
+    const completingProfile = isSelf && (payloadRole != null || (payload.roleDetails && Object.keys(payload.roleDetails).length > 0));
 
     const setFields: Partial<DbUserInput> & { updatedAt: Date } = {
       updatedAt: now,
@@ -218,7 +223,9 @@ export async function POST(request: NextRequest) {
       firebaseUid: payload.firebaseUid,
       university: payload.university,
       contact: payload.contact,
-      roleDetails: payload.roleDetails ?? {}
+      roleDetails: payload.roleDetails ?? {},
+      ...(isNewUserWithoutRole && { needsProfileCompletion: true }),
+      ...(completingProfile && { needsProfileCompletion: false })
     };
 
     if (payload.name) setFields.name = payload.name;
@@ -226,6 +233,7 @@ export async function POST(request: NextRequest) {
     if (payload.university) setFields.university = payload.university;
     if (payload.contact) setFields.contact = payload.contact;
     if (payload.roleDetails) setFields.roleDetails = payload.roleDetails;
+    if (payload.needsProfileCompletion === false) setFields.needsProfileCompletion = false;
     if (isPrivileged && payload.status) setFields.status = payload.status;
     if (isPrivileged && typeof payload.isDeleted === "boolean") setFields.isDeleted = payload.isDeleted;
     if (isPrivileged && payload.deletedAt) setFields.deletedAt = payload.deletedAt;

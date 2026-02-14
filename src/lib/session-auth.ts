@@ -16,6 +16,7 @@ type DbUserDocument = {
   university?: string;
   contact?: string;
   roleDetails?: Record<string, string>;
+  needsProfileCompletion?: boolean;
   firebaseUid?: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -37,6 +38,7 @@ function mapUserDocument(document: DbUserDocument): UserProfile {
     university: document.university,
     contact: document.contact,
     roleDetails: document.roleDetails,
+    needsProfileCompletion: document.needsProfileCompletion,
     firebaseUid: document.firebaseUid,
     createdAt: document.createdAt,
     updatedAt: document.updatedAt,

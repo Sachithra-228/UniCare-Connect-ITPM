@@ -31,6 +31,8 @@ export type UserProfile = {
   careerInterests?: string[];
   createdAt?: Date | string;
   updatedAt?: Date | string;
+  /** True when user was created via Google (or similar) and has not yet chosen role/details */
+  needsProfileCompletion?: boolean;
 };
 
 export type Scholarship = {
