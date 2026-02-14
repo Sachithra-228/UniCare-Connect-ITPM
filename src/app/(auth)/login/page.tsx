@@ -7,8 +7,20 @@ import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/shared/button";
 import { Input } from "@/components/shared/input";
 import { getDashboardPathForRole } from "@/lib/auth-redirect";
-import { loginSchema, registerSchema } from "@/lib/validation";
+import { loginSchema, registerSchema, optionalUrlSchema, sriLankaPhoneSchema } from "@/lib/validation";
 import { UserRole as AppUserRole } from "@/types";
+import {
+  OTHER_UNIVERSITY_VALUE,
+  getDegreeProgramsForUniversity,
+  OTHER_DEGREE_VALUE,
+  SUPPORT_TYPES,
+  HIRING_FOCUS_OPTIONS,
+  FUNDING_FOCUS_OPTIONS,
+  RELATIONSHIP_OPTIONS
+} from "@/lib/signup-data";
+import { UniversityPicker } from "@/components/auth/university-picker";
+import { RolePicker } from "@/components/auth/role-picker";
+import { DegreePicker } from "@/components/auth/degree-picker";
 
 type AuthMode = "signin" | "signup";
 type UserRole = Exclude<AppUserRole, "super_admin">;
@@ -18,12 +30,19 @@ type RoleField = {
   label: string;
   placeholder: string;
   type?: "text" | "tel" | "url";
+  optional?: boolean;
+  helpText?: string;
 };
 
 type RoleConfig = {
   label: string;
   helper: string;
   fields: [RoleField, RoleField, RoleField];
+  /** "university" = Sri Lankan university dropdown + Other; "text" = simple text */
+  field1Kind?: "university" | "text";
+  /** "degree" = dynamic by university + Other; "dropdown" = fixed options; "text" = simple text */
+  field2Kind?: "degree" | "dropdown" | "text";
+  field2Options?: readonly string[];
 };
 
 type SignUpData = {
@@ -35,6 +54,8 @@ type SignUpData = {
   fieldA: string;
   fieldB: string;
   fieldC: string;
+  fieldAOther: string;
+  fieldBOther: string;
   acceptedTerms: boolean;
 };
 
@@ -42,64 +63,107 @@ const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
   student: {
     label: "Student",
     helper: "Set up your student support profile.",
+    field1Kind: "university",
+    field2Kind: "degree",
     fields: [
-      { key: "fieldA", label: "University", placeholder: "University of Moratuwa" },
-      { key: "fieldB", label: "Degree program", placeholder: "BSc in IT" },
-      { key: "fieldC", label: "Student ID", placeholder: "UGC-2026-XXXX" }
+      { key: "fieldA", label: "University", placeholder: "Select your university" },
+      { key: "fieldB", label: "Degree program", placeholder: "Select after choosing university" },
+      { key: "fieldC", label: "Student ID (Optional)", placeholder: "e.g. IT23152700", optional: true }
     ]
   },
   admin: {
     label: "University Admin / Faculty",
     helper: "Connect your institution and department.",
+    field1Kind: "university",
+    field2Kind: "text",
     fields: [
-      { key: "fieldA", label: "University / Faculty", placeholder: "University of Colombo" },
-      { key: "fieldB", label: "Department / Office", placeholder: "Student Affairs Office" },
-      { key: "fieldC", label: "Staff ID", placeholder: "STAFF-00192" }
+      { key: "fieldA", label: "University / Faculty", placeholder: "Select your university" },
+      { key: "fieldB", label: "Department / Office", placeholder: "e.g. Student Affairs Office" },
+      { key: "fieldC", label: "Staff ID (Optional)", placeholder: "e.g. STAFF-00192", optional: true }
     ]
   },
   mentor: {
     label: "Alumni / Industry Mentor",
     helper: "Create your mentor identity and expertise profile.",
+    field1Kind: "text",
+    field2Kind: "text",
     fields: [
-      { key: "fieldA", label: "Organization", placeholder: "ABC Technologies" },
-      { key: "fieldB", label: "Expertise area", placeholder: "Software Engineering" },
-      { key: "fieldC", label: "LinkedIn profile", placeholder: "https://linkedin.com/in/your-name", type: "url" }
+      { key: "fieldA", label: "Organization", placeholder: "e.g. ABC Technologies" },
+      { key: "fieldB", label: "Expertise area", placeholder: "e.g. Software Engineering" },
+      {
+        key: "fieldC",
+        label: "LinkedIn profile (Optional)",
+        placeholder: "https://linkedin.com/in/username",
+        type: "url",
+        optional: true,
+        helpText: "Enter full URL including https://"
+      }
     ]
   },
   donor: {
     label: "Donor / CSR Partner",
     helper: "Register your support profile and contribution focus.",
+    field1Kind: "text",
+    field2Kind: "dropdown",
+    field2Options: SUPPORT_TYPES,
     fields: [
-      { key: "fieldA", label: "Organization", placeholder: "XYZ Foundation" },
-      { key: "fieldB", label: "Support type", placeholder: "Emergency bursaries / scholarships" },
-      { key: "fieldC", label: "CSR / Donor reference", placeholder: "CSR-UNICARE-2026" }
+      { key: "fieldA", label: "Organization", placeholder: "e.g. XYZ Foundation" },
+      { key: "fieldB", label: "Support type", placeholder: "Select support type" },
+      { key: "fieldC", label: "CSR / Donor reference (Optional)", placeholder: "e.g. CSR-UNICARE-2026", optional: true }
     ]
   },
   employer: {
     label: "Employer (Job Provider)",
     helper: "Set your hiring profile for student opportunities.",
+    field1Kind: "text",
+    field2Kind: "dropdown",
+    field2Options: HIRING_FOCUS_OPTIONS,
     fields: [
-      { key: "fieldA", label: "Company", placeholder: "Tech Lanka Pvt Ltd" },
-      { key: "fieldB", label: "Hiring focus", placeholder: "Internships, graduate roles" },
-      { key: "fieldC", label: "Company website", placeholder: "https://company.lk", type: "url" }
+      { key: "fieldA", label: "Company", placeholder: "e.g. Tech Lanka Pvt Ltd" },
+      { key: "fieldB", label: "Hiring focus", placeholder: "Select hiring focus" },
+      {
+        key: "fieldC",
+        label: "Company website (Optional)",
+        placeholder: "https://company.lk",
+        type: "url",
+        optional: true,
+        helpText: "Enter full URL including https://"
+      }
     ]
   },
   ngo: {
     label: "NGO / Funding Organization",
     helper: "Define your funding and community support profile.",
+    field1Kind: "text",
+    field2Kind: "dropdown",
+    field2Options: FUNDING_FOCUS_OPTIONS,
     fields: [
-      { key: "fieldA", label: "Organization name", placeholder: "Youth Impact NGO" },
-      { key: "fieldB", label: "Funding focus", placeholder: "Education and wellbeing" },
-      { key: "fieldC", label: "Registration number", placeholder: "NGO/SL/2026/XX" }
+      { key: "fieldA", label: "Organization name", placeholder: "e.g. Youth Impact NGO" },
+      { key: "fieldB", label: "Funding focus", placeholder: "Select funding focus" },
+      {
+        key: "fieldC",
+        label: "Registration number",
+        placeholder: "e.g. NGO/SL/2026/XX",
+        helpText: "Required for NGO accounts"
+      }
     ]
   },
   parent: {
     label: "Parent / Guardian",
     helper: "Set up parent access to monitor student progress.",
+    field1Kind: "text",
+    field2Kind: "dropdown",
+    field2Options: RELATIONSHIP_OPTIONS,
     fields: [
-      { key: "fieldA", label: "Student full name", placeholder: "Student name" },
-      { key: "fieldB", label: "Relationship", placeholder: "Mother / Father / Guardian" },
-      { key: "fieldC", label: "Contact number", placeholder: "+94 7X XXX XXXX", type: "tel" }
+      { key: "fieldA", label: "Student full name", placeholder: "Full name of the student" },
+      { key: "fieldB", label: "Relationship", placeholder: "Select relationship" },
+      {
+        key: "fieldC",
+        label: "Contact number",
+        placeholder: "0771234567",
+        type: "tel",
+        helpText: "10-digit Sri Lanka number (e.g. 0771234567)"
+      }
     ]
   }
 };
@@ -113,8 +177,20 @@ const INITIAL_SIGNUP_DATA: SignUpData = {
   fieldA: "",
   fieldB: "",
   fieldC: "",
+  fieldAOther: "",
+  fieldBOther: "",
   acceptedTerms: false
 };
+
+function resolveFieldA(data: SignUpData): string {
+  if (data.fieldA === OTHER_UNIVERSITY_VALUE) return data.fieldAOther.trim();
+  return data.fieldA.trim();
+}
+function resolveFieldB(data: SignUpData): string {
+  const otherValues = [OTHER_DEGREE_VALUE, "Other (Please specify)", "Other"];
+  if (otherValues.includes(data.fieldB)) return data.fieldBOther.trim();
+  return data.fieldB.trim();
+}
 
 export default function LoginPage() {
   const { signInWithEmail, signInWithGoogle, registerWithEmail } = useAuth();
@@ -130,8 +206,22 @@ export default function LoginPage() {
   const [signUpStep, setSignUpStep] = useState(1);
   const [signUpData, setSignUpData] = useState<SignUpData>(INITIAL_SIGNUP_DATA);
   const [recentlyRegisteredEmail, setRecentlyRegisteredEmail] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ fieldA?: string; fieldB?: string; fieldC?: string }>({});
+  const [step2Errors, setStep2Errors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
 
   const selectedRoleConfig = signUpData.role ? ROLE_CONFIGS[signUpData.role] : null;
+  const isStudent = signUpData.role === "student";
+  const isUniversityRole = signUpData.role === "student" || signUpData.role === "admin";
+  const degreePrograms = isStudent
+    ? getDegreeProgramsForUniversity(
+        signUpData.fieldA === OTHER_UNIVERSITY_VALUE ? "" : signUpData.fieldA
+      )
+    : [];
 
   const isDatabaseErrorMessage = (msg: string) =>
     /Mongo|MONGODB|connection|ECONNREFUSED|ETIMEDOUT|timed out|not configured/i.test(msg);
@@ -281,32 +371,68 @@ export default function LoginPage() {
     setSignUpData((previous) => ({ ...previous, [field]: value }));
   };
 
-  const validateSignUpStep = (step: number) => {
+  const validateSignUpStep = (step: number): string | null => {
+    setFieldErrors({});
     if (step === 1) {
       if (!signUpData.role) return "Please select your role to continue.";
       return null;
     }
 
     if (step === 2) {
-      const result = registerSchema.safeParse({
-        name: signUpData.name,
-        email: signUpData.email,
-        password: signUpData.password
-      });
-
-      if (!result.success) {
-        return "Please complete full name, valid email, and password (minimum 6 characters).";
-      }
-
-      if (signUpData.password !== signUpData.confirmPassword) {
-        return "Passwords do not match.";
+      setStep2Errors({});
+      const err: { name?: string; email?: string; password?: string; confirmPassword?: string } = {};
+      if (!signUpData.name.trim()) err.name = "Full name is required.";
+      else if (signUpData.name.trim().length < 2) err.name = "Please enter at least 2 characters.";
+      const emailResult = registerSchema.shape.email.safeParse(signUpData.email);
+      if (!signUpData.email.trim()) err.email = "Email is required.";
+      else if (!emailResult.success) err.email = "Please enter a valid email address.";
+      if (!signUpData.password) err.password = "Password is required.";
+      else if (signUpData.password.length < 6) err.password = "Password must be at least 6 characters.";
+      if (!signUpData.confirmPassword) err.confirmPassword = "Please confirm your password.";
+      else if (signUpData.password !== signUpData.confirmPassword)
+        err.confirmPassword = "Passwords do not match.";
+      if (Object.keys(err).length > 0) {
+        setStep2Errors(err);
+        return "Please complete all required fields and fix any errors.";
       }
       return null;
     }
 
-    if (step === 3) {
-      if (!signUpData.fieldA.trim() || !signUpData.fieldB.trim() || !signUpData.fieldC.trim()) {
-        return "Please complete all role details.";
+    if (step === 3 && selectedRoleConfig) {
+      const a = resolveFieldA(signUpData);
+      const b = resolveFieldB(signUpData);
+      const c = signUpData.fieldC.trim();
+      const err: { fieldA?: string; fieldB?: string; fieldC?: string } = {};
+
+      if (!a) {
+        err.fieldA =
+          selectedRoleConfig.field1Kind === "university"
+            ? "Please select or enter your university."
+            : `Please enter ${selectedRoleConfig.fields[0].label.toLowerCase()}.`;
+      }
+      if (!b) {
+        err.fieldB =
+          selectedRoleConfig.field2Kind === "degree"
+            ? "Please select or enter your degree program."
+            : `Please enter ${selectedRoleConfig.fields[1].label.toLowerCase()}.`;
+      }
+
+      const field3Optional = selectedRoleConfig.fields[2].optional;
+      if (!field3Optional && !c) {
+        err.fieldC = `Please enter ${selectedRoleConfig.fields[2].label.replace(" (Optional)", "").toLowerCase()}.`;
+      } else if (c) {
+        if (selectedRoleConfig.fields[2].type === "url") {
+          const urlResult = optionalUrlSchema.safeParse(c);
+          if (!urlResult.success) err.fieldC = urlResult.error.errors[0]?.message ?? "Invalid URL.";
+        } else if (selectedRoleConfig.fields[2].type === "tel") {
+          const phoneResult = sriLankaPhoneSchema.safeParse(c);
+          if (!phoneResult.success) err.fieldC = phoneResult.error.errors[0]?.message ?? "Invalid phone number.";
+        }
+      }
+
+      if (Object.keys(err).length > 0) {
+        setFieldErrors(err);
+        return "Please complete the required fields and fix any errors.";
       }
       return null;
     }
@@ -314,7 +440,6 @@ export default function LoginPage() {
     if (!signUpData.acceptedTerms) {
       return "Please accept the terms to create your account.";
     }
-
     return null;
   };
 
@@ -331,6 +456,8 @@ export default function LoginPage() {
 
   const goToPreviousSignUpStep = () => {
     setSignUpError(null);
+    setFieldErrors({});
+    setStep2Errors({});
     setSignUpStep((previous) => Math.max(1, previous - 1));
   };
 
@@ -349,9 +476,9 @@ export default function LoginPage() {
       await registerWithEmail(signUpData.email, signUpData.password, {
         name: signUpData.name,
         role: signUpData.role || undefined,
-        fieldA: signUpData.fieldA,
-        fieldB: signUpData.fieldB,
-        fieldC: signUpData.fieldC
+        fieldA: resolveFieldA(signUpData),
+        fieldB: resolveFieldB(signUpData),
+        fieldC: signUpData.fieldC.trim()
       });
       const successMessage =
         "Your account was created successfully. Please check your email and verify your account before signing in.";
@@ -368,24 +495,23 @@ export default function LoginPage() {
 
   const renderSignUpStep = () => {
     if (signUpStep === 1) {
+      const roleOptions = (Object.keys(ROLE_CONFIGS) as UserRole[]).map((role) => ({
+        value: role,
+        label: ROLE_CONFIGS[role].label
+      }));
       return (
         <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="role">
+          <label className="text-sm font-medium text-slate-900" htmlFor="role">
             Select your role
           </label>
-          <select
+          <RolePicker
             id="role"
+            options={roleOptions}
             value={signUpData.role}
-            onChange={(event) => updateSignUpField("role", event.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none dark:border-slate-700 dark:bg-slate-900"
-          >
-            <option value="">Choose one role</option>
-            {(Object.keys(ROLE_CONFIGS) as UserRole[]).map((role) => (
-              <option key={role} value={role}>
-                {ROLE_CONFIGS[role].label}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => updateSignUpField("role", v)}
+            placeholder="Search or choose your role"
+            aria-label="Role"
+          />
           {selectedRoleConfig ? (
             <p className="text-xs text-slate-500">{selectedRoleConfig.helper}</p>
           ) : null}
@@ -397,93 +523,253 @@ export default function LoginPage() {
       return (
         <div className="grid gap-3 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-medium" htmlFor="signup-name">
-              Full name
+            <label className="text-sm font-medium text-slate-900" htmlFor="signup-name">
+              Full name <span className="text-red-500">*</span>
             </label>
             <Input
               id="signup-name"
               value={signUpData.name}
-              onChange={(event) => updateSignUpField("name", event.target.value)}
+              onChange={(event) => {
+                updateSignUpField("name", event.target.value);
+                if (step2Errors.name) setStep2Errors((e) => ({ ...e, name: undefined }));
+              }}
               placeholder="Your full name"
               required
+              className={step2Errors.name ? "border-red-400 focus-visible:ring-red-400/30" : ""}
             />
+            {step2Errors.name && <p className="text-xs text-red-500">{step2Errors.name}</p>}
           </div>
           <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-medium" htmlFor="signup-email">
-              Email
+            <label className="text-sm font-medium text-slate-900" htmlFor="signup-email">
+              Email <span className="text-red-500">*</span>
             </label>
             <Input
               id="signup-email"
               type="email"
               value={signUpData.email}
-              onChange={(event) => updateSignUpField("email", event.target.value)}
+              onChange={(event) => {
+                updateSignUpField("email", event.target.value);
+                if (step2Errors.email) setStep2Errors((e) => ({ ...e, email: undefined }));
+              }}
               placeholder="name@domain.com"
               required
+              className={step2Errors.email ? "border-red-400 focus-visible:ring-red-400/30" : ""}
             />
+            {step2Errors.email && <p className="text-xs text-red-500">{step2Errors.email}</p>}
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="signup-password">
-              Password
+            <label className="text-sm font-medium text-slate-900" htmlFor="signup-password">
+              Password <span className="text-red-500">*</span>
             </label>
             <Input
               id="signup-password"
               type="password"
               value={signUpData.password}
-              onChange={(event) => updateSignUpField("password", event.target.value)}
+              onChange={(event) => {
+                updateSignUpField("password", event.target.value);
+                if (step2Errors.password) setStep2Errors((e) => ({ ...e, password: undefined }));
+              }}
               placeholder="Minimum 6 characters"
               required
+              className={step2Errors.password ? "border-red-400 focus-visible:ring-red-400/30" : ""}
             />
+            {step2Errors.password && <p className="text-xs text-red-500">{step2Errors.password}</p>}
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="signup-confirm-password">
-              Confirm password
+            <label className="text-sm font-medium text-slate-900" htmlFor="signup-confirm-password">
+              Confirm password <span className="text-red-500">*</span>
             </label>
             <Input
               id="signup-confirm-password"
               type="password"
               value={signUpData.confirmPassword}
-              onChange={(event) => updateSignUpField("confirmPassword", event.target.value)}
+              onChange={(event) => {
+                updateSignUpField("confirmPassword", event.target.value);
+                if (step2Errors.confirmPassword) setStep2Errors((e) => ({ ...e, confirmPassword: undefined }));
+              }}
               placeholder="Re-enter password"
               required
+              className={step2Errors.confirmPassword ? "border-red-400 focus-visible:ring-red-400/30" : ""}
             />
+            {step2Errors.confirmPassword && (
+              <p className="text-xs text-red-500">{step2Errors.confirmPassword}</p>
+            )}
           </div>
         </div>
       );
     }
 
     if (signUpStep === 3 && selectedRoleConfig) {
+      const config = selectedRoleConfig;
+      const f1 = config.fields[0];
+      const f2 = config.fields[1];
+      const f3 = config.fields[2];
+      const showFieldAOther = isUniversityRole && signUpData.fieldA === OTHER_UNIVERSITY_VALUE;
+      const isFieldBOther =
+        signUpData.fieldB === OTHER_DEGREE_VALUE ||
+        signUpData.fieldB === "Other (Please specify)" ||
+        signUpData.fieldB === "Other";
+      const showFieldBOther =
+        (isStudent && isFieldBOther) ||
+        (!isStudent && config.field2Kind === "dropdown" && signUpData.fieldB === "Other (Please specify)");
+
       return (
-        <div className="grid gap-3">
-          {selectedRoleConfig.fields.map((field) => (
-            <div key={field.key} className="space-y-2">
-              <label className="text-sm font-medium" htmlFor={field.key}>
-                {field.label}
-              </label>
+        <div className="grid gap-4">
+          {/* Field 1 - University dropdown or text */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-900" htmlFor="fieldA">
+              {f1.label}
+              {!f1.optional && <span className="text-red-500"> *</span>}
+            </label>
+            {config.field1Kind === "university" ? (
+              <>
+                <UniversityPicker
+                  id="fieldA"
+                  value={signUpData.fieldA}
+                  onChange={(v) => {
+                    updateSignUpField("fieldA", v);
+                    if (v !== OTHER_UNIVERSITY_VALUE) updateSignUpField("fieldB", "");
+                  }}
+                  placeholder="Search or choose your university"
+                  aria-label="University"
+                />
+                {showFieldAOther && (
+                  <Input
+                    value={signUpData.fieldAOther}
+                    onChange={(e) => updateSignUpField("fieldAOther", e.target.value)}
+                    placeholder="Enter university name"
+                    className="mt-2"
+                  />
+                )}
+              </>
+            ) : (
               <Input
-                id={field.key}
-                type={field.type ?? "text"}
-                value={signUpData[field.key]}
-                onChange={(event) => updateSignUpField(field.key, event.target.value)}
-                placeholder={field.placeholder}
-                required
+                id="fieldA"
+                value={signUpData.fieldA}
+                onChange={(e) => updateSignUpField("fieldA", e.target.value)}
+                placeholder={f1.placeholder}
               />
-            </div>
-          ))}
+            )}
+            {fieldErrors.fieldA && <p className="text-xs text-red-500">{fieldErrors.fieldA}</p>}
+          </div>
+
+          {/* Field 2 - Degree (dynamic), dropdown, or text */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-900" htmlFor="fieldB">
+              {f2.label}
+              {!f2.optional && <span className="text-red-500"> *</span>}
+            </label>
+            {config.field2Kind === "degree" ? (
+              <>
+                <DegreePicker
+                  id="fieldB"
+                  options={degreePrograms}
+                  value={signUpData.fieldB}
+                  onChange={(v) => updateSignUpField("fieldB", v)}
+                  placeholder="Search or select degree program"
+                  disabled={!resolveFieldA(signUpData)}
+                  aria-label="Degree program"
+                />
+                {showFieldBOther && (
+                  <Input
+                    value={signUpData.fieldBOther}
+                    onChange={(e) => updateSignUpField("fieldBOther", e.target.value)}
+                    placeholder="Enter degree program"
+                    className="mt-2"
+                  />
+                )}
+              </>
+            ) : config.field2Kind === "dropdown" && config.field2Options ? (
+              <>
+                <select
+                  id="fieldB"
+                  value={signUpData.fieldB}
+                  onChange={(e) => updateSignUpField("fieldB", e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 dark:border-slate-700 dark:bg-slate-900"
+                >
+                  <option value="">{f2.placeholder}</option>
+                  {config.field2Options.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+                {showFieldBOther && (
+                  <Input
+                    value={signUpData.fieldBOther}
+                    onChange={(e) => updateSignUpField("fieldBOther", e.target.value)}
+                    placeholder="Please specify"
+                    className="mt-2"
+                  />
+                )}
+              </>
+            ) : (
+              <Input
+                id="fieldB"
+                value={signUpData.fieldB}
+                onChange={(e) => updateSignUpField("fieldB", e.target.value)}
+                placeholder={f2.placeholder}
+              />
+            )}
+            {fieldErrors.fieldB && <p className="text-xs text-red-500">{fieldErrors.fieldB}</p>}
+          </div>
+
+          {/* Field 3 */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-900" htmlFor="fieldC">
+              {f3.label}
+              {!f3.optional && <span className="text-red-500"> *</span>}
+              {f3.optional && <span className="ml-1 text-slate-400">(Optional)</span>}
+            </label>
+            {f3.type === "tel" ? (
+              <Input
+                id="fieldC"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                maxLength={10}
+                value={signUpData.fieldC}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  updateSignUpField("fieldC", digits);
+                }}
+                placeholder={f3.placeholder}
+                className={
+                  fieldErrors.fieldC
+                    ? "border-red-400 focus-visible:ring-red-400/30"
+                    : f3.optional
+                      ? "border-slate-200 bg-slate-50/50 dark:bg-slate-800/50"
+                      : ""
+                }
+              />
+            ) : (
+              <Input
+                id="fieldC"
+                type={f3.type ?? "text"}
+                value={signUpData.fieldC}
+                onChange={(e) => updateSignUpField("fieldC", e.target.value)}
+                placeholder={f3.placeholder}
+                className={f3.optional ? "border-slate-200 bg-slate-50/50 dark:bg-slate-800/50" : ""}
+              />
+            )}
+            {f3.helpText && <p className="text-xs text-slate-500">{f3.helpText}</p>}
+            {fieldErrors.fieldC && <p className="text-xs text-red-500">{fieldErrors.fieldC}</p>}
+          </div>
         </div>
       );
     }
 
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
-          <p className="font-semibold text-slate-900">Review details</p>
-          <ul className="mt-2 space-y-1 text-slate-600">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm dark:bg-slate-800/50 dark:border-slate-700">
+          <p className="font-semibold text-slate-900 dark:text-slate-100">Review details</p>
+          <ul className="mt-2 space-y-1 text-slate-600 dark:text-slate-300">
             <li>Name: {signUpData.name}</li>
             <li>Email: {signUpData.email}</li>
             <li>Role: {signUpData.role ? ROLE_CONFIGS[signUpData.role].label : "-"}</li>
-            <li>{selectedRoleConfig?.fields[0].label}: {signUpData.fieldA}</li>
-            <li>{selectedRoleConfig?.fields[1].label}: {signUpData.fieldB}</li>
-            <li>{selectedRoleConfig?.fields[2].label}: {signUpData.fieldC}</li>
+            <li>{selectedRoleConfig?.fields[0].label}: {resolveFieldA(signUpData) || "-"}</li>
+            <li>{selectedRoleConfig?.fields[1].label}: {resolveFieldB(signUpData) || "-"}</li>
+            <li>{selectedRoleConfig?.fields[2].label}: {signUpData.fieldC.trim() || "-"}</li>
           </ul>
         </div>
         <label className="flex items-start gap-2 text-sm text-slate-600">
