@@ -1,7 +1,7 @@
-import { SectionHeading } from "@/components/shared/SectionHeading";
-import { StatCard } from "@/components/shared/StatCard";
-import { Card } from "@/components/shared/Card";
-import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
+import { SectionHeading } from "@/components/shared/section-heading";
+import { StatCard } from "@/components/shared/stat-card";
+import { Card } from "@/components/shared/card";
+import { AdminAnalytics } from "@/components/admin/admin-analytics";
 
 const moderationQueue = [
   { id: "q1", type: "Forum post", status: "Pending review", owner: "Sajini P." },

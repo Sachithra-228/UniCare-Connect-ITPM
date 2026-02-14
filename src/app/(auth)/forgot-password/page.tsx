@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/shared/Button";
-import { Input } from "@/components/shared/Input";
+import { useAuth } from "@/context/auth-context";
+import { Button } from "@/components/shared/button";
+import { Input } from "@/components/shared/input";
 
 export default function ForgotPasswordPage() {
   const { requestPasswordReset } = useAuth();
@@ -19,8 +19,12 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    await requestPasswordReset(email);
-    setMessage("Password reset link sent to your email.");
+    try {
+      await requestPasswordReset(email);
+      setMessage("Password reset link sent to your email.");
+    } catch {
+      setMessage("Unable to send reset link right now. Please try again.");
+    }
   };
 
   return (

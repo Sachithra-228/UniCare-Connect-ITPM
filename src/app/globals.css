@@ -21,3 +21,352 @@ select:focus-visible,
 textarea:focus-visible {
   @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-slate-950;
 }
+
+.marquee-wrap:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 1rem;
+  padding-inline: 1rem;
+  animation: university-marquee 56s linear infinite;
+}
+
+.marquee-item {
+  align-items: center;
+  display: flex;
+  min-width: 84px;
+  overflow: hidden;
+  transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease;
+  width: 84px;
+}
+
+.marquee-item-inner {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.marquee-name {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateX(-6px);
+  transition: max-width 260ms ease, opacity 260ms ease, transform 260ms ease;
+  white-space: nowrap;
+}
+
+.marquee-item:hover {
+  border-color: rgb(59 130 246 / 0.35);
+  box-shadow: 0 16px 28px rgb(15 23 42 / 0.12);
+  min-width: 320px;
+  transform: translateY(-6px) scale(1.04);
+  width: 320px;
+  z-index: 5;
+}
+
+.marquee-logo {
+  transition: transform 260ms ease;
+}
+
+.marquee-item:hover .marquee-logo {
+  transform: scale(1.18);
+}
+
+.marquee-item:hover .marquee-name {
+  max-width: 240px;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@keyframes university-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.wireframe-stage {
+  perspective: 1000px;
+}
+
+.wireframe-globe {
+  animation: wireframe-rotate 26s linear infinite;
+  transform-style: preserve-3d;
+}
+
+.wireframe-line {
+  fill: none;
+  stroke: rgb(186 230 253 / 0.22);
+  stroke-width: 0.7;
+}
+
+.wireframe-dot {
+  animation: wireframe-blink 3.4s ease-in-out infinite;
+  fill: rgb(103 232 249 / 0.85);
+}
+
+@keyframes wireframe-rotate {
+  from {
+    transform: rotateX(18deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(18deg) rotateZ(360deg);
+  }
+}
+
+@keyframes wireframe-blink {
+  0%,
+  100% {
+    opacity: 0.22;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+.journey-runner {
+  animation: journey-run 900ms ease-in-out infinite;
+}
+
+.walking-avatar .walk-arm-left,
+.walking-avatar .walk-arm-right,
+.walking-avatar .walk-leg-left,
+.walking-avatar .walk-leg-right {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.walking-avatar .walk-arm-left {
+  animation: walk-arm-left 650ms ease-in-out infinite;
+}
+
+.walking-avatar .walk-arm-right {
+  animation: walk-arm-right 650ms ease-in-out infinite;
+}
+
+.walking-avatar .walk-leg-left {
+  animation: walk-leg-left 650ms ease-in-out infinite;
+}
+
+.walking-avatar .walk-leg-right {
+  animation: walk-leg-right 650ms ease-in-out infinite;
+}
+
+.journey-unicare {
+  animation: journey-pulse 1.5s ease-in-out infinite;
+}
+
+.faq-skw-left {
+  clip-path: polygon(0 0, 94% 0, 100% 100%, 0 100%);
+}
+
+.faq-skw-right {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 6% 100%);
+}
+
+.faq-left-up {
+  animation: faq-left-up 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-left-down {
+  animation: faq-left-down 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-right-down {
+  animation: faq-right-down 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.faq-right-up {
+  animation: faq-right-up 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes faq-left-up {
+  from {
+    opacity: 0;
+    transform: translateY(34px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes faq-left-down {
+  from {
+    opacity: 0;
+    transform: translateY(-34px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes faq-right-down {
+  from {
+    opacity: 0;
+    transform: translateY(-34px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes faq-right-up {
+  from {
+    opacity: 0;
+    transform: translateY(34px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.core-journey-section {
+  background: linear-gradient(180deg, #f7faff 0%, #ffffff 62%);
+}
+
+.core-journey-grid {
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.2) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.16) 1px, transparent 1px);
+  background-size: 34px 34px;
+  animation: core-journey-grid-drift 22s linear infinite;
+}
+
+.core-journey-aurora-a {
+  animation: core-journey-aurora-a 18s ease-in-out infinite;
+}
+
+.core-journey-aurora-b {
+  animation: core-journey-aurora-b 24s ease-in-out infinite;
+}
+
+.core-journey-aurora-c {
+  animation: core-journey-aurora-c 20s ease-in-out infinite;
+}
+
+@keyframes core-journey-grid-drift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 42px 0, 0 42px;
+  }
+}
+
+@keyframes core-journey-aurora-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.42;
+  }
+  50% {
+    transform: translate3d(28px, -18px, 0) scale(1.08);
+    opacity: 0.6;
+  }
+}
+
+@keyframes core-journey-aurora-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.36;
+  }
+  50% {
+    transform: translate3d(-22px, 16px, 0) scale(1.12);
+    opacity: 0.52;
+  }
+}
+
+@keyframes core-journey-aurora-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.28;
+  }
+  50% {
+    transform: translate3d(16px, -14px, 0) scale(1.14);
+    opacity: 0.44;
+  }
+}
+
+@keyframes journey-run {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes journey-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.28);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+  }
+}
+
+@keyframes walk-arm-left {
+  0%,
+  100% {
+    transform: rotate(20deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-18deg) translateY(-1px);
+  }
+}
+
+@keyframes walk-arm-right {
+  0%,
+  100% {
+    transform: rotate(-18deg) translateY(-1px);
+  }
+  50% {
+    transform: rotate(20deg) translateY(0);
+  }
+}
+
+@keyframes walk-leg-left {
+  0%,
+  100% {
+    transform: rotate(-18deg);
+  }
+  50% {
+    transform: rotate(16deg);
+  }
+}
+
+@keyframes walk-leg-right {
+  0%,
+  100% {
+    transform: rotate(16deg);
+  }
+  50% {
+    transform: rotate(-18deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core-journey-grid,
+  .core-journey-aurora-a,
+  .core-journey-aurora-b,
+  .core-journey-aurora-c,
+  .faq-left-up,
+  .faq-left-down,
+  .faq-right-down,
+  .faq-right-up {
+    animation: none;
+  }
+}

@@ -1,9 +1,27 @@
 import { NextRequest } from "next/server";
 import { demoScholarships } from "@/lib/demo-data";
 import { isDemoMode, jsonResponse } from "@/lib/api";
+import { getMongoDatabase } from "@/lib/mongodb";
+import { requireRole, requireSession } from "@/lib/session-auth";
 
 export async function GET() {
-  return jsonResponse(demoScholarships);
+  if (isDemoMode()) {
+    return jsonResponse(demoScholarships);
+  }
+
+  const database = await getMongoDatabase();
+  const scholarships = await database
+    .collection("scholarships")
+    .find({})
+    .sort({ createdAt: -1 })
+    .toArray();
+
+  return jsonResponse(
+    scholarships.map((item) => ({
+      ...item,
+      _id: item._id.toString()
+    }))
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -11,5 +29,38 @@ export async function POST(request: NextRequest) {
   if (isDemoMode()) {
     return jsonResponse({ message: "Scholarship created (demo mode)", payload }, 201);
   }
-  return jsonResponse({ message: "Scholarship creation requires database setup." }, 501);
+
+  const authResult = await requireSession(request);
+  if (authResult.error) {
+    return authResult.error;
+  }
+
+  const roleCheck = requireRole(authResult.session.user?.role, [
+    "admin",
+    "super_admin",
+    "donor",
+    "ngo"
+  ]);
+  if (roleCheck) {
+    return roleCheck;
+  }
+
+  const database = await getMongoDatabase();
+  const scholarshipsCollection = database.collection("scholarships");
+  const now = new Date();
+  const document = {
+    ...payload,
+    createdBy: authResult.session.user?._id ?? authResult.session.firebase.uid,
+    createdAt: now,
+    updatedAt: now
+  };
+  const result = await scholarshipsCollection.insertOne(document);
+
+  return jsonResponse(
+    {
+      message: "Scholarship created",
+      scholarship: { ...document, _id: result.insertedId.toString() }
+    },
+    201
+  );
 }

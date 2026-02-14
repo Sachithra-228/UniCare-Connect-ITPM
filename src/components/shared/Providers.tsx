@@ -1,9 +1,9 @@
 "use client";
 
 import { ReactNode } from "react";
-import { AuthProvider } from "@/context/AuthContext";
-import { ThemeProvider } from "@/context/ThemeContext";
-import { LanguageProvider } from "@/context/LanguageContext";
+import { AuthProvider } from "@/context/auth-context";
+import { ThemeProvider } from "@/context/theme-context";
+import { LanguageProvider } from "@/context/language-context";
 
 type ProvidersProps = {
   children: ReactNode;
