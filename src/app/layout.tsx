@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Providers } from "@/components/shared/Providers";
-import { TopNav } from "@/components/shared/TopNav";
-import { Footer } from "@/components/shared/Footer";
+import { Providers } from "@/components/shared/providers";
+import { AppShell } from "@/components/shared/app-shell";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,11 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-white font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <Providers>
-          <div className="flex min-h-screen flex-col">
-            <TopNav />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>

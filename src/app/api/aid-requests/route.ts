@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { jsonResponse, isDemoMode } from "@/lib/api";
+import { getMongoDatabase } from "@/lib/mongodb";
+import { requireSession } from "@/lib/session-auth";
 
 const demoRequests = [
   {
@@ -16,8 +18,29 @@ const demoRequests = [
   }
 ];
 
-export async function GET() {
-  return jsonResponse(demoRequests);
+export async function GET(request: NextRequest) {
+  if (isDemoMode()) {
+    return jsonResponse(demoRequests);
+  }
+
+  const authResult = await requireSession(request);
+  if (authResult.error) {
+    return authResult.error;
+  }
+
+  const database = await getMongoDatabase();
+  const requests = await database
+    .collection("aid_requests")
+    .find({})
+    .sort({ createdAt: -1 })
+    .toArray();
+
+  return jsonResponse(
+    requests.map((item) => ({
+      ...item,
+      _id: item._id.toString()
+    }))
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -25,5 +48,32 @@ export async function POST(request: NextRequest) {
   if (isDemoMode()) {
     return jsonResponse({ message: "Aid request received (demo mode)", payload }, 201);
   }
-  return jsonResponse({ message: "Aid request creation requires database setup." }, 501);
+
+  const authResult = await requireSession(request);
+  if (authResult.error) {
+    return authResult.error;
+  }
+
+  const database = await getMongoDatabase();
+  const requestsCollection = database.collection("aid_requests");
+  const now = new Date();
+
+  const document = {
+    ...payload,
+    userId: payload.userId ?? authResult.session.user?._id,
+    firebaseUid: payload.firebaseUid ?? authResult.session.firebase.uid,
+    status: payload.status ?? "pending",
+    createdAt: now,
+    updatedAt: now
+  };
+
+  const result = await requestsCollection.insertOne(document);
+
+  return jsonResponse(
+    {
+      message: "Aid request saved",
+      aidRequest: { ...document, _id: result.insertedId.toString() }
+    },
+    201
+  );
 }
