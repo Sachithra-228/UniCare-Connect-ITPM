@@ -57,6 +57,9 @@ export type JobListing = {
   requirements: string[];
   applicationDeadline: string;
   contactEmail: string;
+  /** External source e.g. "Remotive"; when set, link opens externalUrl */
+  source?: string;
+  externalUrl?: string;
 };
 
 export type HealthLog = {

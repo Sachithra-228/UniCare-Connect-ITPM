@@ -370,3 +370,24 @@ textarea:focus-visible {
     animation: none;
   }
 }
+
+/* Resume builder: when printing (Export as PDF), show only the resume document */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .resume-preview-document,
+  .resume-preview-document * {
+    visibility: visible;
+  }
+  .resume-preview-document {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+  }
+}

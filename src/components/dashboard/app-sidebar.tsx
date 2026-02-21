@@ -86,10 +86,16 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
               const href = `/dashboard/${role}#${section.id}`;
               const isActive = pathname === `/dashboard/${role}` && hash === section.id;
               const SectionIcon = getSectionIcon(section.id);
+              const handleClick = (e: React.MouseEvent) => {
+                if (pathname === `/dashboard/${role}`) {
+                  e.preventDefault();
+                  window.location.hash = section.id;
+                }
+              };
               return (
                 <SidebarMenuItem key={section.id}>
                   <SidebarMenuButton asChild isActive={isActive}>
-                    <Link href={href} className="flex items-center gap-3">
+                    <Link href={href} onClick={handleClick} className="flex items-center gap-3">
                       <SectionIcon className="size-5 shrink-0 text-slate-600 dark:text-slate-400" />
                       {!collapsed && <span>{section.menuLabel}</span>}
                     </Link>

@@ -6,7 +6,7 @@ import { getMongoDatabase } from "@/lib/mongodb";
 import { UserProfile } from "@/types";
 
 export const SESSION_COOKIE_NAME = "session";
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24; // 24 hours – cookie expires after 1 day
 
 type DbUserDocument = {
   _id: { toString: () => string };

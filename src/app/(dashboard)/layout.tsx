@@ -26,7 +26,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <SidebarProvider defaultCollapsed={false}>
       <AppSidebar role={role} user={user ?? null} />
       <SidebarInset>
-        <div className="flex flex-col p-4 md:p-6 lg:p-8">{children}</div>
+        <div className="flex min-h-screen flex-col bg-slate-50/80 p-4 md:p-6 lg:p-8 dark:bg-slate-900/50">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
