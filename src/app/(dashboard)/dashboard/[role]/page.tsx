@@ -1,10 +1,8 @@
 "use client";
 
-import clsx from "clsx";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { Badge } from "@/components/shared/badge";
 import { Card } from "@/components/shared/card";
 import {
   DASHBOARD_ROLE_CONFIG,
@@ -13,6 +11,8 @@ import {
   resolveDashboardRole
 } from "@/lib/role-dashboard-config";
 import { getSectionIcon } from "@/lib/dashboard-icons";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { StudentSectionContent } from "@/components/dashboard/student/student-section-content";
 
 type RoleDashboardPageProps = {
   params: { role: string };
@@ -23,11 +23,22 @@ function resolveRouteRole(value: string): DashboardRole | null {
   return DASHBOARD_ROLE_ORDER.find((r) => r === normalized) ?? null;
 }
 
+type QuickStats = {
+  pendingApplications: number;
+  upcomingDeadlines: number;
+  unreadNotifications: number;
+};
+
 export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
   const routeRole = resolveRouteRole(params.role);
   const { user, loading } = useAuth();
   const router = useRouter();
   const [activeSectionId, setActiveSectionId] = useState("");
+  const [quickStats, setQuickStats] = useState<QuickStats>({
+    pendingApplications: 0,
+    upcomingDeadlines: 0,
+    unreadNotifications: 0
+  });
 
   const roleConfig = useMemo(
     () => (routeRole ? DASHBOARD_ROLE_CONFIG[routeRole] : null),
@@ -71,12 +82,37 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
     }
   }, [loading, routeRole, router, user]);
 
-  const setSectionAndHash = (id: string) => {
-    setActiveSectionId(id);
-    if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", `#${id}`);
-    }
-  };
+  useEffect(() => {
+    if (routeRole !== "student") return;
+    Promise.all([
+      fetch("/api/aid-requests").then((r) => r.json()).catch(() => []),
+      fetch("/api/scholarships").then((r) => r.json()).catch(() => []),
+      fetch("/api/jobs").then((r) => r.json()).catch(() => []),
+      fetch("/api/notifications").then((r) => r.json()).catch(() => ({}))
+    ]).then(([aid, scholarships, jobs, notifData]) => {
+      const aidList = Array.isArray(aid) ? aid : [];
+      const pendingApps = aidList.filter(
+        (a: { status?: string }) =>
+          a.status && !["Approved", "Rejected", "approved", "rejected"].includes(a.status)
+      ).length;
+      const schList = Array.isArray(scholarships) ? scholarships : [];
+      const jobList = Array.isArray(jobs) ? jobs : [];
+      const today = new Date().toISOString().split("T")[0];
+      const deadlines = [
+        ...schList.map((s: { deadline?: string }) => s.deadline).filter(Boolean),
+        ...jobList.map((j: { applicationDeadline?: string }) => j.applicationDeadline).filter(Boolean)
+      ].filter((d: string) => d >= today).length;
+      const notifications = Array.isArray((notifData as { notifications?: unknown[] }).notifications)
+        ? (notifData as { notifications: { read?: boolean }[] }).notifications
+        : [];
+      const unread = notifications.filter((n: { read?: boolean }) => !n.read).length;
+      setQuickStats({
+        pendingApplications: pendingApps,
+        upcomingDeadlines: deadlines,
+        unreadNotifications: unread
+      });
+    });
+  }, [routeRole]);
 
   if (loading || !roleConfig || !routeRole) {
     return (
@@ -90,100 +126,74 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
 
   const activeSection =
     roleConfig.sections.find((s) => s.id === activeSectionId) ?? roleConfig.sections[0];
-  const totalItems = roleConfig.sections.reduce((c, s) => c + s.items.length, 0);
   const ActiveSectionIcon = getSectionIcon(activeSection.id);
 
+  const isHomeSection = activeSectionId === "home";
+
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-              Role Dashboard
-            </p>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
-              {roleConfig.workspaceLabel}
-            </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-300">{roleConfig.description}</p>
+    <div className="space-y-8">
+      {isHomeSection && (
+        <>
+          <DashboardHeader />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <a
+              href={`/dashboard/${routeRole}#my-applications`}
+              className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-white to-primary/10 py-5 px-5 shadow-sm transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:from-primary/15 hover:to-primary/20 hover:shadow-md hover:shadow-primary/10 dark:from-primary/10 dark:via-slate-900/80 dark:to-primary/15 dark:hover:from-primary/20 dark:hover:to-primary/25"
+            >
+              <span className="absolute right-0 top-0 h-16 w-20 rounded-bl-full bg-primary/5 transition-colors group-hover:bg-primary/10 dark:bg-primary/10 dark:group-hover:bg-primary/15" aria-hidden />
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Pending applications</p>
+              <p className="mt-1 text-2xl font-semibold text-primary transition-colors group-hover:text-primary dark:text-primary">{quickStats.pendingApplications}</p>
+            </a>
+            <a
+              href={`/dashboard/${routeRole}#home`}
+              className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-white to-primary/10 py-5 px-5 shadow-sm transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:from-primary/15 hover:to-primary/20 hover:shadow-md hover:shadow-primary/10 dark:from-primary/10 dark:via-slate-900/80 dark:to-primary/15 dark:hover:from-primary/20 dark:hover:to-primary/25"
+            >
+              <span className="absolute right-0 top-0 h-16 w-20 rounded-bl-full bg-primary/5 transition-colors group-hover:bg-primary/10 dark:bg-primary/10 dark:group-hover:bg-primary/15" aria-hidden />
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Upcoming deadlines</p>
+              <p className="mt-1 text-2xl font-semibold text-primary transition-colors group-hover:text-primary dark:text-primary">{quickStats.upcomingDeadlines}</p>
+            </a>
+            <a
+              href={`/dashboard/${routeRole}#profile`}
+              className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-white to-primary/10 py-5 px-5 shadow-sm transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:from-primary/15 hover:to-primary/20 hover:shadow-md hover:shadow-primary/10 dark:from-primary/10 dark:via-slate-900/80 dark:to-primary/15 dark:hover:from-primary/20 dark:hover:to-primary/25"
+            >
+              <span className="absolute right-0 top-0 h-16 w-20 rounded-bl-full bg-primary/5 transition-colors group-hover:bg-primary/10 dark:bg-primary/10 dark:group-hover:bg-primary/15" aria-hidden />
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Unread notifications</p>
+              <p className="mt-1 text-2xl font-semibold text-primary transition-colors group-hover:text-primary dark:text-primary">{quickStats.unreadNotifications}</p>
+            </a>
           </div>
-          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Your assigned role</p>
-            <p className="text-sm font-semibold text-primary">{roleConfig.label}</p>
-            <p className="mt-0.5 text-xs text-slate-500">This dashboard is based on your account role.</p>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="space-y-1 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Current Role</p>
-          <p className="text-sm font-semibold text-slate-900 dark:text-white">{roleConfig.label}</p>
-          <Badge variant="info">Active workspace</Badge>
-        </Card>
-        <Card className="space-y-1 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Modules</p>
-          <p className="text-2xl font-semibold text-slate-900 dark:text-white">{roleConfig.sections.length}</p>
-          <p className="text-xs text-slate-500">Sidebar sections</p>
-        </Card>
-        <Card className="space-y-1 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Content Blocks</p>
-          <p className="text-2xl font-semibold text-slate-900 dark:text-white">{totalItems}</p>
-          <p className="text-xs text-slate-500">Planned items</p>
-        </Card>
-      </div>
-
-      <Card className="space-y-4 p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <ActiveSectionIcon className="size-5" />
+      <Card className="overflow-hidden border-slate-200/80 shadow-sm dark:border-slate-700/50">
+        <div className="flex items-center gap-4 border-b border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-slate-800 dark:bg-slate-800/30">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <ActiveSectionIcon className="size-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
               {activeSection.menuLabel}
             </p>
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">{activeSection.title}</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{activeSection.title}</h2>
           </div>
         </div>
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {activeSection.items.map((item) => (
-            <li
-              key={item}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-            >
-              {item}
-            </li>
-          ))}
-        </ul>
-      </Card>
-
-      <Card className="space-y-3 p-5">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">All modules</h3>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {roleConfig.sections.map((section) => {
-            const Icon = getSectionIcon(section.id);
-            const isActive = section.id === activeSection.id;
-            return (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => setSectionAndHash(section.id)}
-                className={clsx(
-                  "flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition-colors",
-                  isActive
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-slate-200 text-slate-700 hover:border-primary/30 hover:text-primary dark:border-slate-800 dark:text-slate-300"
-                )}
+        <div className="p-6">
+        {routeRole === "student" ? (
+          <StudentSectionContent sectionId={activeSection.id} />
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {activeSection.items.map((item) => (
+              <li
+                key={item}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
               >
-                <span className="flex items-center gap-2">
-                  <Icon className="size-4 shrink-0" />
-                  <span>{section.menuLabel}</span>
-                </span>
-                <span className="text-xs text-slate-400">{section.items.length}</span>
-              </button>
-            );
-          })}
+                {item}
+              </li>
+            ))}
+          </ul>
+        )}
         </div>
       </Card>
+
     </div>
   );
 }

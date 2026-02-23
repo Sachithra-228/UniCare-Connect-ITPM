@@ -35,6 +35,8 @@ type AuthContextValue = {
   user: UserProfile | null;
   firebaseUser: FirebaseAuthUser | null;
   loading: boolean;
+  refreshUser: () => Promise<void>;
+  updateUserProfile: (partial: Partial<UserProfile>) => void;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   registerWithEmail: (email: string, password: string, profile?: RegisterProfileInput) => Promise<void>;
@@ -333,10 +335,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await clearServerSession();
   };
 
+  const refreshUser = async () => {
+    if (!firebaseUser?.uid) return;
+    try {
+      const res = await fetch(`/api/users?firebaseUid=${encodeURIComponent(firebaseUser.uid)}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as { user?: UserProfile };
+      if (data.user) setUser(data.user);
+    } catch {
+      // Ignore refresh errors
+    }
+  };
+
+  const updateUserProfile = (partial: Partial<UserProfile>) => {
+    setUser((prev) => (prev ? { ...prev, ...partial } : null));
+  };
+
   const value = {
     user,
     firebaseUser,
     loading,
+    refreshUser,
+    updateUserProfile,
     signInWithEmail,
     signInWithGoogle,
     registerWithEmail,

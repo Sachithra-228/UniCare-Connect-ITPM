@@ -9,19 +9,26 @@ export async function GET() {
     return jsonResponse(demoJobs);
   }
 
-  const database = await getMongoDatabase();
-  const jobs = await database
-    .collection("jobs")
-    .find({})
-    .sort({ createdAt: -1 })
-    .toArray();
+  try {
+    const database = await getMongoDatabase();
+    const jobs = await database
+      .collection("jobs")
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
 
-  return jsonResponse(
-    jobs.map((item) => ({
+    const list = jobs.map((item: { _id?: unknown; [k: string]: unknown }) => ({
       ...item,
-      _id: item._id.toString()
-    }))
-  );
+      _id: item._id?.toString?.() ?? String(item._id)
+    }));
+
+    if (list.length === 0) {
+      return jsonResponse(demoJobs);
+    }
+    return jsonResponse(list);
+  } catch {
+    return jsonResponse(demoJobs);
+  }
 }
 
 export async function POST(request: NextRequest) {

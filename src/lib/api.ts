@@ -14,3 +14,21 @@ export function errorMessageForDev(error: unknown): string | undefined {
   if (error instanceof Error) return error.message;
   return undefined;
 }
+
+/** True when the error is a MongoDB connection/timeout error (e.g. Atlas unreachable). */
+export function isMongoConnectionError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const name = (error as { name?: string }).name;
+  const message = String((error as { message?: string }).message ?? "");
+  const cause = (error as { cause?: unknown }).cause;
+  const causeMessage = cause && typeof cause === "object" ? String((cause as { message?: string }).message ?? "") : "";
+  return (
+    name === "MongoServerSelectionError" ||
+    name === "MongoNetworkTimeoutError" ||
+    name === "MongoNetworkError" ||
+    message.includes("connectTimeoutMS") ||
+    message.includes("secureConnect") ||
+    causeMessage.includes("connectTimeoutMS") ||
+    causeMessage.includes("secureConnect")
+  );
+}
