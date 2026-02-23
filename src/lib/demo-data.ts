@@ -99,9 +99,31 @@ export const demoMentorshipSessions: MentorshipSession[] = [
     _id: "m1",
     mentorId: "u2",
     studentId: "u1",
+    mentorName: "Ravindu Fernando",
+    studentName: "Sajini Perera",
     topic: "Career planning",
     scheduledTime: "2026-02-12T10:00:00+05:30",
-    status: "confirmed",
+    status: "scheduled",
     feedback: "Focus on portfolio building"
+  },
+  {
+    _id: "m2",
+    mentorId: "u2",
+    studentId: "u1",
+    mentorName: "Ravindu Fernando",
+    studentName: "Sajini Perera",
+    topic: "Product management intro",
+    scheduledTime: "",
+    status: "pending"
+  },
+  {
+    _id: "m3",
+    mentorId: "u2",
+    studentId: "u1",
+    mentorName: "Ravindu Fernando",
+    studentName: "Sajini Perera",
+    topic: "Resume review",
+    scheduledTime: "2026-01-15T14:00:00+05:30",
+    status: "completed"
   }
 ];
