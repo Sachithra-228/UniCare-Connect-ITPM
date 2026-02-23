@@ -9,19 +9,26 @@ export async function GET() {
     return jsonResponse(demoScholarships);
   }
 
-  const database = await getMongoDatabase();
-  const scholarships = await database
-    .collection("scholarships")
-    .find({})
-    .sort({ createdAt: -1 })
-    .toArray();
+  try {
+    const database = await getMongoDatabase();
+    const scholarships = await database
+      .collection("scholarships")
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
 
-  return jsonResponse(
-    scholarships.map((item) => ({
+    const list = scholarships.map((item: { _id?: unknown; [k: string]: unknown }) => ({
       ...item,
-      _id: item._id.toString()
-    }))
-  );
+      _id: item._id?.toString?.() ?? String(item._id)
+    }));
+
+    if (list.length === 0) {
+      return jsonResponse(demoScholarships);
+    }
+    return jsonResponse(list);
+  } catch {
+    return jsonResponse(demoScholarships);
+  }
 }
 
 export async function POST(request: NextRequest) {

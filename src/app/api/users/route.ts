@@ -13,6 +13,7 @@ type UserPayload = {
   role?: UserRole;
   university?: string;
   contact?: string;
+  profilePic?: string;
   roleDetails?: Record<string, string>;
   needsProfileCompletion?: boolean;
   status?: "active" | "blocked" | "pending";
@@ -33,6 +34,7 @@ type DbUserDocument = {
   role: UserRole;
   university?: string;
   contact?: string;
+  profilePic?: string;
   roleDetails?: Record<string, string>;
   needsProfileCompletion?: boolean;
   status?: "active" | "blocked" | "pending";
@@ -57,6 +59,7 @@ function mapUserDocument(document: WithId<DbUserInput>) {
     role: document.role,
     university: document.university,
     contact: document.contact,
+    profilePic: document.profilePic,
     roleDetails: document.roleDetails,
     needsProfileCompletion: document.needsProfileCompletion,
     firebaseUid: document.firebaseUid,
@@ -232,6 +235,7 @@ export async function POST(request: NextRequest) {
     if (roleToSet != null) setFields.role = roleToSet;
     if (payload.university) setFields.university = payload.university;
     if (payload.contact) setFields.contact = payload.contact;
+    if (payload.profilePic !== undefined && isSelf) setFields.profilePic = payload.profilePic;
     if (payload.roleDetails) setFields.roleDetails = payload.roleDetails;
     if (payload.needsProfileCompletion === false) setFields.needsProfileCompletion = false;
     if (isPrivileged && payload.status) setFields.status = payload.status;
@@ -267,6 +271,50 @@ export async function POST(request: NextRequest) {
     return jsonResponse({ message: "User synced", user: mapUserDocument(result) }, 201);
   } catch (err) {
     console.error("[POST /api/users] MongoDB error:", err instanceof Error ? err.message : err);
+    const devMessage = errorMessageForDev(err);
+    return jsonResponse(
+      {
+        message: "Database is currently unavailable. Please try again.",
+        code: "DB_CONNECTION_FAILED",
+        ...(devMessage && { error: devMessage })
+      },
+      503
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  const payload = (await request.json()) as { profilePic?: string };
+
+  if (isDemoMode()) {
+    return jsonResponse({ message: "Profile picture updated (demo mode)", profilePic: payload.profilePic ?? null });
+  }
+
+  const authResult = await requireSession(request);
+  if (authResult.error) {
+    return authResult.error;
+  }
+
+  const uid = authResult.session.firebase?.uid;
+  if (!uid) {
+    return jsonResponse({ message: "Unauthorized" }, 401);
+  }
+
+  try {
+    const database = await getMongoDatabase();
+    const usersCollection = database.collection<DbUserInput>("users");
+    const now = new Date();
+    const result = await usersCollection.findOneAndUpdate(
+      { firebaseUid: uid },
+      { $set: { profilePic: payload.profilePic ?? null, updatedAt: now } },
+      { returnDocument: "after" }
+    );
+    if (!result) {
+      return jsonResponse({ message: "User not found" }, 404);
+    }
+    return jsonResponse({ message: "Profile picture updated", user: mapUserDocument(result) });
+  } catch (err) {
+    console.error("[PUT /api/users] MongoDB error:", err instanceof Error ? err.message : err);
     const devMessage = errorMessageForDev(err);
     return jsonResponse(
       {

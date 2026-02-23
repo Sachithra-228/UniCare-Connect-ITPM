@@ -46,9 +46,11 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "🏠",
         title: "Student Home",
         items: [
-          "Welcome message",
-          "Personalized recommendations",
-          "Recent activity"
+          "Show personalized welcome message",
+          "Display recent activity feed",
+          "Show recommended scholarships/jobs based on profile",
+          "Show upcoming deadlines",
+          "Display wellness check-in reminder"
         ]
       },
       {
@@ -57,10 +59,11 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "💰",
         title: "Financial Aid",
         items: [
-          "Active scholarship matches",
-          "Emergency aid status",
-          "Equipment requests",
-          "Meal voucher balance"
+          "Show all available scholarships (matched to profile)",
+          "Track emergency aid applications status",
+          "Request equipment (laptops/books)",
+          "View meal voucher balance",
+          "Apply for tuition fee assistance"
         ]
       },
       {
@@ -69,10 +72,11 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "💼",
         title: "Career",
         items: [
-          "Recommended jobs/internships",
-          "Application tracker",
-          "Resume builder status",
-          "Upcoming deadlines"
+          "Browse part-time jobs and internships",
+          "View job recommendations based on skills",
+          "Track job applications status",
+          "Build and download resume",
+          "View skill gap analysis and course recommendations"
         ]
       },
       {
@@ -81,10 +85,11 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "👥",
         title: "Mentorship",
         items: [
-          "My mentors",
-          "Pending session requests",
-          "Recommended mentors",
-          "Past session history"
+          "Browse available mentors (alumni/industry)",
+          "Send mentorship requests",
+          "View current mentors and session history",
+          "Schedule sessions with mentors",
+          "Rate and review mentorship experience"
         ]
       },
       {
@@ -93,10 +98,12 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "❤️",
         title: "Wellness",
         items: [
-          "Mood tracker (today's log)",
-          "Counselor booking",
-          "Wellness challenge progress",
-          "Peer support groups"
+          "Log daily mood/stress/sleep",
+          "View wellness trends over time",
+          "Book counseling sessions",
+          "Join wellness challenges (steps/meditation)",
+          "Access peer support forums",
+          "Browse health resources library"
         ]
       },
       {
@@ -105,9 +112,11 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "📅",
         title: "Campus Life",
         items: [
-          "Upcoming events",
-          "My clubs/societies",
-          "Campus announcements"
+          "View upcoming campus events",
+          "Browse and join student clubs/societies",
+          "See campus announcements",
+          "Access local business discounts",
+          "View volunteer opportunities"
         ]
       },
       {
@@ -116,9 +125,10 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "📚",
         title: "My Applications",
         items: [
-          "Scholarship applications",
-          "Job applications",
-          "Aid requests (status tracker)"
+          "Track all applications in one place (scholarships, jobs, aid)",
+          "View status (pending/approved/rejected)",
+          "Upload missing documents",
+          "Receive feedback on rejections"
         ]
       },
       {
@@ -127,10 +137,11 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "👤",
         title: "Profile",
         items: [
-          "Personal details",
-          "Academic info",
-          "Document storage",
-          "Settings"
+          "Manage personal details",
+          "Update academic info (university, degree, year)",
+          "Upload documents (ID, transcripts)",
+          "Set privacy preferences",
+          "Manage notification settings"
         ]
       }
     ]

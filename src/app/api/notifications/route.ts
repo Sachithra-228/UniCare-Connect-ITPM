@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { isDemoMode, jsonResponse } from "@/lib/api";
+import { isDemoMode, isMongoConnectionError, jsonResponse } from "@/lib/api";
 import { demoUsers } from "@/lib/demo-data";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { requireRole, requireSession } from "@/lib/session-auth";
@@ -29,26 +29,36 @@ export async function GET(request: NextRequest) {
     return authResult.error;
   }
 
-  const database = await getMongoDatabase();
-  const notifications = await database
-    .collection("notifications")
-    .find({
-      $or: [
-        { userId: authResult.session.user?._id },
-        { userEmail: authResult.session.firebase.email },
-        { audience: "all" }
-      ]
-    })
-    .sort({ createdAt: -1 })
-    .toArray();
+  try {
+    const database = await getMongoDatabase();
+    const notifications = await database
+      .collection("notifications")
+      .find({
+        $or: [
+          { userId: authResult.session.user?._id },
+          { userEmail: authResult.session.firebase.email },
+          { audience: "all" }
+        ]
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
 
-  return jsonResponse({
-    user: authResult.session.user,
-    notifications: notifications.map((item) => ({
-      ...item,
-      _id: item._id.toString()
-    }))
-  });
+    return jsonResponse({
+      user: authResult.session.user,
+      notifications: notifications.map((item) => ({
+        ...item,
+        _id: item._id.toString()
+      }))
+    });
+  } catch (error) {
+    if (isMongoConnectionError(error)) {
+      return jsonResponse({
+        user: authResult.session.user,
+        notifications: demoNotifications
+      });
+    }
+    throw error;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -67,22 +77,32 @@ export async function POST(request: NextRequest) {
     return roleCheck;
   }
 
-  const database = await getMongoDatabase();
-  const notificationsCollection = database.collection("notifications");
-  const now = new Date();
-  const document = {
-    ...payload,
-    createdBy: authResult.session.user?._id ?? authResult.session.firebase.uid,
-    createdAt: now,
-    updatedAt: now
-  };
-  const result = await notificationsCollection.insertOne(document);
+  try {
+    const database = await getMongoDatabase();
+    const notificationsCollection = database.collection("notifications");
+    const now = new Date();
+    const document = {
+      ...payload,
+      createdBy: authResult.session.user?._id ?? authResult.session.firebase.uid,
+      createdAt: now,
+      updatedAt: now
+    };
+    const result = await notificationsCollection.insertOne(document);
 
-  return jsonResponse(
-    {
-      message: "Notification created",
-      notification: { ...document, _id: result.insertedId.toString() }
-    },
-    201
-  );
+    return jsonResponse(
+      {
+        message: "Notification created",
+        notification: { ...document, _id: result.insertedId.toString() }
+      },
+      201
+    );
+  } catch (error) {
+    if (isMongoConnectionError(error)) {
+      return jsonResponse(
+        { message: "Database temporarily unavailable. Please try again later.", error: "MongoUnavailable" },
+        503
+      );
+    }
+    throw error;
+  }
 }

@@ -57,6 +57,9 @@ export type JobListing = {
   requirements: string[];
   applicationDeadline: string;
   contactEmail: string;
+  /** External source e.g. "Remotive"; when set, link opens externalUrl */
+  source?: string;
+  externalUrl?: string;
 };
 
 export type HealthLog = {
@@ -74,8 +77,15 @@ export type MentorshipSession = {
   _id: string;
   mentorId: string;
   studentId: string;
+  mentorName?: string;
+  studentName?: string;
   topic: string;
   scheduledTime: string;
-  status: "pending" | "confirmed" | "completed";
+  status: "pending" | "confirmed" | "scheduled" | "completed" | "cancelled";
+  message?: string;
   feedback?: string;
+  rating?: number;
+  review?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
