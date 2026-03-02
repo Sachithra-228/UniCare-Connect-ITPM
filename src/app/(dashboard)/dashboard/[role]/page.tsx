@@ -13,6 +13,12 @@ import {
 import { getSectionIcon } from "@/lib/dashboard-icons";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { StudentSectionContent } from "@/components/dashboard/student/student-section-content";
+import { AdminSectionContent } from "@/components/admin/admin-section-content";
+import { DonorSectionContent } from "@/components/donor/donor-section-content";
+import { NgoSectionContent } from "@/components/ngo/ngo-section-content";
+import { EmployerSectionContent } from "@/components/employer/employer-section-content";
+import { ParentSectionContent } from "@/components/parent/parent-section-content";
+import { MentorSectionContent } from "@/components/mentor/mentor-section-content";
 
 type RoleDashboardPageProps = {
   params: { role: string };
@@ -177,20 +183,32 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
           </div>
         </div>
         <div className="p-6">
-        {routeRole === "student" ? (
-          <StudentSectionContent sectionId={activeSection.id} />
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {activeSection.items.map((item) => (
-              <li
-                key={item}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
-        )}
+          {routeRole === "student" ? (
+            <StudentSectionContent sectionId={activeSection.id} />
+          ) : routeRole === "admin" ? (
+            <AdminSectionContent sectionId={activeSection.id} />
+          ) : routeRole === "donor" ? (
+            <DonorSectionContent sectionId={activeSection.id} />
+          ) : routeRole === "ngo" ? (
+            <NgoSectionContent sectionId={activeSection.id} />
+          ) : routeRole === "employer" ? (
+            <EmployerSectionContent sectionId={activeSection.id} />
+          ) : routeRole === "parent" ? (
+            <ParentSectionContent sectionId={activeSection.id} />
+          ) : routeRole === "mentor" ? (
+            <MentorSectionContent sectionId={activeSection.id} />
+          ) : (
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {activeSection.items.map((item) => (
+                <li
+                  key={item}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </Card>
 
