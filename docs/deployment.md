@@ -21,5 +21,4 @@
 
 ## Notifications
 
-- Resend: set `RESEND_API_KEY`.
 - Twilio: set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`.
