@@ -1,10 +1,10 @@
-import { Card } from "@/components/shared/Card";
-import { SectionHeading } from "@/components/shared/SectionHeading";
-import { AidRequestForm } from "@/components/financial/AidRequestForm";
-import { EquipmentSupport } from "@/components/financial/EquipmentSupport";
-import { BoardingSupport } from "@/components/financial/BoardingSupport";
-import { TuitionSupport } from "@/components/financial/TuitionSupport";
-import { PartTimeJobPreview } from "@/components/financial/PartTimeJobPreview";
+import { Card } from "@/components/shared/card";
+import { SectionHeading } from "@/components/shared/section-heading";
+import { AidRequestForm } from "@/components/financial/aid-request-form";
+import { EquipmentSupport } from "@/components/financial/equipment-support";
+import { BoardingSupport } from "@/components/financial/boarding-support";
+import { TuitionSupport } from "@/components/financial/tuition-support";
+import { PartTimeJobPreview } from "@/components/financial/part-time-job-preview";
 
 export default function FinancialAidPage() {
   return (

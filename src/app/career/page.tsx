@@ -1,8 +1,8 @@
-import { SectionHeading } from "@/components/shared/SectionHeading";
-import { ScholarshipMatcher } from "@/components/career/ScholarshipMatcher";
-import { JobBoard } from "@/components/career/JobBoard";
-import { ApplicationTracker } from "@/components/career/ApplicationTracker";
-import { SkillGapAnalysis } from "@/components/career/SkillGapAnalysis";
+import { SectionHeading } from "@/components/shared/section-heading";
+import { ScholarshipMatcher } from "@/components/career/scholarship-matcher";
+import { JobBoard } from "@/components/career/job-board";
+import { ApplicationTracker } from "@/components/career/application-tracker";
+import { SkillGapAnalysis } from "@/components/career/skill-gap-analysis";
 
 export default function CareerPage() {
   return (

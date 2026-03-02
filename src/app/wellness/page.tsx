@@ -1,9 +1,9 @@
-import { SectionHeading } from "@/components/shared/SectionHeading";
-import { MoodTracker } from "@/components/wellness/MoodTracker";
-import { CounselorBooking } from "@/components/wellness/CounselorBooking";
-import { WellnessChallenges } from "@/components/wellness/WellnessChallenges";
-import { PeerSupport } from "@/components/wellness/PeerSupport";
-import { HealthContent } from "@/components/wellness/HealthContent";
+import { SectionHeading } from "@/components/shared/section-heading";
+import { MoodTracker } from "@/components/wellness/mood-tracker";
+import { CounselorBooking } from "@/components/wellness/counselor-booking";
+import { WellnessChallenges } from "@/components/wellness/wellness-challenges";
+import { PeerSupport } from "@/components/wellness/peer-support";
+import { HealthContent } from "@/components/wellness/health-content";
 
 export default function WellnessPage() {
   return (
