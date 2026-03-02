@@ -185,7 +185,7 @@ export default function LoginPage() {
       const code = (error as { code: string }).code;
 
       if (code === "auth/email-already-in-use") {
-        return "An account with this email already exists.";
+        return "An account with this email already exists. Sign in instead or use a different email.";
       }
       if (code === "auth/invalid-email") {
         return "Please enter a valid email address.";
@@ -195,6 +195,15 @@ export default function LoginPage() {
       }
       if (code === "auth/network-request-failed") {
         return "Network issue. Check your connection and try again.";
+      }
+      if (code === "auth/operation-not-allowed") {
+        return "Email/password sign-up is not enabled. Enable it in Firebase Console under Authentication → Sign-in method.";
+      }
+      if (code === "auth/invalid-api-key" || code === "auth/api-key-not-valid") {
+        return "Authentication is misconfigured. Check your Firebase API key.";
+      }
+      if (code === "auth/too-many-requests") {
+        return "Too many attempts. Please try again later.";
       }
     }
 

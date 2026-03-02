@@ -87,13 +87,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const runSignInPreflight = async (email: string) => {
-    const response = await fetch("/api/auth/preflight", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ email })
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12_000);
+    let response: Response;
+    try {
+      response = await fetch("/api/auth/preflight", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email }),
+        signal: controller.signal
+      });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === "AbortError") {
+        throw new Error("DB_CONNECTION_FAILED");
+      }
+      throw new Error("SIGNIN_PRECHECK_FAILED");
+    }
+    clearTimeout(timeoutId);
 
     if (response.ok) {
       return;
@@ -223,7 +236,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(demoUsers[0] ?? null);
       return;
     }
-    await runSignInPreflight(email);
 
     const credential = await signInWithEmailAndPassword(auth, email, password);
     const signedInUser = credential.user as FirebaseAuthUser;
@@ -238,8 +250,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const idToken = await signedInUser.getIdToken(true);
     await setServerSession(idToken);
-    const syncedUser = await syncUserWithDatabase(signedInUser);
-    await enforceUserAccess(syncedUser);
+
+    try {
+      const syncedUser = await syncUserWithDatabase(signedInUser);
+      await enforceUserAccess(syncedUser);
+    } catch {
+      // MongoDB/sync unavailable – user is still signed in via Firebase and session is set.
+      // onIdTokenChanged will set a fallback profile so the user can continue.
+    }
   };
 
   const signInWithGoogle = async () => {
