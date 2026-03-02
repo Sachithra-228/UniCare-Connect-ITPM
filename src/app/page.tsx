@@ -47,7 +47,6 @@ export default function HomePage() {
       </section>
 
       <CoreModulesJourney />
-
       <StoriesStack />
       <SupportWorkspacePanels />
       <FaqMiniAccordion />
