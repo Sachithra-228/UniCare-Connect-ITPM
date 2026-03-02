@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card } from "@/components/shared/card";
 import {
   Bar,
@@ -13,7 +14,23 @@ import {
   YAxis
 } from "recharts";
 
-const engagementData = [
+type EngagementPoint = {
+  month: string;
+  users: number;
+  aid: number;
+};
+
+type WellnessPoint = {
+  week: string;
+  score: number;
+};
+
+type AnalyticsResponse = {
+  engagement: EngagementPoint[];
+  wellness: WellnessPoint[];
+};
+
+const FALLBACK_ENGAGEMENT: EngagementPoint[] = [
   { month: "Sep", users: 320, aid: 40 },
   { month: "Oct", users: 420, aid: 58 },
   { month: "Nov", users: 520, aid: 72 },
@@ -21,7 +38,7 @@ const engagementData = [
   { month: "Jan", users: 780, aid: 120 }
 ];
 
-const wellnessData = [
+const FALLBACK_WELLNESS: WellnessPoint[] = [
   { week: "W1", score: 72 },
   { week: "W2", score: 68 },
   { week: "W3", score: 75 },
@@ -29,13 +46,42 @@ const wellnessData = [
 ];
 
 export function AdminAnalytics() {
+  const [engagement, setEngagement] = useState<EngagementPoint[]>(FALLBACK_ENGAGEMENT);
+  const [wellness, setWellness] = useState<WellnessPoint[]>(FALLBACK_WELLNESS);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/analytics")
+      .then(async (res) => {
+        if (!res.ok) return null;
+        return (await res.json()) as AnalyticsResponse;
+      })
+      .then((data) => {
+        if (!data || cancelled) return;
+        if (Array.isArray(data.engagement) && data.engagement.length) {
+          setEngagement(data.engagement);
+        }
+        if (Array.isArray(data.wellness) && data.wellness.length) {
+          setWellness(data.wellness);
+        }
+      })
+      .catch(() => {
+        // Keep fallback demo data on error.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="space-y-4">
         <h3 className="text-lg font-semibold">User engagement</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={engagementData}>
+            <BarChart data={engagement}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
@@ -50,7 +96,7 @@ export function AdminAnalytics() {
         <h3 className="text-lg font-semibold">Wellness trend</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={wellnessData}>
+            <LineChart data={wellness}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="week" />
               <YAxis />
