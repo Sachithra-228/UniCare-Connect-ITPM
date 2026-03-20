@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/context/language-context";
+import { getUiTranslations } from "@/lib/ui-translations";
 
 type StoryCard = {
   name: string;
@@ -11,40 +13,36 @@ type StoryCard = {
   image: string;
 };
 
-const stories: StoryCard[] = [
+const storyVisuals = [
   {
-    name: "Ishara P.",
-    role: "Engineering student",
-    quote: "UniCare helped me secure a laptop within a week and connected me to a part-time lab role.",
     tone: "from-[#1d4ed8] to-[#1e40af] text-white",
     image: "/sachithra.jpeg"
   },
   {
-    name: "Prof. D. Jayasekara",
-    role: "Faculty mentor",
-    quote: "The admin analytics dashboard gives our faculty instant visibility on student needs.",
     tone: "from-[#1e3a8a] to-[#0f172a] text-white",
     image: "/teacher.png"
   },
   {
-    name: "Alumni Mentor",
-    role: "Campus volunteer",
-    quote: "Mentorship scheduling is seamless, and students arrive prepared every time.",
     tone: "from-[#2563eb] to-[#1d4ed8] text-white",
     image: "/kusum.jpeg"
   },
   {
-    name: "Dinithi K.",
-    role: "First-year student",
-    quote: "Emergency bursary support arrived on time and helped me continue my semester.",
     tone: "from-[#0f3b74] to-[#1e3a8a] text-white",
     image: "/imasha.jpeg"
   }
-];
+] as const;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 export function StoriesStack() {
+  const { language } = useLanguage();
+  const text = getUiTranslations(language).stories;
+  const stories: StoryCard[] = text.cards.map((card, index) => ({
+    ...card,
+    tone: storyVisuals[index]?.tone ?? storyVisuals[0].tone,
+    image: storyVisuals[index]?.image ?? storyVisuals[0].image
+  }));
+
   const sectionRef = useRef<HTMLElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -69,19 +67,15 @@ export function StoriesStack() {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
-  }, []);
+  }, [stories.length]);
 
   const stickyHeightVh = stories.length * 62;
 
   return (
     <section id="stories" ref={sectionRef} className="mx-auto w-full max-w-6xl px-4 py-16">
       <div className="mx-auto max-w-3xl text-center">
-        <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
-          Real stories from Sri Lankan campuses
-        </h2>
-        <p className="mt-3 text-base text-slate-600 md:text-lg">
-          Scroll to bring each story forward.
-        </p>
+        <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">{text.heading}</h2>
+        <p className="mt-3 text-base text-slate-600 md:text-lg">{text.description}</p>
       </div>
 
       <div className="mt-10 grid gap-5 md:hidden">

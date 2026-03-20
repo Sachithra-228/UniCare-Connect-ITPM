@@ -2,48 +2,16 @@
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/context/language-context";
+import { getUiTranslations } from "@/lib/ui-translations";
 
-type FaqItem = {
-  question: string;
-  answer: string;
-};
-
-const faqs: FaqItem[] = [
-  {
-    question: "Who can use UniCare Connect?",
-    answer:
-      "University students, mentors, and support staff can use UniCare to manage aid, career pathways, wellbeing, and mentoring in one platform."
-  },
-  {
-    question: "How fast can a student request be reviewed?",
-    answer:
-      "Urgent cases are prioritized by the support queue, and teams can review and act on requests through the action planner dashboard."
-  },
-  {
-    question: "Does UniCare support both public and private universities?",
-    answer:
-      "Yes. UniCare is designed for collaboration across Sri Lankan public and private institutions with configurable workflows."
-  },
-  {
-    question: "Can students track outcomes after submitting requests?",
-    answer:
-      "Yes. Students can follow progress, view updates, and see final outcomes for financial, mentorship, career, and wellness requests."
-  },
-  {
-    question: "Can I apply for financial aid directly from the platform?",
-    answer:
-      "Yes. Students can submit aid requests, upload required details, and track every status update in real time."
-  },
-  {
-    question: "How does the mentorship matching process work?",
-    answer:
-      "UniCare maps student goals with available mentors and suggests the best-fit options based on profile and support needs."
-  }
-];
-
-const clampIndex = (value: number) => Math.min(faqs.length - 1, Math.max(0, value));
+const clampIndex = (value: number, count: number) => Math.min(count - 1, Math.max(0, value));
 
 export function FaqMiniAccordion() {
+  const { language } = useLanguage();
+  const text = getUiTranslations(language).faq;
+  const faqs = text.items;
+
   const sectionRef = useRef<HTMLElement | null>(null);
   const cooldownRef = useRef(0);
 
@@ -56,25 +24,25 @@ export function FaqMiniAccordion() {
 
   const navigateBy = useCallback((delta: 1 | -1) => {
     setActiveIndex((prev) => {
-      const next = clampIndex(prev + delta);
+      const next = clampIndex(prev + delta, faqs.length);
       if (next !== prev) {
         setDirection(delta);
         setMotionKey((key) => key + 1);
       }
       return next;
     });
-  }, []);
+  }, [faqs.length]);
 
   const navigateTo = useCallback((index: number) => {
     setActiveIndex((prev) => {
-      const next = clampIndex(index);
+      const next = clampIndex(index, faqs.length);
       if (next !== prev) {
         setDirection(next > prev ? 1 : -1);
         setMotionKey((key) => key + 1);
       }
       return next;
     });
-  }, []);
+  }, [faqs.length]);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -137,7 +105,7 @@ export function FaqMiniAccordion() {
       window.removeEventListener("wheel", onWheel);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [activeIndex, desktopMode, inView, navigateBy]);
+  }, [activeIndex, desktopMode, faqs.length, inView, navigateBy]);
 
   const activeFaq = faqs[activeIndex];
 
@@ -175,7 +143,7 @@ export function FaqMiniAccordion() {
                   type="button"
                   onClick={() => navigateBy(-1)}
                   className="rounded-full border border-white/25 p-2 text-slate-100 transition-colors hover:bg-white/10"
-                  aria-label="Previous question"
+                  aria-label={text.previousQuestion}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -186,7 +154,7 @@ export function FaqMiniAccordion() {
                       key={`faq-dot-${index}`}
                       type="button"
                       onClick={() => navigateTo(index)}
-                      aria-label={`Go to question ${index + 1}`}
+                      aria-label={`${text.goToQuestion} ${index + 1}`}
                       className={`h-2.5 rounded-full transition-all ${
                         index === activeIndex ? "w-8 bg-blue-300" : "w-2.5 bg-white/40"
                       }`}
@@ -198,7 +166,7 @@ export function FaqMiniAccordion() {
                   type="button"
                   onClick={() => navigateBy(1)}
                   className="rounded-full border border-white/25 p-2 text-slate-100 transition-colors hover:bg-white/10"
-                  aria-label="Next question"
+                  aria-label={text.nextQuestion}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>

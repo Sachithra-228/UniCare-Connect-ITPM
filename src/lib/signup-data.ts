@@ -2,6 +2,7 @@
  * Sri Lankan universities and degree programs for sign-up Field 1 & 2.
  * Used for Student and University Admin roles.
  */
+import type { Language } from "@/context/language-context";
 
 export const GOVERNMENT_UNIVERSITIES = [
   "University of Colombo",
@@ -194,6 +195,81 @@ export const RELATIONSHIP_OPTIONS = [
   "Guardian",
   "Other (Please specify)"
 ] as const;
+
+const SIGNUP_OPTION_LABELS: Record<Exclude<Language, "en">, Record<string, string>> = {
+  si: {
+    "Computer Science / IT": "පරිගණක විද්‍යාව / තොරතුරු තාක්ෂණය",
+    Engineering: "ඉංජිනේරු",
+    "Business / Management": "ව්‍යාපාර / කළමනාකරණය",
+    Commerce: "වාණිජ",
+    "Arts / Humanities": "කලා / මානව ශාස්ත්‍ර",
+    Science: "විද්‍යාව",
+    Law: "නීතිය",
+    "Medicine / Health": "වෛද්‍ය / සෞඛ්‍ය",
+    "Emergency bursaries / scholarships": "හදිසි බර්සරි / ශිෂ්‍යත්ව",
+    "Merit-based scholarships": "කාර්ය සාධන පදනම් ශිෂ්‍යත්ව",
+    "Need-based financial aid": "අවශ්‍යතා පදනම් මූල්‍ය ආධාර",
+    "Equipment / resources": "උපකරණ / සම්පත්",
+    "Mentorship programs": "මඟපෙන්වීම් වැඩසටහන්",
+    Internships: "පුහුණු අවස්ථා",
+    "Graduate roles": "උපාධිධාරී තනතුරු",
+    "Part-time / casual": "අර්ධකාලීන / තාවකාලික",
+    "Placements / industrial training": "ස්ථානගත කිරීම / කාර්මික පුහුණුව",
+    "All of the above": "ඉහත සියල්ල",
+    "Education and wellbeing": "අධ්‍යාපනය සහ යහපැවැත්ම",
+    "Emergency relief": "හදිසි සහන",
+    "Scholarships and bursaries": "ශිෂ්‍යත්ව සහ බර්සරි",
+    "Community development": "සමාජ සංවර්ධනය",
+    "Health and nutrition": "සෞඛ්‍ය සහ පෝෂණය",
+    Mother: "මව",
+    Father: "පියා",
+    Guardian: "භාරකරු",
+    "Other (Please specify)": "වෙනත් (විස්තර කරන්න)",
+    Other: "වෙනත්"
+  },
+  ta: {
+    "Computer Science / IT": "கணினி அறிவியல் / தகவல் தொழில்நுட்பம்",
+    Engineering: "பொறியியல்",
+    "Business / Management": "வணிகம் / மேலாண்மை",
+    Commerce: "வர்த்தகம்",
+    "Arts / Humanities": "கலை / மனிதவியல்",
+    Science: "அறிவியல்",
+    Law: "சட்டம்",
+    "Medicine / Health": "மருத்துவம் / சுகாதாரம்",
+    "Emergency bursaries / scholarships": "அவசர உதவித்தொகை / கல்வியுதவி",
+    "Merit-based scholarships": "திறமை அடிப்படையிலான கல்வியுதவி",
+    "Need-based financial aid": "தேவை அடிப்படையிலான நிதி உதவி",
+    "Equipment / resources": "உபகரணங்கள் / வளங்கள்",
+    "Mentorship programs": "வழிகாட்டல் திட்டங்கள்",
+    Internships: "பயிற்சி வேலைகள்",
+    "Graduate roles": "பட்டதாரி பணியிடங்கள்",
+    "Part-time / casual": "பகுதி நேர / தற்காலிக",
+    "Placements / industrial training": "பணியமர்த்தல் / தொழில் பயிற்சி",
+    "All of the above": "மேலே உள்ள அனைத்தும்",
+    "Education and wellbeing": "கல்வி மற்றும் நலன்",
+    "Emergency relief": "அவசர நிவாரணம்",
+    "Scholarships and bursaries": "கல்வியுதவித்தொகைகள்",
+    "Community development": "சமூக மேம்பாடு",
+    "Health and nutrition": "சுகாதாரம் மற்றும் ஊட்டச்சத்து",
+    Mother: "அம்மா",
+    Father: "அப்பா",
+    Guardian: "பாதுகாவலர்",
+    "Other (Please specify)": "மற்றவை (தயவுசெய்து குறிப்பிடவும்)",
+    Other: "மற்றவை"
+  }
+};
+
+export function localizeSignupOptionLabel(option: string, language: Language): string {
+  if (language === "en") {
+    if (option === OTHER_DEGREE_VALUE || option === "Other") return "Other (Please specify)";
+    return option;
+  }
+  return SIGNUP_OPTION_LABELS[language][option] ?? option;
+}
+
+export function isOtherSelection(value: string): boolean {
+  return value === OTHER_DEGREE_VALUE || value === "Other (Please specify)" || value === "Other";
+}
 
 export function getDegreeProgramsForUniversity(university: string): string[] {
   if (!university || university === "__other__") return [...GENERIC_DEGREE_PROGRAMS];

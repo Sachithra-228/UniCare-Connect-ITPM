@@ -1,5 +1,8 @@
+﻿"use client";
+
 import { Card } from "@/components/shared/card";
 import { Badge } from "@/components/shared/badge";
+import { useLanguage } from "@/context/language-context";
 
 const events = [
   { id: "e1", title: "Career Fair 2026", date: "Feb 20", type: "Campus" },
@@ -8,9 +11,17 @@ const events = [
 ];
 
 export function EventCalendar() {
+  const { language } = useLanguage();
+  const title =
+    language === "si"
+      ? "කැම්පස් සිදුවීම් සහ සමාජ"
+      : language === "ta"
+        ? "வளாக நிகழ்வுகள் மற்றும் கிளப்புகள்"
+        : "Campus events & clubs";
+
   return (
     <Card className="space-y-4">
-      <h3 className="text-lg font-semibold">Campus events & clubs</h3>
+      <h3 className="text-lg font-semibold">{title}</h3>
       <div className="space-y-3 text-sm">
         {events.map((event) => (
           <div

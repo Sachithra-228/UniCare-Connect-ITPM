@@ -1,5 +1,8 @@
+﻿"use client";
+
 import { Card } from "@/components/shared/card";
 import { Badge } from "@/components/shared/badge";
+import { useLanguage } from "@/context/language-context";
 
 const partners = [
   { id: "p1", name: "HealthPlus Pharmacy", offer: "10% student discount" },
@@ -8,9 +11,17 @@ const partners = [
 ];
 
 export function CampusPartners() {
+  const { language } = useLanguage();
+  const text =
+    language === "si"
+      ? { title: "දේශීය හවුල්කාරීත්ව", active: "සක්‍රීය" }
+      : language === "ta"
+        ? { title: "உள்ளூர் கூட்டாண்மைகள்", active: "செயலில்" }
+        : { title: "Local partnerships", active: "Active" };
+
   return (
     <Card className="space-y-4">
-      <h3 className="text-lg font-semibold">Local partnerships</h3>
+      <h3 className="text-lg font-semibold">{text.title}</h3>
       <div className="space-y-3 text-sm">
         {partners.map((partner) => (
           <div
@@ -21,7 +32,7 @@ export function CampusPartners() {
               <p className="font-semibold">{partner.name}</p>
               <p className="text-slate-500">{partner.offer}</p>
             </div>
-            <Badge variant="success">Active</Badge>
+            <Badge variant="success">{text.active}</Badge>
           </div>
         ))}
       </div>

@@ -5,16 +5,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/auth-context";
+import { useLanguage } from "@/context/language-context";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
+import { getUiTranslations } from "@/lib/ui-translations";
 
 export function TopNav() {
   const { user, signOutUser } = useAuth();
+  const { language } = useLanguage();
   const pathname = usePathname();
   const isHomePage = pathname === "/";
   const [isVisible, setIsVisible] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
   const lastScrollYRef = useRef(0);
+  const text = getUiTranslations(language).topNav;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -70,11 +74,8 @@ export function TopNav() {
               : "translate-y-0 border border-slate-200 bg-white/90 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/80"
           )}
         >
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-              UC
-            </span>
-            <span className="hidden sm:inline">UniCare Connect</span>
+          <Link href="/" className="flex items-center text-base font-semibold text-primary sm:text-lg">
+            <span>UniCare Connect</span>
           </Link>
 
           <nav
@@ -82,10 +83,10 @@ export function TopNav() {
             aria-label="Main"
           >
             <Link href="/overview" className={navLinkClass("/overview")}>
-              Overview
+              {text.overview}
             </Link>
             <Link href="/university-connect" className={navLinkClass("/university-connect")}>
-              Universities
+              {text.universities}
             </Link>
 
             <div className="group relative">
@@ -97,7 +98,7 @@ export function TopNav() {
                     : "hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-900"
                 )}
               >
-                Student Support
+                {text.studentSupport}
                 <span className="text-xs">v</span>
               </button>
               <div className="invisible absolute left-0 top-full z-10 mt-3 w-52 rounded-2xl border border-slate-200 bg-white p-2 opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 dark:border-slate-800 dark:bg-slate-950">
@@ -108,7 +109,7 @@ export function TopNav() {
                     isRouteActive("/financial-aid") && "bg-primary/10 text-primary"
                   )}
                 >
-                  Financial Aid
+                  {text.financialAid}
                 </Link>
                 <Link
                   href="/career"
@@ -117,7 +118,7 @@ export function TopNav() {
                     isRouteActive("/career") && "bg-primary/10 text-primary"
                   )}
                 >
-                  Career
+                  {text.career}
                 </Link>
                 <Link
                   href="/mentorship"
@@ -126,7 +127,7 @@ export function TopNav() {
                     isRouteActive("/mentorship") && "bg-primary/10 text-primary"
                   )}
                 >
-                  Mentorship
+                  {text.mentorship}
                 </Link>
                 <Link
                   href="/wellness"
@@ -135,13 +136,13 @@ export function TopNav() {
                     isRouteActive("/wellness") && "bg-primary/10 text-primary"
                   )}
                 >
-                  Wellness
+                  {text.wellness}
                 </Link>
               </div>
             </div>
 
             <Link href="/stories" className={navLinkClass("/stories")}>
-              Stories
+              {text.stories}
             </Link>
           </nav>
 
@@ -154,13 +155,13 @@ export function TopNav() {
                   href="/dashboard"
                   className="hidden rounded-full border border-slate-200 px-3 py-1 text-sm dark:border-slate-700 md:inline-flex"
                 >
-                  Dashboard
+                  {text.dashboard}
                 </Link>
                 <button
                   onClick={() => signOutUser()}
                   className="rounded-full border border-slate-200 px-3 py-1 text-sm dark:border-slate-700"
                 >
-                  Sign out
+                  {text.signOut}
                 </button>
               </>
             ) : (
@@ -168,7 +169,7 @@ export function TopNav() {
                 href="/login"
                 className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-white"
               >
-                Sign in
+                {text.signIn}
               </Link>
             )}
           </div>

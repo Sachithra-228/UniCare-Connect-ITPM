@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { ImpactStats } from "@/components/shared/impact-stats";
 import { EcosystemShowcase } from "@/components/shared/ecosystem-showcase";
 import { ScrollSwap } from "@/components/shared/scroll-swap";
+import { useLanguage } from "@/context/language-context";
 
 const partnerUniversities = [
   { name: "University of Colombo", logo: "/colombo.jpg" },
@@ -26,6 +29,50 @@ const partnerUniversities = [
 ];
 
 export default function OverviewPage() {
+  const { language } = useLanguage();
+  const text =
+    language === "si"
+      ? {
+          hero1: "ඔබගේ සම්පූර්ණ විශ්වවිද්‍යාල",
+          hero2: "සහාය පරිසරය",
+          heroBody:
+            "මූල්‍ය ආධාර, වෘත්තීය මාර්ගෝපදේශනය, මානසික සුවතාව සහ කැම්පස් ජීවිතය ශ්‍රී ලාංකික ශිෂ්‍යයන් සඳහා එකම වේදිකාවක.",
+          parents: "දෙමාපියන් සඳහා",
+          staff: "කාර්ය මණ්ඩලය සඳහා",
+          outcomes: "සෑම කැම්පස් එකකටම මැනිය හැකි ප්‍රතිඵල",
+          core: "එක් ශිෂ්‍ය අත්දැකීමක් වටා මූලික මොඩියුල",
+          trusted: "රට පුරා විශ්වවිද්‍යාල 25+ ක විශ්වාසය",
+          start: "ඔබගේ ගමන ආරම්භ කරන්න",
+          button: "නොමිලේ ආරම්භ කරන්න"
+        }
+      : language === "ta"
+        ? {
+            hero1: "உங்கள் முழுமையான பல்கலைக்கழக",
+            hero2: "ஆதரவு சூழல்",
+            heroBody:
+              "நிதி உதவி, தொழில் வழிகாட்டல், மனநலம் மற்றும் வளாக வாழ்க்கை அனைத்தும் இலங்கை மாணவர்களுக்கான ஒரே தளத்தில்.",
+            parents: "பெற்றோருக்காக",
+            staff: "பணியாளர்களுக்காக",
+            outcomes: "ஒவ்வொரு வளாகத்திற்கும் அளவிடக்கூடிய முடிவுகள்",
+            core: "ஒரே மாணவர் அனுபவத்தைச் சுற்றிய மைய தொகுதிகள்",
+            trusted: "நாட்டளவில் 25+ பல்கலைக்கழகங்கள் நம்பும் தளம்",
+            start: "உங்கள் பயணத்தை தொடங்குங்கள்",
+            button: "இலவசமாக தொடங்குங்கள்"
+          }
+        : {
+            hero1: "Your Complete University",
+            hero2: "Support Ecosystem",
+            heroBody:
+              "Financial aid, career guidance, mental wellness, and campus life all in one platform built for Sri Lankan students.",
+            parents: "For parents",
+            staff: "For staff",
+            outcomes: "Measurable outcomes for every campus",
+            core: "Core modules around one student experience",
+            trusted: "Trusted by 25+ universities nationwide",
+            start: "Start your journey",
+            button: "Get Started Free"
+          };
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-16 px-4 py-14">
       <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-sky-50 via-white to-white p-8 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950 md:p-12">
@@ -50,13 +97,10 @@ export default function OverviewPage() {
         <div className="relative grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-6">
           <h1 className="text-4xl font-semibold leading-tight md:text-5xl">
-            <span className="block whitespace-nowrap">Your Complete University</span>
-            <span className="block">Support Ecosystem</span>
+            <span className="block whitespace-nowrap">{text.hero1}</span>
+            <span className="block">{text.hero2}</span>
           </h1>
-          <p className="text-base italic text-slate-600 dark:text-slate-300">
-            Financial aid, career guidance, mental wellness, and campus life all in one platform
-            built for Sri Lankan students.
-          </p>
+          <p className="text-base italic text-slate-600 dark:text-slate-300">{text.heroBody}</p>
         </div>
         <div className="flex items-center justify-center">
           <Image
@@ -76,7 +120,7 @@ export default function OverviewPage() {
         first={
           <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">For parents</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">{text.parents}</p>
               <h2 className="text-2xl font-semibold">Stay informed and support with confidence</h2>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Parents can track student progress, see support milestones, and receive updates on
@@ -106,7 +150,7 @@ export default function OverviewPage() {
               />
             </div>
             <div className="space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">For staff</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">{text.staff}</p>
               <h2 className="text-2xl font-semibold">Empower advisors with real-time visibility</h2>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Staff and mentors get a unified dashboard to triage requests, monitor wellbeing, and
@@ -121,7 +165,7 @@ export default function OverviewPage() {
         <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-white to-slate-50 p-8 shadow-sm dark:border-slate-800 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 md:p-10">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold">Measurable outcomes for every campus</h2>
+              <h2 className="text-2xl font-semibold">{text.outcomes}</h2>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Real impact across financial aid, careers, and wellbeing.
               </p>
@@ -230,7 +274,7 @@ export default function OverviewPage() {
       <section>
         <div className="mx-auto max-w-2xl text-center">
           <SectionHeading
-            title="Core modules around one student experience"
+            title={text.core}
             subtitle="Explore the four key features from the accordion on the right."
           />
         </div>
@@ -287,7 +331,7 @@ export default function OverviewPage() {
       <section>
         <div className="mx-auto max-w-3xl text-center">
           <SectionHeading
-            title="Trusted by 25+ universities nationwide"
+            title={text.trusted}
             subtitle="Collaboration across Sri Lanka with public and private institutions."
           />
         </div>
@@ -325,7 +369,7 @@ export default function OverviewPage() {
         <div className="relative flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <div className="space-y-3">
             <p className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-cyan-100">
-              Start your journey
+              {text.start}
             </p>
             <h2 className="text-2xl font-semibold leading-tight md:text-3xl">
               Ready to Transform Your University Experience?
@@ -344,7 +388,7 @@ export default function OverviewPage() {
             href="/register"
             className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-black/20 transition-all hover:-translate-y-0.5 hover:bg-slate-100"
           >
-            Get Started Free
+            {text.button}
             <span aria-hidden="true">→</span>
           </Link>
         </div>

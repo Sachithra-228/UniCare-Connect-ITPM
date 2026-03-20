@@ -3,6 +3,8 @@
 import { CalendarCheck2, GraduationCap, HandCoins, HeartPulse } from "lucide-react";
 import { Libre_Baskerville } from "next/font/google";
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/context/language-context";
+import { getUiTranslations } from "@/lib/ui-translations";
 
 const H_MIN = 32;
 const H_MAX = 72;
@@ -18,6 +20,9 @@ const libreBaskerville = Libre_Baskerville({
 });
 
 export function SupportWorkspacePanels() {
+  const { language } = useLanguage();
+  const text = getUiTranslations(language).supportPanels;
+
   const sectionRef = useRef<HTMLElement | null>(null);
   const horizontalRef = useRef<HTMLDivElement | null>(null);
   const verticalRef = useRef<HTMLDivElement | null>(null);
@@ -145,12 +150,12 @@ export function SupportWorkspacePanels() {
           <h3
             className={`${libreBaskerville.className} text-4xl font-bold tracking-tight text-white md:text-5xl lg:whitespace-nowrap`}
           >
-            Resize panels to prioritize support operations
+            {text.heading}
           </h3>
           <p
             className={`${libreBaskerville.className} mt-3 text-base text-slate-300 md:text-lg lg:whitespace-nowrap`}
           >
-            Drag separators, or focus a handle and use arrow keys, Home, and End.
+            {text.description}
           </p>
         </div>
 
@@ -160,31 +165,31 @@ export function SupportWorkspacePanels() {
         >
           <section
             id="student-overview-panel"
-            aria-label="Student overview"
+            aria-label={text.studentOverviewAria}
             className="h-full overflow-hidden rounded-xl border border-blue-200 bg-white p-5"
             style={{ width: `${leftSize}%` }}
           >
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">Student Snapshot</p>
-          <h4 className="mt-2 text-xl font-semibold">Semester health at a glance</h4>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">{text.snapshotTitle}</p>
+          <h4 className="mt-2 text-xl font-semibold">{text.snapshotSubtitle}</h4>
           <div className="mt-5 grid gap-3">
             <div className="rounded-xl border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-4">
               <div className="flex items-center gap-3">
                 <HandCoins className="h-4 w-4 text-blue-200" />
-                <p className="text-sm font-medium text-slate-100">Financial requests pending review</p>
+                <p className="text-sm font-medium text-slate-100">{text.financialPending}</p>
               </div>
               <p className="mt-2 text-2xl font-semibold text-white">12</p>
             </div>
             <div className="rounded-xl border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-4">
               <div className="flex items-center gap-3">
                 <GraduationCap className="h-4 w-4 text-blue-200" />
-                <p className="text-sm font-medium text-slate-100">Career matches generated this week</p>
+                <p className="text-sm font-medium text-slate-100">{text.careerMatches}</p>
               </div>
               <p className="mt-2 text-2xl font-semibold text-white">38</p>
             </div>
             <div className="rounded-xl border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-4">
               <div className="flex items-center gap-3">
                 <HeartPulse className="h-4 w-4 text-blue-200" />
-                <p className="text-sm font-medium text-slate-100">Wellness check-ins completed</p>
+                <p className="text-sm font-medium text-slate-100">{text.wellnessCheckins}</p>
               </div>
               <p className="mt-2 text-2xl font-semibold text-white">27</p>
             </div>
@@ -193,7 +198,7 @@ export function SupportWorkspacePanels() {
 
         <div
           role="separator"
-          aria-label="Resize left and right panels"
+          aria-label={text.resizeHorizontalAria}
           aria-controls="student-overview-panel support-operations-panel"
           aria-orientation="vertical"
           aria-valuemin={H_MIN}
@@ -213,7 +218,7 @@ export function SupportWorkspacePanels() {
         <section
           id="support-operations-panel"
           ref={verticalRef}
-          aria-label="Support operations"
+          aria-label={text.supportOperationsAria}
           className="flex h-full overflow-hidden rounded-xl border border-blue-200 bg-white"
           style={{ width: `${100 - leftSize}%` }}
         >
@@ -223,23 +228,23 @@ export function SupportWorkspacePanels() {
               className="overflow-hidden rounded-xl border border-blue-200 bg-white p-5"
               style={{ height: `${topSize}%` }}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">Priority Queue</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">{text.priorityQueueTitle}</p>
               <div className="mt-3 space-y-3">
                 <div className="rounded-lg border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-3 text-sm text-slate-100">
-                  Emergency tuition case requires same-day approval.
+                  {text.priority1}
                 </div>
                 <div className="rounded-lg border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-3 text-sm text-slate-100">
-                  6 students waiting for internship placement confirmation.
+                  {text.priority2}
                 </div>
                 <div className="rounded-lg border border-white/20 bg-gradient-to-br from-[#0b1732] via-[#0b1d3f] to-[#0a1632] p-3 text-sm text-slate-100">
-                  Mentor reassignment needed for 2 high-risk students.
+                  {text.priority3}
                 </div>
               </div>
             </div>
 
             <div
               role="separator"
-              aria-label="Resize top and bottom panels"
+              aria-label={text.resizeVerticalAria}
               aria-controls="priority-queue-panel action-planner-panel"
               aria-orientation="horizontal"
               aria-valuemin={V_MIN}
@@ -261,19 +266,19 @@ export function SupportWorkspacePanels() {
               className="overflow-hidden rounded-xl border border-blue-200 bg-white p-5"
               style={{ height: `${100 - topSize}%` }}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">Action Planner</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">{text.actionPlannerTitle}</p>
               <div className="mt-3 space-y-2.5 text-sm text-slate-700">
                 <div className="flex items-center gap-2">
                   <CalendarCheck2 className="h-4 w-4 text-primary" />
-                  Approve aid batch before 3:00 PM.
+                  {text.action1}
                 </div>
                 <div className="flex items-center gap-2">
                   <CalendarCheck2 className="h-4 w-4 text-primary" />
-                  Finalize mentor pairing for week 4.
+                  {text.action2}
                 </div>
                 <div className="flex items-center gap-2">
                   <CalendarCheck2 className="h-4 w-4 text-primary" />
-                  Export weekly wellbeing summary for faculty.
+                  {text.action3}
                 </div>
               </div>
             </div>
@@ -283,16 +288,16 @@ export function SupportWorkspacePanels() {
 
         <div className="mt-6 grid gap-3 md:hidden">
           <div className="rounded-xl border border-blue-200 bg-white p-4">
-            <p className="text-sm font-semibold">Student Snapshot</p>
-            <p className="mt-1 text-sm text-slate-600">Desktop view has keyboard-resizable panels.</p>
+            <p className="text-sm font-semibold">{text.mobileStudentTitle}</p>
+            <p className="mt-1 text-sm text-slate-600">{text.mobileStudentBody}</p>
           </div>
           <div className="rounded-xl border border-blue-200 bg-white p-4">
-            <p className="text-sm font-semibold">Priority Queue</p>
-            <p className="mt-1 text-sm text-slate-600">Emergency tuition case requires same-day approval.</p>
+            <p className="text-sm font-semibold">{text.mobilePriorityTitle}</p>
+            <p className="mt-1 text-sm text-slate-600">{text.mobilePriorityBody}</p>
           </div>
           <div className="rounded-xl border border-blue-200 bg-white p-4">
-            <p className="text-sm font-semibold">Action Planner</p>
-            <p className="mt-1 text-sm text-slate-600">Approve aid batch and finalize mentor pairing.</p>
+            <p className="text-sm font-semibold">{text.mobileActionTitle}</p>
+            <p className="mt-1 text-sm text-slate-600">{text.mobileActionBody}</p>
           </div>
         </div>
       </div>

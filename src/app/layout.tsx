@@ -1,12 +1,22 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Noto_Sans_Sinhala, Noto_Sans_Tamil } from "next/font/google";
 import "./globals.css";
-import { Providers } from "@/components/shared/providers";
+import { Providers } from "@/components/shared/Providers";
 import { AppShell } from "@/components/shared/app-shell";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter"
+});
+
+const notoSansSinhala = Noto_Sans_Sinhala({
+  subsets: ["sinhala"],
+  variable: "--font-sinhala"
+});
+
+const notoSansTamil = Noto_Sans_Tamil({
+  subsets: ["tamil"],
+  variable: "--font-tamil"
 });
 
 export const metadata: Metadata = {
@@ -16,7 +26,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${notoSansSinhala.variable} ${notoSansTamil.variable}`}>
       <body className="min-h-screen bg-white font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <Providers>
           <AppShell>{children}</AppShell>

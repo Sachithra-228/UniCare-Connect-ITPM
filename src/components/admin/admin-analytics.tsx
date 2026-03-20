@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/shared/card";
+import { useLanguage } from "@/context/language-context";
 import {
   Bar,
   BarChart,
@@ -46,8 +47,15 @@ const FALLBACK_WELLNESS: WellnessPoint[] = [
 ];
 
 export function AdminAnalytics() {
+  const { language } = useLanguage();
   const [engagement, setEngagement] = useState<EngagementPoint[]>(FALLBACK_ENGAGEMENT);
   const [wellness, setWellness] = useState<WellnessPoint[]>(FALLBACK_WELLNESS);
+  const text =
+    language === "si"
+      ? { userEngagement: "පරිශීලක සම්බන්ධතාව", wellnessTrend: "යහපැවැත්ම ප්‍රවණතාව" }
+      : language === "ta"
+        ? { userEngagement: "பயனர் ஈடுபாடு", wellnessTrend: "நலப்போக்கு" }
+        : { userEngagement: "User engagement", wellnessTrend: "Wellness trend" };
 
   useEffect(() => {
     let cancelled = false;
@@ -78,7 +86,7 @@ export function AdminAnalytics() {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="space-y-4">
-        <h3 className="text-lg font-semibold">User engagement</h3>
+        <h3 className="text-lg font-semibold">{text.userEngagement}</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={engagement}>
@@ -93,7 +101,7 @@ export function AdminAnalytics() {
         </div>
       </Card>
       <Card className="space-y-4">
-        <h3 className="text-lg font-semibold">Wellness trend</h3>
+        <h3 className="text-lg font-semibold">{text.wellnessTrend}</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={wellness}>

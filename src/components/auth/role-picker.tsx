@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { DropdownPortal } from "./dropdown-portal";
+import { useLanguage } from "@/context/language-context";
 
 export type RoleOption = { value: string; label: string };
 
@@ -24,9 +25,31 @@ export function RolePicker({
   "aria-label": ariaLabel,
   className = ""
 }: RolePickerProps) {
+  const { language } = useLanguage();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const text =
+    language === "si"
+      ? {
+          defaultPlaceholder: "ඔබගේ භූමිකාව තෝරන්න",
+          searchPlaceholder: "සෙවීමට ටයිප් කරන්න...",
+          searchAria: "භූමිකා සෙවීම",
+          noMatch: "ගැලපෙන භූමිකාවක් නොමැත."
+        }
+      : language === "ta"
+        ? {
+            defaultPlaceholder: "உங்கள் பங்கையை தேர்ந்தெடுக்கவும்",
+            searchPlaceholder: "தேட தட்டச்சு செய்யவும்...",
+            searchAria: "பங்குகளை தேடுங்கள்",
+            noMatch: "பொருந்தும் பங்கு இல்லை."
+          }
+        : {
+            defaultPlaceholder: "Choose your role",
+            searchPlaceholder: "Type to search...",
+            searchAria: "Search roles",
+            noMatch: "No matching role."
+          };
 
   const displayValue = options.find((o) => o.value === value)?.label ?? "";
   const filtered = options.filter((o) =>
@@ -51,7 +74,7 @@ export function RolePicker({
         className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-sm shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 dark:border-slate-700 dark:bg-slate-900"
       >
         <span className={displayValue ? "text-slate-900 dark:text-slate-100" : "text-slate-500"}>
-          {displayValue || placeholder}
+          {displayValue || (placeholder === "Choose your role" ? text.defaultPlaceholder : placeholder)}
         </span>
         <svg
           className={"h-4 w-4 shrink-0 text-slate-400 transition " + (open ? "rotate-180" : "")}
@@ -70,10 +93,10 @@ export function RolePicker({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Type to search..."
+              placeholder={text.searchPlaceholder}
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-600 dark:bg-slate-800"
               autoFocus
-              aria-label="Search roles"
+              aria-label={text.searchAria}
             />
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto py-2">
@@ -90,7 +113,7 @@ export function RolePicker({
               </button>
             ))}
             {filtered.length === 0 && search.trim() && (
-              <p className="px-4 py-3 text-sm text-slate-500">No matching role.</p>
+              <p className="px-4 py-3 text-sm text-slate-500">{text.noMatch}</p>
             )}
           </div>
         </div>

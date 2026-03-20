@@ -1,18 +1,9 @@
+﻿"use client";
+
 import Link from "next/link";
 import { Github, Linkedin, Music2, Youtube } from "lucide-react";
-
-const primaryNav = [
-  { label: "Overview", href: "/overview" },
-  { label: "Universities", href: "/university-connect" },
-  { label: "Stories", href: "/stories" }
-];
-
-const supportNav = [
-  { label: "Financial Aid", href: "/financial-aid" },
-  { label: "Career", href: "/career" },
-  { label: "Mentorship", href: "/mentorship" },
-  { label: "Wellness", href: "/wellness" }
-];
+import { useLanguage } from "@/context/language-context";
+import { getUiTranslations } from "@/lib/ui-translations";
 
 const socialLinks = [
   { label: "TikTok", href: "https://www.tiktok.com/", icon: Music2 },
@@ -22,6 +13,22 @@ const socialLinks = [
 ];
 
 export function Footer() {
+  const { language } = useLanguage();
+  const text = getUiTranslations(language);
+
+  const primaryNav = [
+    { label: text.topNav.overview, href: "/overview" },
+    { label: text.topNav.universities, href: "/university-connect" },
+    { label: text.topNav.stories, href: "/stories" }
+  ];
+
+  const supportNav = [
+    { label: text.topNav.financialAid, href: "/financial-aid" },
+    { label: text.topNav.career, href: "/career" },
+    { label: text.topNav.mentorship, href: "/mentorship" },
+    { label: text.topNav.wellness, href: "/wellness" }
+  ];
+
   return (
     <footer className="border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 dark:border-slate-800 dark:from-slate-950 dark:to-slate-950">
       <div className="mx-auto w-full max-w-6xl px-4 py-10">
@@ -33,24 +40,15 @@ export function Footer() {
               </span>
               <div>
                 <p className="text-base font-semibold">UniCare Connect</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  One platform for student success.
-                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{text.footer.tagline}</p>
               </div>
             </div>
-            <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-              A connected ecosystem for financial aid, career pathways, mentorship, and wellness
-              support across Sri Lankan universities.
-            </p>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-              Contact: support@unicare.lk
-            </p>
+            <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{text.footer.description}</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Contact: support@unicare.lk</p>
           </div>
 
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-              Navigation
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{text.footer.navigation}</p>
             <div className="grid gap-2">
               {primaryNav.map((item) => (
                 <Link
@@ -62,9 +60,7 @@ export function Footer() {
                 </Link>
               ))}
             </div>
-            <p className="pt-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">
-              Student support
-            </p>
+            <p className="pt-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">{text.footer.studentSupport}</p>
             <div className="grid gap-2">
               {supportNav.map((item) => (
                 <Link
@@ -79,7 +75,7 @@ export function Footer() {
           </div>
 
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Socials</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{text.footer.socials}</p>
             <div className="flex items-center gap-3">
               {socialLinks.map((item) => {
                 const Icon = item.icon;
@@ -103,7 +99,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t border-slate-200 pt-4 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-          <p>© 2026 UniCare Connect. Built for IT3040 IT Project Management.</p>
+          <p>{text.footer.copyright}</p>
         </div>
       </div>
     </footer>

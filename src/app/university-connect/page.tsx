@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { SriLankaDistrictMap } from "@/components/shared/sri-lanka-district-map";
 import { SRI_LANKA_DISTRICTS } from "@/lib/data/theme-mappings";
+import { useLanguage } from "@/context/language-context";
 
 type DirectoryItem = {
   name: string;
@@ -128,6 +129,41 @@ function getLocationDistricts(location: string) {
 }
 
 export default function UniversityConnectPage() {
+  const { language } = useLanguage();
+  const text =
+    language === "si"
+      ? {
+          heading: "ශ්‍රී ලංකා විශ්වවිද්‍යාල සහ ආයතන පරිසරය",
+          subheading: "අන්තර්ක්‍රියාත්මක කොටස් හරහා ශ්‍රී ලංකාවේ උසස් අධ්‍යාපන විකල්ප සොයා බලන්න.",
+          districtFilters: "දිස්ත්‍රික් පෙරහන්",
+          clearAll: "සියල්ල ඉවත් කරන්න",
+          profile: "ආයතන පැතිකඩ",
+          focus: "අධ්‍යයන අවධානය",
+          clickHint: "පහළ කාඩ්පත් ක්ලික් කර පැතිකඩ තොරතුරු මාරු කරන්න.",
+          empty: "තෝරාගත් දිස්ත්‍රික් පෙරහන් සඳහා මෙම කාණ්ඩයේ ආයතන නොමැත."
+        }
+      : language === "ta"
+        ? {
+            heading: "இலங்கை பல்கலைக்கழக மற்றும் நிறுவனர் சூழல்",
+            subheading: "இலங்கையின் உயர்கல்வி விருப்பங்களை தொடர்பாடல் கூறுகள் மூலம் ஆராயுங்கள்.",
+            districtFilters: "மாவட்ட வடிப்பான்கள்",
+            clearAll: "அனைத்தையும் அழிக்கவும்",
+            profile: "நிறுவன சுயவிவரம்",
+            focus: "கல்வி கவனம்",
+            clickHint: "கீழே உள்ள அட்டைகளை அழுத்தி சுயவிவர விவரங்களை மாற்றுங்கள்.",
+            empty: "தேர்ந்தெடுத்த மாவட்ட வடிப்பான்களுக்கு இந்த பிரிவில் நிறுவனங்கள் இல்லை."
+          }
+        : {
+            heading: "Sri Lankan university and institute ecosystem",
+            subheading: "Explore Sri Lanka's higher education options through interactive components.",
+            districtFilters: "District filters",
+            clearAll: "Clear all",
+            profile: "Institution Profile",
+            focus: "Academic Focus",
+            clickHint: "Click any component card below to switch profile details.",
+            empty: "No institutions found for the selected district filters in this category."
+          };
+
   const [activeSectionId, setActiveSectionId] = useState(sections[0].id);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedBySection, setSelectedBySection] = useState<Record<string, string>>({});
@@ -175,10 +211,10 @@ export default function UniversityConnectPage() {
       <section className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="space-y-4">
           <h1 className="text-4xl font-semibold leading-tight text-slate-900 md:text-5xl">
-            Sri Lankan university and institute ecosystem
+            {text.heading}
           </h1>
           <p className="max-w-xl text-lg leading-relaxed text-slate-600">
-            Explore Sri Lanka&apos;s higher education options through interactive components.
+            {text.subheading}
           </p>
         </div>
         <div className="w-full justify-self-center lg:justify-self-end">
@@ -193,7 +229,7 @@ export default function UniversityConnectPage() {
 
       {selectedDistricts.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">District filters</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{text.districtFilters}</p>
           {selectedDistricts.map((district) => (
             <button
               key={`district-chip-${district}`}
@@ -209,7 +245,7 @@ export default function UniversityConnectPage() {
             onClick={() => setSelectedDistricts([])}
             className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600"
           >
-            Clear all
+            {text.clearAll}
           </button>
         </div>
       ) : null}
@@ -255,12 +291,12 @@ export default function UniversityConnectPage() {
             </article>
 
             <article className="rounded-3xl border border-white/65 bg-white/55 p-6 shadow-[0_16px_40px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">Institution Profile</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">{text.profile}</p>
               <h3 className="mt-2 text-2xl font-semibold">{selectedItem.name}</h3>
               <p className="mt-1 text-slate-600">{selectedItem.location}</p>
 
               <div className="mt-5 rounded-2xl border border-white/70 bg-white/70 p-4 backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">Academic Focus</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">{text.focus}</p>
                 <ul className="mt-3 grid gap-2 text-sm text-slate-700">
                   {selectedItem.focus.split(",").map((focus) => (
                     <li
@@ -273,12 +309,12 @@ export default function UniversityConnectPage() {
                 </ul>
               </div>
 
-              <p className="mt-5 text-sm text-slate-500">Click any component card below to switch profile details.</p>
+              <p className="mt-5 text-sm text-slate-500">{text.clickHint}</p>
             </article>
           </div>
         ) : (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
-            No institutions found for the selected district filters in this category.
+            {text.empty}
           </div>
         )}
 

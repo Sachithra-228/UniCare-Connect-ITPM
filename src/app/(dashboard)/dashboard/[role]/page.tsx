@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useLanguage } from "@/context/language-context";
 import { Card } from "@/components/shared/card";
 import {
   DASHBOARD_ROLE_CONFIG,
@@ -38,6 +39,7 @@ type QuickStats = {
 export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
   const routeRole = resolveRouteRole(params.role);
   const { user, loading } = useAuth();
+  const { language } = useLanguage();
   const router = useRouter();
   const [activeSectionId, setActiveSectionId] = useState("");
   const [quickStats, setQuickStats] = useState<QuickStats>({
@@ -50,6 +52,27 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
     () => (routeRole ? DASHBOARD_ROLE_CONFIG[routeRole] : null),
     [routeRole]
   );
+  const text =
+    language === "si"
+      ? {
+          loading: "ඔබගේ ඩෑෂ්බෝඩ් පූරණය වෙමින්...",
+          pendingApplications: "පොරොත්තුවේ ඇති අයදුම්පත්",
+          upcomingDeadlines: "ඉදිරි අවසන් දිනයන්",
+          unreadNotifications: "නොකියවූ දැනුම්දීම්"
+        }
+      : language === "ta"
+        ? {
+            loading: "உங்கள் டாஷ்போர்டு ஏற்றப்படுகிறது...",
+            pendingApplications: "நிலுவையில் உள்ள விண்ணப்பங்கள்",
+            upcomingDeadlines: "வரவிருக்கும் கடைசி தேதிகள்",
+            unreadNotifications: "படிக்காத அறிவிப்புகள்"
+          }
+        : {
+            loading: "Loading your dashboard...",
+            pendingApplications: "Pending applications",
+            upcomingDeadlines: "Upcoming deadlines",
+            unreadNotifications: "Unread notifications"
+          };
 
   useEffect(() => {
     if (!roleConfig) {
@@ -105,9 +128,11 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
       const jobList = Array.isArray(jobs) ? jobs : [];
       const today = new Date().toISOString().split("T")[0];
       const deadlines = [
-        ...schList.map((s: { deadline?: string }) => s.deadline).filter(Boolean),
-        ...jobList.map((j: { applicationDeadline?: string }) => j.applicationDeadline).filter(Boolean)
-      ].filter((d: string) => d >= today).length;
+        ...schList.map((s: { deadline?: string }) => s.deadline).filter((d): d is string => Boolean(d)),
+        ...jobList
+          .map((j: { applicationDeadline?: string }) => j.applicationDeadline)
+          .filter((d): d is string => Boolean(d))
+      ].filter((d) => d >= today).length;
       const notifications = Array.isArray((notifData as { notifications?: unknown[] }).notifications)
         ? (notifData as { notifications: { read?: boolean }[] }).notifications
         : [];
@@ -123,7 +148,7 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
   if (loading || !roleConfig || !routeRole) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-        Loading your dashboard...
+        {text.loading}
       </div>
     );
   }
@@ -147,7 +172,7 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
               className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-white to-primary/10 py-5 px-5 shadow-sm transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:from-primary/15 hover:to-primary/20 hover:shadow-md hover:shadow-primary/10 dark:from-primary/10 dark:via-slate-900/80 dark:to-primary/15 dark:hover:from-primary/20 dark:hover:to-primary/25"
             >
               <span className="absolute right-0 top-0 h-16 w-20 rounded-bl-full bg-primary/5 transition-colors group-hover:bg-primary/10 dark:bg-primary/10 dark:group-hover:bg-primary/15" aria-hidden />
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Pending applications</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{text.pendingApplications}</p>
               <p className="mt-1 text-2xl font-semibold text-primary transition-colors group-hover:text-primary dark:text-primary">{quickStats.pendingApplications}</p>
             </a>
             <a
@@ -155,7 +180,7 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
               className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-white to-primary/10 py-5 px-5 shadow-sm transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:from-primary/15 hover:to-primary/20 hover:shadow-md hover:shadow-primary/10 dark:from-primary/10 dark:via-slate-900/80 dark:to-primary/15 dark:hover:from-primary/20 dark:hover:to-primary/25"
             >
               <span className="absolute right-0 top-0 h-16 w-20 rounded-bl-full bg-primary/5 transition-colors group-hover:bg-primary/10 dark:bg-primary/10 dark:group-hover:bg-primary/15" aria-hidden />
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Upcoming deadlines</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{text.upcomingDeadlines}</p>
               <p className="mt-1 text-2xl font-semibold text-primary transition-colors group-hover:text-primary dark:text-primary">{quickStats.upcomingDeadlines}</p>
             </a>
             <a
@@ -163,7 +188,7 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
               className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-white to-primary/10 py-5 px-5 shadow-sm transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:from-primary/15 hover:to-primary/20 hover:shadow-md hover:shadow-primary/10 dark:from-primary/10 dark:via-slate-900/80 dark:to-primary/15 dark:hover:from-primary/20 dark:hover:to-primary/25"
             >
               <span className="absolute right-0 top-0 h-16 w-20 rounded-bl-full bg-primary/5 transition-colors group-hover:bg-primary/10 dark:bg-primary/10 dark:group-hover:bg-primary/15" aria-hidden />
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Unread notifications</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{text.unreadNotifications}</p>
               <p className="mt-1 text-2xl font-semibold text-primary transition-colors group-hover:text-primary dark:text-primary">{quickStats.unreadNotifications}</p>
             </a>
           </div>
