@@ -1,6 +1,7 @@
 "use client";
 
 import clsx from "clsx";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -74,8 +75,15 @@ export function TopNav() {
               : "translate-y-0 border border-slate-200 bg-white/90 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/80"
           )}
         >
-          <Link href="/" className="flex items-center text-base font-semibold text-primary sm:text-lg">
-            <span>UniCare Connect</span>
+          <Link href="/" className="flex items-center" aria-label="UniCare Connect">
+            <Image
+              src="/logo.png"
+              alt="UniCare Connect"
+              width={500}
+              height={500}
+              className="h-8 w-20 object-cover object-center"
+              priority
+            />
           </Link>
 
           <nav

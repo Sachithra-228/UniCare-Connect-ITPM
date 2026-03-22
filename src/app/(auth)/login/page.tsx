@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
@@ -1084,139 +1085,161 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_70px_-45px_rgba(15,23,42,0.45)]">
-        <div className="border-b border-slate-200 p-5 sm:p-6">
-          <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1">
-            <button
-              type="button"
-              onClick={() => setMode("signin")}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                mode === "signin" ? "bg-primary text-white" : "text-slate-600"
-              }`}
-            >
-              {t.signInTab}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("signup")}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                mode === "signup" ? "bg-primary text-white" : "text-slate-600"
-              }`}
-            >
-              {t.signUpTab}
-            </button>
+    <div className="min-h-screen w-full bg-slate-100 lg:grid lg:grid-cols-2">
+      <aside className="relative hidden lg:block">
+        <Image src="/hero-student.png" alt="Students supporting each other" fill className="object-cover" priority />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-slate-900/25 to-primary/45" />
+        <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
+          <Image
+            src="/logo.png"
+            alt="UniCare Connect"
+            width={180}
+            height={72}
+            className="h-14 w-auto rounded-xl bg-white/90 p-2"
+          />
+          <div className="space-y-2">
+            <h2 className="text-3xl font-semibold leading-tight">
+              {mode === "signin" ? t.welcomeBack : t.createUniCareAccount}
+            </h2>
+            <p className="max-w-md text-base text-white/85">
+              {mode === "signin" ? t.signInSubtitle : t.signUpSubtitle}
+            </p>
           </div>
-          <h1 className="mt-4 text-2xl font-semibold text-slate-900">
-            {mode === "signin" ? t.welcomeBack : t.createUniCareAccount}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {mode === "signin"
-              ? t.signInSubtitle
-              : t.signUpSubtitle}
-          </p>
         </div>
-
-        <div className="p-5 sm:p-6">
-          {mode === "signin" ? (
-            <form className="space-y-4" onSubmit={handleSignInSubmit}>
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="email">
-                  {t.email}
-                </label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  aria-required="true"
-                  defaultValue={recentlyRegisteredEmail ?? ""}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="password">
-                  {t.password}
-                </label>
-                <Input id="password" name="password" type="password" required aria-required="true" />
-              </div>
-              {isVerifiedRedirect ? (
-                <p className="text-sm text-green-600">
-                  {t.emailVerifiedSuccess}
-                </p>
-              ) : null}
-              {signUpSuccess ? <p className="text-sm text-green-600">{signUpSuccess}</p> : null}
-              {signInError ? <p className="text-sm text-red-500">{signInError}</p> : null}
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Button type="submit">{t.signInButton}</Button>
-                <Button type="button" variant="secondary" onClick={handleGoogleSignIn}>
-                  {t.signInWithGoogle}
-                </Button>
-              </div>
-              <div className="flex items-center justify-between text-sm text-slate-500">
-                <Link href="/forgot-password">{t.forgotPassword}</Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode("signup");
-                    setSignInError(null);
-                  }}
-                  className="font-medium text-primary hover:underline"
-                >
-                  {t.createAccountLink}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form className="space-y-5" onSubmit={handleSignUpSubmit}>
-              <div className="grid grid-cols-4 gap-2">
-                {[1, 2, 3, 4].map((step) => (
-                  <div key={step} className="space-y-2">
-                    <div
-                      className={`h-1 rounded-full ${
-                        signUpStep >= step ? "bg-primary" : "bg-slate-200"
-                      }`}
-                    />
-                    <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
-                      {t.step} {step}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              {renderSignUpStep()}
-              {signUpError ? <p className="text-sm text-red-500">{signUpError}</p> : null}
-
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={goToPreviousSignUpStep}
-                  disabled={signUpStep === 1}
-                  className={signUpStep === 1 ? "cursor-not-allowed opacity-50" : ""}
-                >
-                  {t.back}
-                </Button>
-                <div className="flex items-center gap-2">
+      </aside>
+      <section className="flex min-h-screen items-center bg-white px-4 py-10 sm:px-8 lg:px-12">
+        <div className="w-full max-w-xl">
+          <div className="border-b border-slate-200 p-5 sm:p-6">
+            <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1">
+              <button
+                type="button"
+                onClick={() => setMode("signin")}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                  mode === "signin" ? "bg-primary text-white" : "text-slate-600"
+                }`}
+              >
+                {t.signInTab}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("signup")}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                  mode === "signup" ? "bg-primary text-white" : "text-slate-600"
+                }`}
+              >
+                {t.signUpTab}
+              </button>
+            </div>
+            <h1 className="mt-4 text-2xl font-semibold text-slate-900">
+              {mode === "signin" ? t.welcomeBack : t.createUniCareAccount}
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {mode === "signin"
+                ? t.signInSubtitle
+                : t.signUpSubtitle}
+            </p>
+          </div>
+          <div className="p-5 sm:p-6">
+            {mode === "signin" ? (
+              <form className="space-y-4" onSubmit={handleSignInSubmit}>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="email">
+                    {t.email}
+                  </label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    aria-required="true"
+                    defaultValue={recentlyRegisteredEmail ?? ""}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="password">
+                    {t.password}
+                  </label>
+                  <Input id="password" name="password" type="password" required aria-required="true" />
+                </div>
+                {isVerifiedRedirect ? (
+                  <p className="text-sm text-green-600">
+                    {t.emailVerifiedSuccess}
+                  </p>
+                ) : null}
+                {signUpSuccess ? <p className="text-sm text-green-600">{signUpSuccess}</p> : null}
+                {signInError ? <p className="text-sm text-red-500">{signInError}</p> : null}
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Button type="submit">{t.signInButton}</Button>
+                  <Button type="button" variant="secondary" onClick={handleGoogleSignIn}>
+                    {t.signInWithGoogle}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between text-sm text-slate-500">
+                  <Link href="/forgot-password">{t.forgotPassword}</Link>
                   <button
                     type="button"
-                    onClick={() => setMode("signin")}
-                    className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                    onClick={() => {
+                      setMode("signup");
+                      setSignInError(null);
+                    }}
+                    className="font-medium text-primary hover:underline"
                   >
-                    {t.alreadyHaveAccount}
+                    {t.createAccountLink}
                   </button>
-                  {signUpStep < 4 ? (
-                    <Button type="button" onClick={goToNextSignUpStep}>
-                      {t.continue}
-                    </Button>
-                  ) : (
-                    <Button type="submit">{t.createAccountButton}</Button>
-                  )}
                 </div>
-              </div>
-            </form>
-          )}
+              </form>
+            ) : (
+              <form className="space-y-5" onSubmit={handleSignUpSubmit}>
+                <div className="grid grid-cols-4 gap-2">
+                  {[1, 2, 3, 4].map((step) => (
+                    <div key={step} className="space-y-2">
+                      <div
+                        className={`h-1 rounded-full ${
+                          signUpStep >= step ? "bg-primary" : "bg-slate-200"
+                        }`}
+                      />
+                      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
+                        {t.step} {step}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {renderSignUpStep()}
+                {signUpError ? <p className="text-sm text-red-500">{signUpError}</p> : null}
+
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={goToPreviousSignUpStep}
+                    disabled={signUpStep === 1}
+                    className={signUpStep === 1 ? "cursor-not-allowed opacity-50" : ""}
+                  >
+                    {t.back}
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMode("signin")}
+                      className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                    >
+                      {t.alreadyHaveAccount}
+                    </button>
+                    {signUpStep < 4 ? (
+                      <Button type="button" onClick={goToNextSignUpStep}>
+                        {t.continue}
+                      </Button>
+                    ) : (
+                      <Button type="submit">{t.createAccountButton}</Button>
+                    )}
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
 
       {signUpPopupMessage ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/45 px-4">
