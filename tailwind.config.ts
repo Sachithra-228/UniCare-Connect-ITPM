@@ -11,7 +11,7 @@ const config: Config = {
         accent: "#f59e0b"
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui"]
+        sans: ["var(--app-font)", "var(--font-inter)", "Inter", "ui-sans-serif", "system-ui"]
       }
     }
   },

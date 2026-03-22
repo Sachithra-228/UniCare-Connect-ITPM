@@ -25,6 +25,7 @@ import {
   type DashboardSection
 } from "@/lib/role-dashboard-config";
 import { useAuth } from "@/context/auth-context";
+import { useLanguage } from "@/context/language-context";
 import type { UserProfile } from "@/types";
 
 type AppSidebarProps = {
@@ -36,6 +37,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
   const pathname = usePathname();
   const { collapsed } = useSidebar();
   const { signOutUser } = useAuth();
+  const { language } = useLanguage();
   const [hash, setHash] = useState("");
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -57,6 +59,12 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
   const config = DASHBOARD_ROLE_CONFIG[role];
+  const text =
+    language === "si"
+      ? { menu: "මෙනුව", account: "ගිණුම", signOut: "ඉවත් වන්න" }
+      : language === "ta"
+        ? { menu: "மெனு", account: "கணக்கு", signOut: "வெளியேறு" }
+        : { menu: "Menu", account: "Account", signOut: "Sign out" };
   if (!config) return null;
 
   return (
@@ -80,7 +88,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>{text.menu}</SidebarGroupLabel>
           <SidebarMenu>
             {config.sections.map((section: DashboardSection) => {
               const href = `/dashboard/${role}#${section.id}`;
@@ -156,7 +164,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                   role="menuitem"
                 >
                   <UserCircle className="size-4 shrink-0" />
-                  Account
+                  {text.account}
                 </Link>
                 <button
                   type="button"
@@ -168,7 +176,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                   role="menuitem"
                 >
                   <LogOut className="size-4 shrink-0" />
-                  Sign out
+                  {text.signOut}
                 </button>
               </div>
             </div>

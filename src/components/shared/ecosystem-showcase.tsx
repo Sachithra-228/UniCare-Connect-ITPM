@@ -1,23 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import { FeatureOrbit, orbitFeatures, type OrbitFeature } from "@/components/shared/feature-orbit";
+import { FeatureOrbit, getOrbitFeatures, type OrbitFeature } from "@/components/shared/feature-orbit";
 import { SectionHeading } from "@/components/shared/section-heading";
+import { useLanguage } from "@/context/language-context";
 
 type FeatureKey = OrbitFeature["key"];
 
 export function EcosystemShowcase() {
+  const { language } = useLanguage();
+  const orbitFeatures = getOrbitFeatures(language);
   const [activeKey, setActiveKey] = useState<FeatureKey>(orbitFeatures[0].key);
+
+  const sectionText =
+    language === "si"
+      ? {
+          title: "එක් ශිෂ්‍ය අත්දැකීමක් වටා මූලික මොඩියුල",
+          subtitle: "දකුණේ accordion එකෙන් ප්‍රධාන විශේෂාංග හතර සොයන්න."
+        }
+      : language === "ta"
+        ? {
+            title: "ஒரே மாணவர் அனுபவத்தைச் சுற்றிய மைய தொகுதிகள்",
+            subtitle: "வலப்பக்க accordion-ல் நான்கு முக்கிய அம்சங்களை ஆராயுங்கள்."
+          }
+        : {
+            title: "Core modules around one student experience",
+            subtitle: "Explore the four key features from the accordion on the right."
+          };
 
   return (
     <section>
       <SectionHeading
-        title="Core modules around one student experience"
-        subtitle="Explore the four key features from the accordion on the right."
+        title={sectionText.title}
+        subtitle={sectionText.subtitle}
       />
 
       <div className="mt-12 grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
         <FeatureOrbit
+          features={orbitFeatures}
           activeKey={activeKey}
           onSelect={setActiveKey}
           className="mt-0"
