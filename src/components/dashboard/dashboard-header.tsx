@@ -2,10 +2,23 @@
 
 import { useRef, useState } from "react";
 import { useAuth } from "@/context/auth-context";
+import { useLanguage, type Language } from "@/context/language-context";
 import { User } from "lucide-react";
 
-function getTimeBasedGreeting(): string {
+function getTimeBasedGreeting(language: Language): string {
   const hour = new Date().getHours();
+  if (language === "si") {
+    if (hour >= 5 && hour < 12) return "සුභ උදෑසනක්";
+    if (hour >= 12 && hour < 17) return "සුභ මධ්‍යහ්නයක්";
+    if (hour >= 17 && hour < 22) return "සුභ සැන්දෑවක්";
+    return "සුභ රාත්‍රියක්";
+  }
+  if (language === "ta") {
+    if (hour >= 5 && hour < 12) return "காலை வணக்கம்";
+    if (hour >= 12 && hour < 17) return "மதிய வணக்கம்";
+    if (hour >= 17 && hour < 22) return "மாலை வணக்கம்";
+    return "இரவு வணக்கம்";
+  }
   if (hour >= 5 && hour < 12) return "Good morning";
   if (hour >= 12 && hour < 17) return "Good afternoon";
   if (hour >= 17 && hour < 22) return "Good evening";
@@ -22,9 +35,13 @@ function titleWord(word: string): string {
  * Format full name with a space between first and last.
  * If name is stored as one word (e.g. "wijesinghesachithra"), split so it displays as two words.
  */
-function formatFullName(fullName: string | undefined): string {
+function formatFullName(fullName: string | undefined, language: Language): string {
   const raw = fullName?.trim();
-  if (!raw) return "Student";
+  if (!raw) {
+    if (language === "si") return "ශිෂ්‍ය";
+    if (language === "ta") return "மாணவர்";
+    return "Student";
+  }
   const hasSpace = /\s/.test(raw);
   if (hasSpace) {
     return raw.split(/\s+/).map(titleWord).join(" ");
@@ -41,6 +58,7 @@ function formatFullName(fullName: string | undefined): string {
 
 export function DashboardHeader() {
   const { user, refreshUser, updateUserProfile } = useAuth();
+  const { language } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -75,8 +93,14 @@ export function DashboardHeader() {
     }
   };
 
-  const greeting = getTimeBasedGreeting();
-  const fullNameDisplay = formatFullName(user?.name);
+  const greeting = getTimeBasedGreeting(language);
+  const fullNameDisplay = formatFullName(user?.name, language);
+  const uploadProfilePhotoAria =
+    language === "si"
+      ? "පැතිකඩ ඡායාරූපය උඩුගත කරන්න"
+      : language === "ta"
+        ? "சுயவிவரப் புகைப்படத்தை பதிவேற்றவும்"
+        : "Upload profile photo";
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-white to-primary/5 shadow-sm transition-shadow hover:shadow-md dark:from-primary/15 dark:via-slate-900/90 dark:to-primary/10">
@@ -89,7 +113,7 @@ export function DashboardHeader() {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="group relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20 bg-slate-100 ring-2 ring-white transition-all hover:border-primary/50 hover:ring-primary/10 dark:bg-slate-800 dark:ring-slate-900 dark:hover:border-primary/40"
-            aria-label="Upload profile photo"
+            aria-label={uploadProfilePhotoAria}
           >
             <input
               ref={fileInputRef}
