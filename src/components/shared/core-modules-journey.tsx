@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { Libre_Baskerville } from "next/font/google";
+import { useLanguage } from "@/context/language-context";
+import { getUiTranslations } from "@/lib/ui-translations";
 
 type JourneySlide = {
   step: string;
@@ -13,43 +15,13 @@ type JourneySlide = {
   accent: string;
 };
 
-const slides: JourneySlide[] = [
-  {
-    step: "01",
-    module: "Financial Support",
-    thought: "I am worried about tuition fees and emergency costs this semester.",
-    resolved: "UniCare matched grants and fee-relief options, and my request got approved.",
-    accent: "from-emerald-500/20 to-emerald-500/5"
-  },
-  {
-    step: "02",
-    module: "Career & Scholarships",
-    thought: "I am not sure which internships and scholarships fit my profile.",
-    resolved: "UniCare suggested role-based opportunities and scholarship matches in one dashboard.",
-    accent: "from-sky-500/20 to-sky-500/5"
-  },
-  {
-    step: "03",
-    module: "Mentorship & Campus",
-    thought: "I feel disconnected and I do not know who can guide me.",
-    resolved: "UniCare connected me with mentors and relevant campus communities.",
-    accent: "from-violet-500/20 to-violet-500/5"
-  },
-  {
-    step: "04",
-    module: "Health & Wellness",
-    thought: "Stress is affecting my focus and I need support quickly.",
-    resolved: "UniCare routed me to wellness resources and counselor booking without delay.",
-    accent: "from-rose-500/20 to-rose-500/5"
-  },
-  {
-    step: "Done",
-    module: "Journey Complete",
-    thought: "All my key challenges are now structured and manageable.",
-    resolved: "UNICARE always with you.",
-    accent: "from-primary/20 to-primary/5"
-  }
-];
+const slideAccents = [
+  "from-emerald-500/20 to-emerald-500/5",
+  "from-sky-500/20 to-sky-500/5",
+  "from-violet-500/20 to-violet-500/5",
+  "from-rose-500/20 to-rose-500/5",
+  "from-primary/20 to-primary/5"
+] as const;
 
 const libreBaskerville = Libre_Baskerville({
   subsets: ["latin"],
@@ -92,6 +64,13 @@ function WalkingAvatar() {
 }
 
 export function CoreModulesJourney() {
+  const { language } = useLanguage();
+  const text = getUiTranslations(language).coreJourney;
+  const slides: JourneySlide[] = text.slides.map((slide, index) => ({
+    ...slide,
+    accent: slideAccents[index] ?? "from-primary/20 to-primary/5"
+  }));
+
   const sectionRef = useRef<HTMLElement | null>(null);
   const dragStateRef = useRef<{ pointerId: number | null; startX: number; startShift: number }>({
     pointerId: null,
@@ -177,13 +156,12 @@ export function CoreModulesJourney() {
           <h2
             className={`${libreBaskerville.className} text-4xl font-bold leading-tight tracking-tight text-[#13203f] md:text-5xl lg:whitespace-nowrap`}
           >
-            Everything students need in one place
+            {text.heading}
           </h2>
           <p
             className={`${libreBaskerville.className} mt-4 text-base text-slate-600 md:text-lg lg:whitespace-nowrap`}
           >
-            Follow one student story module-by-module. Use arrows to move through each thought and
-            resolution.
+            {text.description}
           </p>
         </div>
 
@@ -192,10 +170,10 @@ export function CoreModulesJourney() {
             <div className="relative min-h-[360px] overflow-hidden p-1">
               <div className="p-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">
-                  {isFinal ? "Step Done" : `Current Module • ${current.step}`}
+                  {isFinal ? text.stepDone : `${text.currentModule} • ${current.step}`}
                 </p>
                 <h3 className="mt-1 text-xl font-semibold">
-                  {isFinal ? "unicare always with you" : current.module}
+                  {isFinal ? text.finalTitle : current.module}
                 </h3>
               </div>
 
@@ -226,7 +204,7 @@ export function CoreModulesJourney() {
               <button
                 type="button"
                 onClick={prev}
-                aria-label="Previous thought"
+                aria-label={text.previousThought}
                 className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -235,7 +213,7 @@ export function CoreModulesJourney() {
               <button
                 type="button"
                 onClick={next}
-                aria-label="Next thought"
+                aria-label={text.nextThought}
                 className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -245,15 +223,13 @@ export function CoreModulesJourney() {
                 {isFinal ? (
                   <div className="min-h-[300px] rounded-3xl border border-blue-300/40 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 p-8 text-white shadow-[0_20px_60px_-24px_rgba(29,78,216,0.6)]">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100">
-                      Step Done
+                      {text.stepDone}
                     </p>
                     <div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm">
                       <p className="text-lg font-medium lowercase tracking-[0.04em] text-white/95 md:text-xl">
-                        unicare always with you
+                        {text.finalTitle}
                       </p>
-                      <p className="mt-3 text-sm text-blue-100/95">
-                        From first worry to final outcome, every support module is now resolved.
-                      </p>
+                      <p className="mt-3 text-sm text-blue-100/95">{text.finalSummary}</p>
                     </div>
                   </div>
                 ) : (
@@ -267,7 +243,7 @@ export function CoreModulesJourney() {
 
                     <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
-                        Resolved by UniCare
+                        {text.resolvedBy}
                       </p>
                       <p className="mt-2 text-sm leading-6 text-emerald-900">{current.resolved}</p>
                     </div>
@@ -280,7 +256,7 @@ export function CoreModulesJourney() {
                       key={`dot-${index}`}
                       type="button"
                       onClick={() => setActiveIndex(index)}
-                      aria-label={`Go to step ${index + 1}`}
+                      aria-label={`${text.goToStep} ${index + 1}`}
                       className={`h-2.5 rounded-full transition-all ${
                         index === activeIndex ? "w-8 bg-primary" : "w-2.5 bg-slate-300"
                       }`}
