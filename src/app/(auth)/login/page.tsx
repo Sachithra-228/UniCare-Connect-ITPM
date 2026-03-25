@@ -1087,16 +1087,15 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full bg-slate-100 lg:grid lg:grid-cols-2">
       <aside className="relative hidden lg:block">
-        <Image src="/hero-student.png" alt="Students supporting each other" fill className="object-cover" priority />
+        <Image
+          src={mode === "signin" ? "/signin.png" : "/signup.png"}
+          alt={mode === "signin" ? "Sign in visual" : "Sign up visual"}
+          fill
+          className="object-cover"
+          priority
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-slate-900/25 to-primary/45" />
-        <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
-          <Image
-            src="/logo.png"
-            alt="UniCare Connect"
-            width={180}
-            height={72}
-            className="h-14 w-auto rounded-xl bg-white/90 p-2"
-          />
+        <div className="relative z-10 flex h-full flex-col justify-end p-10 text-white">
           <div className="space-y-2">
             <h2 className="text-3xl font-semibold leading-tight">
               {mode === "signin" ? t.welcomeBack : t.createUniCareAccount}
@@ -1107,7 +1106,17 @@ export default function LoginPage() {
           </div>
         </div>
       </aside>
-      <section className="flex min-h-screen items-center bg-white px-4 py-10 sm:px-8 lg:px-12">
+      <section className="relative flex min-h-screen items-center bg-white px-4 py-10 sm:px-8 lg:px-12">
+        <div className="absolute right-4 top-4 sm:right-8 sm:top-6 lg:right-12 lg:top-8">
+          <Image
+            src="/logo.png"
+            alt="UniCare Connect"
+            width={220}
+            height={88}
+            className="h-12 w-auto rounded-lg bg-white/90 p-1.5 shadow-sm sm:h-14 sm:p-2 lg:h-16"
+            priority
+          />
+        </div>
         <div className="w-full max-w-xl">
           <div className="border-b border-slate-200 p-5 sm:p-6">
             <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1">

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { isMongoConnectionError, jsonResponse, isDemoMode } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
-import { requireSession } from "@/lib/session-auth";
+import { requireRole, requireSession } from "@/lib/session-auth";
 
 const demoRequests = [
   {
@@ -21,6 +21,7 @@ const demoRequests = [
 ];
 
 export async function GET(request: NextRequest) {
+  const scope = request.nextUrl.searchParams.get("scope");
   if (isDemoMode()) {
     return jsonResponse(demoRequests);
   }
@@ -30,12 +31,20 @@ export async function GET(request: NextRequest) {
     return authResult.error;
   }
 
+  const isAllScope = scope === "all";
+  if (isAllScope) {
+    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+  }
+
   const userId = authResult.session.user?._id;
   const firebaseUid = authResult.session.firebase?.uid;
   const orClauses: { userId?: string; firebaseUid?: string }[] = [];
   if (userId) orClauses.push({ userId });
   if (firebaseUid) orClauses.push({ firebaseUid });
-  const filter = orClauses.length ? { $or: orClauses } : {};
+  const filter = isAllScope ? {} : orClauses.length ? { $or: orClauses } : {};
 
   try {
     const database = await getMongoDatabase();

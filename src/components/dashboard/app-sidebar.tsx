@@ -35,7 +35,8 @@ type AppSidebarProps = {
 
 export function AppSidebar({ role, user }: AppSidebarProps) {
   const pathname = usePathname();
-  const { collapsed } = useSidebar();
+  const { collapsed, isMobile, setMobileOpen } = useSidebar();
+  const isCompact = !isMobile && collapsed;
   const { signOutUser } = useAuth();
   const { language } = useLanguage();
   const [hash, setHash] = useState("");
@@ -58,6 +59,11 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
+
+  useEffect(() => {
+    if (isMobile) setMobileOpen(false);
+  }, [isMobile, pathname, setMobileOpen]);
+
   const config = DASHBOARD_ROLE_CONFIG[role];
   const text =
     language === "si"
@@ -74,7 +80,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
             <span className="text-sm font-semibold">UC</span>
           </div>
-          {!collapsed && (
+          {!isCompact && (
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">UniCare Connect</p>
               <p className="truncate text-xs text-slate-500">{config.label}</p>
@@ -99,13 +105,14 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                   e.preventDefault();
                   window.location.hash = section.id;
                 }
+                if (isMobile) setMobileOpen(false);
               };
               return (
                 <SidebarMenuItem key={section.id}>
                   <SidebarMenuButton asChild isActive={isActive}>
                     <Link href={href} onClick={handleClick} className="flex items-center gap-3">
                       <SectionIcon className="size-5 shrink-0 text-slate-600 dark:text-slate-400" />
-                      {!collapsed && <span>{section.menuLabel}</span>}
+                      {!isCompact && <span>{section.menuLabel}</span>}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -127,13 +134,13 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
               <User className="size-5" />
             </div>
-            {!collapsed && user && (
+            {!isCompact && user && (
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-slate-900 dark:text-white">{user.name}</p>
                 <p className="truncate text-xs text-slate-500">{user.email}</p>
               </div>
             )}
-            {!collapsed && (
+            {!isCompact && (
               <ChevronDown
                 className={clsx("size-4 shrink-0 text-slate-400 transition-transform", accountOpen && "rotate-180")}
               />
@@ -144,7 +151,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
             <div
               className="absolute bottom-full left-0 z-50 mb-1 min-w-[12rem] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900"
               style={
-                collapsed
+                isCompact
                   ? { left: "100%", bottom: 0, marginBottom: 0, marginLeft: 8, minWidth: "11rem" }
                   : { right: 0 }
               }
@@ -159,7 +166,10 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
               <div className="py-1">
                 <Link
                   href={`/dashboard/${role}#profile`}
-                  onClick={() => setAccountOpen(false)}
+                  onClick={() => {
+                    setAccountOpen(false);
+                    if (isMobile) setMobileOpen(false);
+                  }}
                   className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                   role="menuitem"
                 >
@@ -170,6 +180,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                   type="button"
                   onClick={() => {
                     setAccountOpen(false);
+                    if (isMobile) setMobileOpen(false);
                     signOutUser();
                   }}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"

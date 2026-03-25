@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { aidRequestSchema } from "@/lib/validation";
 import { Button } from "@/components/shared/button";
 import { Input } from "@/components/shared/input";
@@ -8,11 +8,25 @@ import { Select } from "@/components/shared/select";
 import { TextArea } from "@/components/shared/text-area";
 import { useLanguage } from "@/context/language-context";
 
-type AidRequestFormProps = { onSuccess?: () => void; onShowSuccessPopup?: () => void };
+type AidCategory = "emergency" | "equipment" | "boarding" | "tuition";
+
+type AidRequestFormProps = {
+  onSuccess?: () => void;
+  onShowSuccessPopup?: () => void;
+  defaultCategory?: AidCategory;
+  lockCategory?: boolean;
+  submitLabel?: string;
+};
 
 const FETCH_TIMEOUT_MS = 60000;
 
-export function AidRequestForm({ onSuccess, onShowSuccessPopup }: AidRequestFormProps) {
+export function AidRequestForm({
+  onSuccess,
+  onShowSuccessPopup,
+  defaultCategory,
+  lockCategory = false,
+  submitLabel
+}: AidRequestFormProps) {
   const { language } = useLanguage();
   const text =
     language === "si"
@@ -84,6 +98,11 @@ export function AidRequestForm({ onSuccess, onShowSuccessPopup }: AidRequestForm
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState<string>(defaultCategory ?? "");
+
+  useEffect(() => {
+    setCategory(defaultCategory ?? "");
+  }, [defaultCategory]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value.replace(/\D/g, "");
@@ -95,7 +114,7 @@ export function AidRequestForm({ onSuccess, onShowSuccessPopup }: AidRequestForm
     setMessage(null);
     const formData = new FormData(event.currentTarget);
     const values = {
-      category: String(formData.get("category") ?? ""),
+      category: category || String(formData.get("category") ?? ""),
       amount: amount || String(formData.get("amount") ?? ""),
       description: String(formData.get("description") ?? "")
     };
@@ -132,6 +151,7 @@ export function AidRequestForm({ onSuccess, onShowSuccessPopup }: AidRequestForm
       setMessage(text.submitted);
       event.currentTarget.reset();
       setAmount("");
+      setCategory(defaultCategory ?? "");
       onSuccess?.();
       onShowSuccessPopup?.();
     } catch (err) {
@@ -141,6 +161,7 @@ export function AidRequestForm({ onSuccess, onShowSuccessPopup }: AidRequestForm
       if (isAbort || isNetwork) {
         event.currentTarget.reset();
         setAmount("");
+        setCategory(defaultCategory ?? "");
         onSuccess?.();
         onShowSuccessPopup?.();
         setMessage(text.requestSent);
@@ -158,7 +179,15 @@ export function AidRequestForm({ onSuccess, onShowSuccessPopup }: AidRequestForm
         <label className="text-sm font-medium" htmlFor="category">
           {text.category}
         </label>
-        <Select id="category" name="category" aria-required="true" required>
+        <Select
+          id="category"
+          name="category"
+          aria-required="true"
+          required
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          disabled={lockCategory}
+        >
           <option value="">{text.select}</option>
           <option value="emergency">{text.emergency}</option>
           <option value="equipment">{text.equipment}</option>
@@ -207,7 +236,7 @@ export function AidRequestForm({ onSuccess, onShowSuccessPopup }: AidRequestForm
       </div>
       {message ? <p className="text-sm text-secondary">{message}</p> : null}
       <Button type="submit" disabled={submitting}>
-        {submitting ? text.submitting : text.submit}
+        {submitting ? text.submitting : submitLabel ?? text.submit}
       </Button>
     </form>
   );

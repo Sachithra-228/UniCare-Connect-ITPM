@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/shared/card";
 import { StatCard } from "@/components/shared/stat-card";
 import { AdminAnalytics } from "./admin-analytics";
@@ -57,10 +57,10 @@ function AdminOverviewSection() {
   return (
     <div className="space-y-8">
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Active students" value="—" description="All roles combined" />
-        <StatCard label="Pending verifications" value="—" description="Students / NGOs / donors" />
-        <StatCard label="Open aid requests" value="—" description="Awaiting decision" />
-        <StatCard label="Open tickets" value="—" description="System & support alerts" />
+        <StatCard label="Active students" value="-" description="All roles combined" />
+        <StatCard label="Pending verifications" value="-" description="Students / NGOs / donors" />
+        <StatCard label="Open aid requests" value="-" description="Awaiting decision" />
+        <StatCard label="Open tickets" value="-" description="System & support alerts" />
       </div>
 
       <AdminAnalytics />
@@ -196,64 +196,209 @@ function AdminVerificationsSection() {
 }
 
 function AdminFinancialOversightSection() {
-  const requests = [
-    {
-      id: "r1",
-      type: "Emergency fund",
-      applicantType: "Student",
-      amount: "LKR 25,000",
-      status: "Awaiting review"
-    },
-    {
-      id: "r2",
-      type: "Fee waiver",
-      applicantType: "Student",
-      amount: "Semester fees",
-      status: "Supporting docs needed"
-    },
-    {
-      id: "r3",
-      type: "Equipment request",
-      applicantType: "Student",
-      amount: "Laptop",
-      status: "Approved - pending handover"
+  type AidQueueItem = {
+    _id?: string;
+    id?: string;
+    category?: string;
+    amount?: string;
+    status?: string;
+    userId?: string;
+    firebaseUid?: string;
+    createdAt?: string;
+    reviewNote?: string | null;
+  };
+
+  type FilterKey = "all" | "emergency" | "equipment" | "boarding" | "tuition";
+
+  const [requests, setRequests] = useState<AidQueueItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const normalizeCategory = (category?: string): FilterKey | "other" => {
+    const value = String(category ?? "").trim().toLowerCase();
+    if (!value || value.includes("emergency")) return "emergency";
+    if (value.includes("equipment")) return "equipment";
+    if (value.includes("meal") || value.includes("voucher") || value.includes("boarding")) return "boarding";
+    if (value.includes("tuition") || value.includes("maintenance") || value.includes("fee")) return "tuition";
+    return "other";
+  };
+
+  const formatCategory = (category?: string) => {
+    const normalized = normalizeCategory(category);
+    if (normalized === "emergency") return "Emergency aid";
+    if (normalized === "equipment") return "Equipment support";
+    if (normalized === "boarding") return "Meal voucher support";
+    if (normalized === "tuition") return "Tuition support";
+    return category || "Other aid";
+  };
+
+  const normalizeStatus = (status?: string): "Approved" | "Rejected" | "Pending" => {
+    const value = String(status ?? "").trim().toLowerCase();
+    if (value === "approved") return "Approved";
+    if (value === "rejected") return "Rejected";
+    return "Pending";
+  };
+
+  const loadRequests = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/aid-requests?scope=all");
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        setError((body as { message?: string; error?: string }).message ?? "Unable to load aid requests.");
+        setRequests([]);
+        return;
+      }
+
+      const data = await response.json();
+      setRequests(Array.isArray(data) ? data : []);
+    } catch {
+      setError("Unable to load aid requests.");
+      setRequests([]);
+    } finally {
+      setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadRequests();
+  }, [loadRequests]);
+
+  const updateRequestStatus = async (id: string, status: "Approved" | "Rejected") => {
+    setUpdatingId(id);
+    setError(null);
+    try {
+      const response = await fetch(`/api/aid-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        setError((body as { message?: string; error?: string }).message ?? "Unable to update request status.");
+        return;
+      }
+
+      await loadRequests();
+    } catch {
+      setError("Unable to update request status.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const filteredRequests = requests.filter((request) => {
+    if (activeFilter === "all") return true;
+    return normalizeCategory(request.category) === activeFilter;
+  });
+
+  const pendingApprovals = requests.filter((request) => normalizeStatus(request.status) === "Pending").length;
+  const approvedCount = requests.filter((request) => normalizeStatus(request.status) === "Approved").length;
+  const equipmentApproved = requests.filter(
+    (request) => normalizeCategory(request.category) === "equipment" && normalizeStatus(request.status) === "Approved"
+  ).length;
+
+  const filters: { key: FilterKey; label: string }[] = [
+    { key: "all", label: "All" },
+    { key: "emergency", label: "Emergency" },
+    { key: "equipment", label: "Equipment" },
+    { key: "boarding", label: "Meal voucher" },
+    { key: "tuition", label: "Tuition" }
   ];
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600 dark:text-slate-300">
-        Financial oversight connects to student, donor, and NGO data. Mentors and employers are not
-        part of these approval workflows.
+        Review and decide student aid requests by category. Changes here are reflected directly in student dashboards.
       </p>
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Funding queue</h3>
-        <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
-          {requests.map((r) => (
-            <div key={r.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-medium">
-                  {r.type}{" "}
-                  <span className="text-xs font-normal text-slate-500">({r.applicantType})</span>
-                </p>
-                <p className="text-xs text-slate-500">Amount / value: {r.amount}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                  {r.status}
-                </span>
-                <button className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90">
-                  Open details
-                </button>
-              </div>
-            </div>
+
+      <Card className="space-y-4 p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {filters.map((filter) => (
+            <button
+              key={filter.key}
+              type="button"
+              onClick={() => setActiveFilter(filter.key)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                activeFilter === filter.key
+                  ? "bg-primary text-white"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              }`}
+            >
+              {filter.label}
+            </button>
           ))}
         </div>
+
+        {error ? <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p> : null}
+
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading funding queue...</p>
+        ) : filteredRequests.length === 0 ? (
+          <p className="text-sm text-slate-500">No aid requests in this category.</p>
+        ) : (
+          <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
+            {filteredRequests.map((request, index) => {
+              const id = request._id || request.id || `request-${index}`;
+              const status = normalizeStatus(request.status);
+              return (
+                <div key={id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{formatCategory(request.category)}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Requester: {request.userId || request.firebaseUid || "N/A"}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Amount: {request.amount ? `LKR ${request.amount}` : "N/A"}
+                    </p>
+                    {request.reviewNote ? (
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Note: {request.reviewNote}</p>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        status === "Approved"
+                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                          : status === "Rejected"
+                            ? "bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
+                            : "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                      }`}
+                    >
+                      {status}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => updateRequestStatus(id, "Approved")}
+                      disabled={updatingId === id || status === "Approved"}
+                      className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-900/40 dark:text-emerald-300"
+                    >
+                      {updatingId === id ? "Updating..." : "Approve"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateRequestStatus(id, "Rejected")}
+                      disabled={updatingId === id || status === "Rejected"}
+                      className="rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-rose-900/40 dark:text-rose-300"
+                    >
+                      {updatingId === id ? "Updating..." : "Reject"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
+
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="This month&apos;s disbursements" value="—" description="Scholarships & aid" />
-        <StatCard label="Pending approvals" value={String(requests.length)} description="Financial workflows" />
-        <StatCard label="Equipment handed over" value="—" description="Laptops, data packs, books" />
+        <StatCard label="Approved requests" value={String(approvedCount)} description="All aid categories" />
+        <StatCard label="Pending approvals" value={String(pendingApprovals)} description="Needs review now" />
+        <StatCard label="Equipment approved" value={String(equipmentApproved)} description="Handover candidates" />
       </div>
     </div>
   );
@@ -328,7 +473,7 @@ function AdminMentorshipProgramSection() {
             <div key={p.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium">
-                  {p.mentor} → {p.mentee}
+                  {p.mentor} {"->"} {p.mentee}
                 </p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
@@ -500,4 +645,5 @@ function AdminProfileSection() {
     </RoleProfileShell>
   );
 }
+
 
