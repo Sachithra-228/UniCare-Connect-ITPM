@@ -35,6 +35,7 @@ const STATUS_COLORS: Record<string, string> = {
   Rejected: "#ef4444",
   Pending: "#f59e0b"
 };
+const AUTO_REFRESH_MS = 30000;
 
 function normalizeCategory(category?: string): AidCategoryKey {
   const value = String(category ?? "").trim().toLowerCase();
@@ -88,28 +89,47 @@ export function StudentFinancialAid() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const fetchAidRequests = useCallback(() => {
-    setLoadingAid(true);
+  const fetchAidRequests = useCallback((showLoader = true) => {
+    if (showLoader) setLoadingAid(true);
     fetch("/api/aid-requests")
       .then((r) => r.json())
       .then((data) => setAidRequests(Array.isArray(data) ? data : []))
       .catch(() => setAidRequests([]))
-      .finally(() => setLoadingAid(false));
+      .finally(() => {
+        if (showLoader) setLoadingAid(false);
+      });
   }, []);
 
-  const fetchFinancialSummary = useCallback(() => {
-    setLoadingFin(true);
+  const fetchFinancialSummary = useCallback((showLoader = true) => {
+    if (showLoader) setLoadingFin(true);
     fetch("/api/students/financial-summary")
       .then((r) => r.json())
       .then((data) => setFinancialSummary(data || null))
       .catch(() => setFinancialSummary(null))
-      .finally(() => setLoadingFin(false));
+      .finally(() => {
+        if (showLoader) setLoadingFin(false);
+      });
   }, []);
 
+  const refreshAidAndSummary = useCallback(
+    (showLoader = false) => {
+      fetchAidRequests(showLoader);
+      fetchFinancialSummary(showLoader);
+    },
+    [fetchAidRequests, fetchFinancialSummary]
+  );
+
   useEffect(() => {
-    fetchAidRequests();
-    fetchFinancialSummary();
-  }, [fetchAidRequests, fetchFinancialSummary]);
+    refreshAidAndSummary(true);
+  }, [refreshAidAndSummary]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refreshAidAndSummary(false);
+    }, AUTO_REFRESH_MS);
+
+    return () => clearInterval(intervalId);
+  }, [refreshAidAndSummary]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -270,7 +290,7 @@ export function StudentFinancialAid() {
               defaultCategory="emergency"
               lockCategory
               submitLabel="Submit emergency aid request"
-              onSuccess={fetchAidRequests}
+              onSuccess={() => refreshAidAndSummary(false)}
               onShowSuccessPopup={() => setShowSuccessPopup(true)}
             />
           </div>
@@ -296,7 +316,7 @@ export function StudentFinancialAid() {
               defaultCategory="equipment"
               lockCategory
               submitLabel="Submit equipment request"
-              onSuccess={fetchAidRequests}
+              onSuccess={() => refreshAidAndSummary(false)}
               onShowSuccessPopup={() => setShowSuccessPopup(true)}
             />
           </div>
@@ -340,7 +360,7 @@ export function StudentFinancialAid() {
               defaultCategory="boarding"
               lockCategory
               submitLabel="Submit meal voucher request"
-              onSuccess={fetchAidRequests}
+              onSuccess={() => refreshAidAndSummary(false)}
               onShowSuccessPopup={() => setShowSuccessPopup(true)}
             />
 
@@ -386,7 +406,7 @@ export function StudentFinancialAid() {
               defaultCategory="tuition"
               lockCategory
               submitLabel="Submit tuition request"
-              onSuccess={fetchAidRequests}
+              onSuccess={() => refreshAidAndSummary(false)}
               onShowSuccessPopup={() => setShowSuccessPopup(true)}
             />
 
@@ -511,7 +531,7 @@ export function StudentFinancialAid() {
                         const response = await fetch(`/api/aid-requests/${id}`, { method: "DELETE" });
                         if (response.ok) {
                           setSelectedRequest(null);
-                          fetchAidRequests();
+                          refreshAidAndSummary(false);
                           setToastMessage("Request deleted successfully.");
                         }
                       } finally {

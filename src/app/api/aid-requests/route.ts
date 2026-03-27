@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { isMongoConnectionError, jsonResponse, isDemoMode } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
+import { createNotification } from "@/lib/notifications";
 import { requireRole, requireSession } from "@/lib/session-auth";
 
 const demoRequests = [
@@ -94,11 +95,49 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await requestsCollection.insertOne(document);
+    const aidRequestId = result.insertedId.toString();
+    const category = String(document.category ?? "financial aid request");
+
+    await Promise.allSettled([
+      createNotification(database, {
+        userId: typeof document.userId === "string" ? document.userId : undefined,
+        firebaseUid: typeof document.firebaseUid === "string" ? document.firebaseUid : undefined,
+        title: "Aid request submitted",
+        message: `Your ${category} has been submitted and is now under review.`,
+        type: "financial-aid",
+        sectionId: "financial-aid",
+        relatedAidRequestId: aidRequestId
+      }),
+      createNotification(database, {
+        audienceRoles: ["admin", "super_admin"],
+        title: "New aid request",
+        message: `A student submitted a new ${category}.`,
+        type: "financial-aid",
+        sectionId: "financial-oversight",
+        relatedAidRequestId: aidRequestId
+      }),
+      createNotification(database, {
+        audienceRoles: ["donor"],
+        title: "Student aid request update",
+        message: `A new ${category} request may need donor support.`,
+        type: "financial-aid",
+        sectionId: "donations",
+        relatedAidRequestId: aidRequestId
+      }),
+      createNotification(database, {
+        audienceRoles: ["ngo"],
+        title: "Student aid request update",
+        message: `A new ${category} request may require funding allocation.`,
+        type: "financial-aid",
+        sectionId: "funding",
+        relatedAidRequestId: aidRequestId
+      })
+    ]);
 
     return jsonResponse(
       {
         message: "Aid request saved",
-        aidRequest: { ...document, _id: result.insertedId.toString() }
+        aidRequest: { ...document, _id: aidRequestId }
       },
       201
     );

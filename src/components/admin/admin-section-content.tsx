@@ -544,43 +544,364 @@ function AdminReportsSection() {
 }
 
 function AdminAnnouncementsSection() {
-  const announcements = [
-    {
-      id: "a1",
-      audience: "All students",
-      title: "Emergency aid application window",
-      visibility: "Students / Parents / Faculty"
-    },
-    {
-      id: "a2",
-      audience: "Final-year students",
-      title: "Campus recruitment drive",
-      visibility: "Students / Employers / Career office"
+  type CampusPayload = {
+    events?: Array<{ id: string; title: string; date: string; type?: string }>;
+    announcements?: Array<{ id: string; title: string; date: string; body: string }>;
+    volunteerRoles?: Array<{ id: string; title: string; org: string; hoursPerWeek: string }>;
+  };
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [campusData, setCampusData] = useState<CampusPayload>({});
+
+  const [publishType, setPublishType] = useState<
+    "announcement" | "event" | "club" | "discount" | "volunteer"
+  >("announcement");
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [body, setBody] = useState("");
+  const [time, setTime] = useState("");
+  const [location, setLocation] = useState("");
+  const [eventType, setEventType] = useState<"academic" | "social" | "career">("social");
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [org, setOrg] = useState("");
+  const [hoursPerWeek, setHoursPerWeek] = useState("");
+  const [description, setDescription] = useState("");
+
+  const loadCampusData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/campus-life");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError((data as { message?: string }).message ?? "Unable to load campus updates.");
+        setCampusData({});
+        return;
+      }
+      const data = (await response.json()) as CampusPayload;
+      setCampusData(data ?? {});
+    } catch {
+      setError("Unable to load campus updates.");
+      setCampusData({});
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, []);
+
+  useEffect(() => {
+    loadCampusData();
+  }, [loadCampusData]);
+
+  const resetDraft = () => {
+    setTitle("");
+    setBody("");
+    setTime("");
+    setLocation("");
+    setName("");
+    setCategory("");
+    setOrg("");
+    setHoursPerWeek("");
+    setDescription("");
+  };
+
+  const submitCampusUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setMessage(null);
+
+    const payload: Record<string, unknown> = { type: publishType };
+    if (publishType === "announcement") {
+      payload.title = title.trim();
+      payload.date = date;
+      payload.body = body.trim();
+    } else if (publishType === "event") {
+      payload.title = title.trim();
+      payload.date = date;
+      payload.time = time.trim();
+      payload.location = location.trim();
+      payload.eventType = eventType;
+      payload.description = description.trim();
+    } else if (publishType === "club") {
+      payload.name = name.trim();
+      payload.category = category.trim();
+      payload.description = description.trim();
+    } else if (publishType === "discount") {
+      payload.name = name.trim();
+      payload.category = category.trim();
+      payload.description = description.trim();
+      payload.location = location.trim();
+    } else {
+      payload.title = title.trim();
+      payload.org = org.trim();
+      payload.hoursPerWeek = hoursPerWeek.trim();
+      payload.location = location.trim();
+      payload.description = description.trim();
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch("/api/campus-life", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json().catch(() => ({} as { message?: string }));
+      if (!response.ok) {
+        setError(data.message ?? "Unable to publish campus update.");
+        return;
+      }
+
+      setMessage("Campus update published successfully.");
+      resetDraft();
+      await loadCampusData();
+    } catch {
+      setError("Unable to publish campus update.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600 dark:text-slate-300">
-        Announcements reach students, parents, and faculty by default. External roles only see
-        notices that are relevant to them.
+        Publish campus updates for students. These updates appear in Student Campus Life and trigger
+        role-based notifications.
       </p>
+
+      <Card className="space-y-4 p-4">
+        <h3 className="text-sm font-semibold">Publish campus update</h3>
+        <form className="space-y-3" onSubmit={submitCampusUpdate}>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Update type</label>
+              <select
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                value={publishType}
+                onChange={(event) =>
+                  setPublishType(event.target.value as "announcement" | "event" | "club" | "discount" | "volunteer")
+                }
+              >
+                <option value="announcement">Announcement</option>
+                <option value="event">Event</option>
+                <option value="club">Club</option>
+                <option value="discount">Discount</option>
+                <option value="volunteer">Volunteer role</option>
+              </select>
+            </div>
+
+            {(publishType === "announcement" || publishType === "event") && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Date</label>
+                <input
+                  type="date"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                  required
+                />
+              </div>
+            )}
+          </div>
+
+          {(publishType === "announcement" || publishType === "event" || publishType === "volunteer") && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Title</label>
+              <input
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          {(publishType === "club" || publishType === "discount") && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Name</label>
+              <input
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          {publishType === "event" && (
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Time</label>
+                <input
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                  value={time}
+                  onChange={(event) => setTime(event.target.value)}
+                  placeholder="10:00-16:00"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Location</label>
+                <input
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Event category</label>
+                <select
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                  value={eventType}
+                  onChange={(event) => setEventType(event.target.value as "academic" | "social" | "career")}
+                >
+                  <option value="social">Social</option>
+                  <option value="academic">Academic</option>
+                  <option value="career">Career</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {(publishType === "discount" || publishType === "volunteer") && (
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Location</label>
+                <input
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                  required
+                />
+              </div>
+              {publishType === "volunteer" ? (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Hours per week</label>
+                  <input
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                    value={hoursPerWeek}
+                    onChange={(event) => setHoursPerWeek(event.target.value)}
+                    required
+                  />
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {(publishType === "club" || publishType === "discount") && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Category</label>
+              <input
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          {publishType === "volunteer" && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Organization</label>
+              <input
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                value={org}
+                onChange={(event) => setOrg(event.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
+              {publishType === "announcement" ? "Message" : "Description"}
+            </label>
+            <textarea
+              className="min-h-[96px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              value={publishType === "announcement" ? body : description}
+              onChange={(event) =>
+                publishType === "announcement"
+                  ? setBody(event.target.value)
+                  : setDescription(event.target.value)
+              }
+              required
+            />
+          </div>
+
+          {error ? <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p> : null}
+          {message ? <p className="text-sm text-emerald-600 dark:text-emerald-300">{message}</p> : null}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {saving ? "Publishing..." : "Publish update"}
+            </button>
+          </div>
+        </form>
+      </Card>
+
       <Card className="space-y-3 p-4">
         <h3 className="text-sm font-semibold">Recent announcements</h3>
-        <div className="space-y-3 text-sm">
-          {announcements.map((a) => (
-            <div
-              key={a.id}
-              className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
-            >
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                {a.audience}
-              </p>
-              <p className="mt-1 font-semibold">{a.title}</p>
-              <p className="mt-1 text-xs text-slate-500">Visible to: {a.visibility}</p>
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading announcements...</p>
+        ) : !campusData.announcements?.length ? (
+          <p className="text-sm text-slate-500">No announcements yet.</p>
+        ) : (
+          <div className="space-y-3 text-sm">
+            {(campusData.announcements ?? []).slice(0, 6).map((item) => (
+              <div
+                key={item.id}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+              >
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  {item.date}
+                </p>
+                <p className="mt-1 font-semibold">{item.title}</p>
+                <p className="mt-1 text-xs text-slate-500">{item.body}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="space-y-3 p-4">
+        <h3 className="text-sm font-semibold">Upcoming events and volunteer roles</h3>
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading campus feed...</p>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Events</p>
+              {(campusData.events ?? []).slice(0, 5).map((item) => (
+                <div key={item.id} className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-800">
+                  <p className="font-medium">{item.title}</p>
+                  <p className="text-xs text-slate-500">{item.date}</p>
+                </div>
+              ))}
+              {!campusData.events?.length ? <p className="text-sm text-slate-500">No events yet.</p> : null}
             </div>
-          ))}
-        </div>
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Volunteer roles</p>
+              {(campusData.volunteerRoles ?? []).slice(0, 5).map((item) => (
+                <div key={item.id} className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-800">
+                  <p className="font-medium">{item.title}</p>
+                  <p className="text-xs text-slate-500">{item.org} - {item.hoursPerWeek}</p>
+                </div>
+              ))}
+              {!campusData.volunteerRoles?.length ? (
+                <p className="text-sm text-slate-500">No volunteer roles yet.</p>
+              ) : null}
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

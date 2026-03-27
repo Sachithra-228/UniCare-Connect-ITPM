@@ -205,11 +205,11 @@ export async function POST(request: NextRequest) {
       "ngo",
       "parent"
     ];
-    const rawRole = payload.role != null && payload.role !== "" ? String(payload.role).toLowerCase() : null;
+    const rawRole = payload.role ? String(payload.role).toLowerCase() : null;
     const payloadRole =
       rawRole && validRoles.includes(rawRole as UserRole) ? (rawRole as UserRole) : null;
 
-    // Always prefer payload role for self-request; otherwise new user → student, existing user → leave unchanged.
+    // Always prefer payload role for self-request; otherwise new user -> student, existing user -> leave unchanged.
     const roleFromPayload =
       payloadRole != null
         ? (isPrivileged || !existingUser || isSelf ? payloadRole : undefined)
@@ -226,7 +226,6 @@ export async function POST(request: NextRequest) {
       firebaseUid: payload.firebaseUid,
       university: payload.university,
       contact: payload.contact,
-      roleDetails: payload.roleDetails ?? {},
       ...(isNewUserWithoutRole && { needsProfileCompletion: true }),
       ...(completingProfile && { needsProfileCompletion: false })
     };
@@ -245,7 +244,10 @@ export async function POST(request: NextRequest) {
 
     // No path may appear in both $set and $setOnInsert (MongoDB conflict). Use $setOnInsert only for
     // insert-only defaults; everything else goes in $set.
-    const update = {
+    const update: {
+      $set: Partial<DbUserInput> & { updatedAt: Date };
+      $setOnInsert: Pick<DbUserInput, "createdAt" | "status" | "isDeleted" | "subscription">;
+    } = {
       $set: setFields,
       $setOnInsert: {
         createdAt: now,
@@ -304,9 +306,10 @@ export async function PUT(request: NextRequest) {
     const database = await getMongoDatabase();
     const usersCollection = database.collection<DbUserInput>("users");
     const now = new Date();
+    const nextProfilePic = payload.profilePic ?? "";
     const result = await usersCollection.findOneAndUpdate(
       { firebaseUid: uid },
-      { $set: { profilePic: payload.profilePic ?? null, updatedAt: now } },
+      { $set: { profilePic: nextProfilePic, updatedAt: now } },
       { returnDocument: "after" }
     );
     if (!result) {

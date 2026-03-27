@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/shared/card";
 import { StatCard } from "@/components/shared/stat-card";
 import type { MentorshipSession } from "@/types";
@@ -52,13 +52,13 @@ export function MentorSectionContent({ sectionId }: MentorSectionContentProps) {
 
 function useMentorSessions() {
   const [sessions, setSessions] = useState<EnrichedSession[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
+  const refreshSessions = useCallback(() => {
+    setLoading(true);
     fetch("/api/mentorship-sessions")
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => {
-        if (cancelled) return;
         if (Array.isArray(data)) {
           setSessions(
             data.map((s: MentorshipSession) => ({
@@ -66,18 +66,21 @@ function useMentorSessions() {
               menteeName: s.studentName
             }))
           );
+        } else {
+          setSessions([]);
         }
       })
       .catch(() => {
-        if (!cancelled) setSessions([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+        setSessions([]);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  return sessions;
+  useEffect(() => {
+    refreshSessions();
+  }, [refreshSessions]);
+
+  return { sessions, loading, refreshSessions };
 }
 
 function useMentorNotifications() {
@@ -111,7 +114,7 @@ function useMentorNotifications() {
 }
 
 function MentorHomeSection() {
-  const sessions = useMentorSessions();
+  const { sessions } = useMentorSessions();
   const notifications = useMentorNotifications();
 
   const upcomingSessions = sessions.filter(
@@ -189,7 +192,7 @@ function MentorHomeSection() {
 }
 
 function MentorMyMenteesSection() {
-  const sessions = useMentorSessions();
+  const { sessions } = useMentorSessions();
 
   const menteeMap = new Map<
     string,
@@ -255,12 +258,36 @@ function MentorMyMenteesSection() {
 }
 
 function MentorSessionsSection() {
-  const sessions = useMentorSessions();
+  const { sessions, loading, refreshSessions } = useMentorSessions();
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const upcoming = sessions.filter(
     (s) => s.status === "scheduled" || s.status === "confirmed" || s.status === "pending"
   );
   const history = sessions.filter((s) => s.status === "completed" || s.status === "cancelled");
+
+  const updateSessionStatus = async (sessionId: string, status: "confirmed" | "completed" | "cancelled") => {
+    setUpdatingId(`${sessionId}:${status}`);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/mentorship-sessions/${sessionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+      const body = await response.json().catch(() => ({} as { message?: string }));
+      if (!response.ok) {
+        setActionError(body.message ?? "Unable to update session status.");
+        return;
+      }
+      refreshSessions();
+    } catch {
+      setActionError("Unable to update session status.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -271,24 +298,62 @@ function MentorSessionsSection() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="space-y-3 p-4">
           <h3 className="text-sm font-semibold">Upcoming & pending</h3>
+          {actionError ? <p className="text-xs text-rose-600 dark:text-rose-400">{actionError}</p> : null}
           <div className="space-y-2 text-sm">
-            {upcoming.map((s) => (
-              <div
-                key={s._id}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
-              >
-                <p className="font-medium">
-                  {s.topic}{" "}
-                  {s.studentName && (
-                    <span className="text-xs font-normal text-slate-500">
-                      with {s.studentName}
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-slate-500">Status: {s.status}</p>
-              </div>
-            ))}
-            {!upcoming.length && (
+            {loading ? (
+              <p className="text-sm text-slate-500">Loading sessions...</p>
+            ) : (
+              upcoming.map((s) => (
+                <div
+                  key={s._id}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+                >
+                  <p className="font-medium">
+                    {s.topic}{" "}
+                    {s.studentName && (
+                      <span className="text-xs font-normal text-slate-500">
+                        with {s.studentName}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-slate-500">Status: {s.status}</p>
+                  {s.scheduledTime && <p className="text-xs text-slate-500">Time: {new Date(s.scheduledTime).toLocaleString()}</p>}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {s.status === "pending" && (
+                      <>
+                        <button
+                          type="button"
+                          className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-900/40 dark:text-emerald-300"
+                          disabled={updatingId !== null}
+                          onClick={() => updateSessionStatus(s._id, "confirmed")}
+                        >
+                          {updatingId === `${s._id}:confirmed` ? "Updating..." : "Approve request"}
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-rose-900/40 dark:text-rose-300"
+                          disabled={updatingId !== null}
+                          onClick={() => updateSessionStatus(s._id, "cancelled")}
+                        >
+                          {updatingId === `${s._id}:cancelled` ? "Updating..." : "Reject request"}
+                        </button>
+                      </>
+                    )}
+                    {(s.status === "confirmed" || s.status === "scheduled") && (
+                      <button
+                        type="button"
+                        className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={updatingId !== null}
+                        onClick={() => updateSessionStatus(s._id, "completed")}
+                      >
+                        {updatingId === `${s._id}:completed` ? "Updating..." : "Mark completed"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+            {!loading && !upcoming.length && (
               <p className="text-sm text-slate-500">
                 No upcoming sessions yet. When students request or you schedule time slots, they will
                 show up here.
@@ -314,6 +379,12 @@ function MentorSessionsSection() {
                 </p>
                 {s.feedback && (
                   <p className="text-xs text-slate-500">Feedback: {s.feedback}</p>
+                )}
+                {typeof s.rating === "number" && (
+                  <p className="text-xs text-slate-500">Student rating: {s.rating}/5</p>
+                )}
+                {s.review && (
+                  <p className="text-xs text-slate-500">Student review: {s.review}</p>
                 )}
               </div>
             ))}
@@ -440,7 +511,7 @@ function MentorWebinarsSection() {
 }
 
 function MentorImpactTrackerSection() {
-  const sessions = useMentorSessions();
+  const { sessions } = useMentorSessions();
 
   const completedSessions = sessions.filter((s) => s.status === "completed").length;
   const uniqueMentees = new Set(sessions.map((s) => s.studentId)).size;

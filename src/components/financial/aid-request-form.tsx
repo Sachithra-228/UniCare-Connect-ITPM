@@ -20,6 +20,39 @@ type AidRequestFormProps = {
 
 const FETCH_TIMEOUT_MS = 60000;
 
+function normalizeAidCategory(value: string): AidCategory | "other" {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.includes("equipment")) return "equipment";
+  if (normalized.includes("meal") || normalized.includes("voucher") || normalized.includes("boarding")) return "boarding";
+  if (normalized.includes("tuition") || normalized.includes("maintenance") || normalized.includes("fee")) return "tuition";
+  if (normalized.includes("emergency")) return "emergency";
+  return "other";
+}
+
+function amountDigits(value: unknown) {
+  return String(value ?? "").replace(/[^\d]/g, "");
+}
+
+function isLikelySavedRequest(
+  item: { category?: unknown; amount?: unknown; description?: unknown; createdAt?: unknown; submittedAt?: unknown },
+  values: { category: string; amount: string; description: string },
+  submittedAtMs: number
+) {
+  const createdAtRaw = item.createdAt ?? item.submittedAt;
+  if (createdAtRaw) {
+    const createdAtMs = new Date(String(createdAtRaw)).getTime();
+    const isValidDate = Number.isFinite(createdAtMs);
+    if (isValidDate && createdAtMs < submittedAtMs - 5 * 60 * 1000) {
+      return false;
+    }
+  }
+
+  const sameCategory = normalizeAidCategory(String(item.category ?? "")) === normalizeAidCategory(values.category);
+  const sameAmount = amountDigits(item.amount) === amountDigits(values.amount);
+  const sameDescription = String(item.description ?? "").trim() === values.description.trim();
+  return sameCategory && sameAmount && sameDescription;
+}
+
 export function AidRequestForm({
   onSuccess,
   onShowSuccessPopup,
@@ -112,12 +145,14 @@ export function AidRequestForm({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage(null);
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const values = {
       category: category || String(formData.get("category") ?? ""),
       amount: amount || String(formData.get("amount") ?? ""),
       description: String(formData.get("description") ?? "")
     };
+    const submittedAtMs = Date.now();
 
     const result = aidRequestSchema.safeParse(values);
     if (!result.success) {
@@ -128,6 +163,23 @@ export function AidRequestForm({
     setSubmitting(true);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    const finalizeSubmit = (nextMessage: string) => {
+      setMessage(nextMessage);
+      form.reset();
+      setAmount("");
+      setCategory(defaultCategory ?? "");
+      try {
+        onSuccess?.();
+      } catch (callbackError) {
+        void callbackError;
+      }
+      try {
+        onShowSuccessPopup?.();
+      } catch (popupError) {
+        void popupError;
+      }
+    };
 
     try {
       const response = await fetch("/api/aid-requests", {
@@ -148,27 +200,48 @@ export function AidRequestForm({
         return;
       }
 
-      setMessage(text.submitted);
-      event.currentTarget.reset();
-      setAmount("");
-      setCategory(defaultCategory ?? "");
-      onSuccess?.();
-      onShowSuccessPopup?.();
+      finalizeSubmit(text.submitted);
     } catch (err) {
       clearTimeout(timeoutId);
-      const isAbort = err instanceof Error && err.name === "AbortError";
-      const isNetwork = err instanceof TypeError && err.message.includes("fetch");
+      const errorName =
+        err && typeof err === "object" && "name" in err ? String((err as { name?: unknown }).name ?? "") : "";
+      const errorMessage =
+        err && typeof err === "object" && "message" in err ? String((err as { message?: unknown }).message ?? "") : "";
+      const lowerMessage = errorMessage.toLowerCase();
+      const isAbort = errorName === "AbortError" || lowerMessage.includes("abort");
+      const isNetwork =
+        lowerMessage.includes("failed to fetch") ||
+        lowerMessage.includes("network") ||
+        lowerMessage.includes("load failed") ||
+        lowerMessage.includes("fetch");
+
       if (isAbort || isNetwork) {
-        event.currentTarget.reset();
-        setAmount("");
-        setCategory(defaultCategory ?? "");
-        onSuccess?.();
-        onShowSuccessPopup?.();
-        setMessage(text.requestSent);
+        finalizeSubmit(text.requestSent);
       } else {
+        try {
+          const verifyResponse = await fetch("/api/aid-requests");
+          const verifyData = await verifyResponse.json().catch(() => null);
+          const requestList = Array.isArray(verifyData) ? verifyData : [];
+          const isSaved = requestList.some((item) =>
+            isLikelySavedRequest(
+              item as { category?: unknown; amount?: unknown; description?: unknown; createdAt?: unknown; submittedAt?: unknown },
+              values,
+              submittedAtMs
+            )
+          );
+
+          if (isSaved) {
+            finalizeSubmit(text.requestSent);
+            return;
+          }
+        } catch (verifyError) {
+          void verifyError;
+        }
+
         setMessage(text.networkFail);
       }
     } finally {
+      clearTimeout(timeoutId);
       setSubmitting(false);
     }
   };
@@ -235,7 +308,7 @@ export function AidRequestForm({
         <Input id="document" name="document" type="file" aria-label={text.uploadAria} />
       </div>
       {message ? <p className="text-sm text-secondary">{message}</p> : null}
-      <Button type="submit" disabled={submitting}>
+      <Button type="submit" disabled={submitting} className="block w-full text-center">
         {submitting ? text.submitting : submitLabel ?? text.submit}
       </Button>
     </form>

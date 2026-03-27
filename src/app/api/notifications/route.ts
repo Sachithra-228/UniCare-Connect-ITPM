@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { ObjectId } from "mongodb";
 import { isDemoMode, isMongoConnectionError, jsonResponse } from "@/lib/api";
 import { demoUsers } from "@/lib/demo-data";
 import { getMongoDatabase } from "@/lib/mongodb";
@@ -9,15 +10,45 @@ const demoNotifications = [
     id: "n1",
     title: "Aid application update",
     message: "Your emergency aid request is under review.",
-    date: "2026-02-07"
+    date: "2026-02-07",
+    sectionId: "financial-aid",
+    read: false
   },
   {
     id: "n2",
     title: "Mentor session confirmed",
     message: "Your session with Ravindu is confirmed for Feb 12.",
-    date: "2026-02-06"
+    date: "2026-02-06",
+    sectionId: "mentorship",
+    read: false
   }
 ];
+
+function buildNotificationVisibilityFilters(input: {
+  userId?: string;
+  email?: string | null;
+  firebaseUid?: string;
+  role?: string;
+  includeGlobal?: boolean;
+}) {
+  const filters: Record<string, unknown>[] = [];
+  if (input.includeGlobal) {
+    filters.push({ audience: "all" });
+  }
+  if (input.userId) {
+    filters.push({ userId: input.userId });
+  }
+  if (input.email) {
+    filters.push({ userEmail: input.email });
+  }
+  if (input.firebaseUid) {
+    filters.push({ firebaseUid: input.firebaseUid });
+  }
+  if (input.role) {
+    filters.push({ audienceRoles: input.role });
+  }
+  return filters;
+}
 
 export async function GET(request: NextRequest) {
   if (isDemoMode()) {
@@ -31,14 +62,23 @@ export async function GET(request: NextRequest) {
 
   try {
     const database = await getMongoDatabase();
+    const includeGlobal = request.nextUrl.searchParams.get("includeGlobal") === "1";
+    const currentRole = authResult.session.user?.role;
+    const baseFilters = buildNotificationVisibilityFilters({
+      userId: authResult.session.user?._id,
+      email: authResult.session.firebase.email,
+      firebaseUid: authResult.session.firebase.uid,
+      role: currentRole,
+      includeGlobal
+    });
+    if (!baseFilters.length) {
+      return jsonResponse({ user: authResult.session.user, notifications: [] });
+    }
+
     const notifications = await database
       .collection("notifications")
       .find({
-        $or: [
-          { userId: authResult.session.user?._id },
-          { userEmail: authResult.session.firebase.email },
-          { audience: "all" }
-        ]
+        $or: baseFilters
       })
       .sort({ createdAt: -1 })
       .toArray();
@@ -56,6 +96,68 @@ export async function GET(request: NextRequest) {
         user: authResult.session.user,
         notifications: demoNotifications
       });
+    }
+    throw error;
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const payload = (await request.json().catch(() => ({}))) as { ids?: string[] };
+
+  if (isDemoMode()) {
+    return jsonResponse({ message: "Notifications marked as read (demo mode)", updatedCount: 0 });
+  }
+
+  const authResult = await requireSession(request);
+  if (authResult.error) {
+    return authResult.error;
+  }
+
+  const ids = Array.isArray(payload.ids) ? payload.ids.filter((id) => typeof id === "string" && id.trim()) : [];
+  if (!ids.length) {
+    return jsonResponse({ message: "No notification ids provided.", updatedCount: 0 });
+  }
+
+  const objectIds = ids.filter((id) => ObjectId.isValid(id)).map((id) => new ObjectId(id));
+  if (!objectIds.length) {
+    return jsonResponse({ message: "No valid notification ids provided.", updatedCount: 0 });
+  }
+
+  try {
+    const database = await getMongoDatabase();
+    const visibilityFilters = buildNotificationVisibilityFilters({
+      userId: authResult.session.user?._id,
+      email: authResult.session.firebase.email,
+      firebaseUid: authResult.session.firebase.uid,
+      role: authResult.session.user?.role,
+      includeGlobal: false
+    });
+
+    if (!visibilityFilters.length) {
+      return jsonResponse({ message: "Unauthorized", updatedCount: 0 }, 401);
+    }
+
+    const result = await database.collection("notifications").updateMany(
+      {
+        _id: { $in: objectIds },
+        read: { $ne: true },
+        $or: visibilityFilters
+      },
+      {
+        $set: {
+          read: true,
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    return jsonResponse({ message: "Notifications marked as read", updatedCount: result.modifiedCount });
+  } catch (error) {
+    if (isMongoConnectionError(error)) {
+      return jsonResponse(
+        { message: "Database temporarily unavailable. Please try again later.", error: "MongoUnavailable" },
+        503
+      );
     }
     throw error;
   }

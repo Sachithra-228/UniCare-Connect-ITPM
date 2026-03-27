@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { demoJobs } from "@/lib/demo-data";
 import { isDemoMode, jsonResponse } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
+import { createNotification } from "@/lib/notifications";
 import { requireRole, requireSession } from "@/lib/session-auth";
 
 export async function GET() {
@@ -61,9 +62,40 @@ export async function POST(request: NextRequest) {
     updatedAt: now
   };
   const result = await jobsCollection.insertOne(document);
+  const jobId = result.insertedId.toString();
+  const title = String(document.title ?? document.position ?? "job listing");
+  const creatorRole = authResult.session.user?.role ?? "employer";
+
+  await Promise.allSettled([
+    createNotification(database, {
+      userId: authResult.session.user?._id,
+      firebaseUid: authResult.session.firebase.uid,
+      title: "Job listing published",
+      message: `Your job "${title}" is now visible to students.`,
+      type: "career",
+      sectionId: creatorRole === "admin" || creatorRole === "super_admin" ? "career-services" : "job-listings",
+      relatedJobId: jobId
+    }),
+    createNotification(database, {
+      audienceRoles: ["student"],
+      title: "New job opportunity",
+      message: `A new job "${title}" was posted.`,
+      type: "career",
+      sectionId: "career",
+      relatedJobId: jobId
+    }),
+    createNotification(database, {
+      audienceRoles: ["admin", "super_admin"],
+      title: "New employer job posting",
+      message: `A new job "${title}" is available for review and tracking.`,
+      type: "career",
+      sectionId: "career-services",
+      relatedJobId: jobId
+    })
+  ]);
 
   return jsonResponse(
-    { message: "Job created", job: { ...document, _id: result.insertedId.toString() } },
+    { message: "Job created", job: { ...document, _id: jobId } },
     201
   );
 }
