@@ -1,30 +1,29 @@
 import { NextRequest } from "next/server";
 import { isMongoConnectionError, jsonResponse, isDemoMode } from "@/lib/api";
+import {
+  createDemoAidRequest,
+  listDemoAidRequests
+} from "@/lib/aid-requests-demo-store";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { createNotification } from "@/lib/notifications";
 import { requireRole, requireSession } from "@/lib/session-auth";
 
-const demoRequests = [
-  {
-    _id: "aid1",
-    id: "aid1",
-    category: "Emergency academic aid",
-    status: "Under review",
-    submittedAt: "2026-02-02"
-  },
-  {
-    _id: "aid2",
-    id: "aid2",
-    category: "Equipment support",
-    status: "Approved",
-    submittedAt: "2026-01-20"
-  }
-];
-
 export async function GET(request: NextRequest) {
   const scope = request.nextUrl.searchParams.get("scope");
   if (isDemoMode()) {
-    return jsonResponse(demoRequests);
+    const requests = listDemoAidRequests();
+    if (scope === "all") return jsonResponse(requests);
+
+    const authResult = await requireSession(request);
+    if (authResult.error) return authResult.error;
+    const userId = authResult.session.user?._id;
+    const firebaseUid = authResult.session.firebase?.uid;
+    const filtered = requests.filter((item) => {
+      const userMatch = userId && item.userId === userId;
+      const firebaseMatch = firebaseUid && item.firebaseUid === firebaseUid;
+      return Boolean(userMatch || firebaseMatch);
+    });
+    return jsonResponse(filtered);
   }
 
   const authResult = await requireSession(request);
@@ -63,7 +62,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     if (isMongoConnectionError(error)) {
-      return jsonResponse(demoRequests);
+      return jsonResponse(listDemoAidRequests());
     }
     throw error;
   }
@@ -72,7 +71,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const payload = await request.json();
   if (isDemoMode()) {
-    return jsonResponse({ message: "Aid request received (demo mode)", payload }, 201);
+    const authResult = await requireSession(request);
+    if (authResult.error) {
+      return authResult.error;
+    }
+    const created = createDemoAidRequest({
+      ...payload,
+      userId: payload.userId ?? authResult.session.user?._id,
+      firebaseUid: payload.firebaseUid ?? authResult.session.firebase.uid
+    });
+    return jsonResponse({ message: "Aid request received (demo mode)", aidRequest: created }, 201);
   }
 
   const authResult = await requireSession(request);

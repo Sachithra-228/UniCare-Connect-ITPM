@@ -5,7 +5,7 @@ import { getDemoSessions, addDemoSession } from "@/lib/mentorship-demo-store";
 import { isDemoMode, jsonResponse } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { createNotification } from "@/lib/notifications";
-import { requireSession } from "@/lib/session-auth";
+import { requireRole, requireSession } from "@/lib/session-auth";
 import type { MentorshipSession } from "@/types";
 
 type SessionDocument = {
@@ -34,7 +34,19 @@ type UserDocument = {
 };
 
 export async function GET(request: NextRequest) {
+  const scope = request.nextUrl.searchParams.get("scope");
+
   if (isDemoMode()) {
+    if (scope === "all") {
+      const authResult = await requireSession(request);
+      if (authResult.error) {
+        return authResult.error;
+      }
+      const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+      if (roleCheck) {
+        return roleCheck;
+      }
+    }
     return jsonResponse(getDemoSessions());
   }
 
@@ -44,13 +56,21 @@ export async function GET(request: NextRequest) {
   }
 
   const uid = authResult.session.firebase.uid;
+  const isAllScope = scope === "all";
+  if (isAllScope) {
+    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+  }
+
   const database = await getMongoDatabase();
   const sessionsCol = database.collection<SessionDocument>("mentorship_sessions");
   const usersCol = database.collection<UserDocument>("users");
 
   const sessions = await sessionsCol
     .find({
-      $or: [{ mentorFirebaseUid: uid }, { studentFirebaseUid: uid }]
+      ...(isAllScope ? {} : { $or: [{ mentorFirebaseUid: uid }, { studentFirebaseUid: uid }] })
     })
     .sort({ scheduledTime: -1, createdAt: -1 })
     .toArray();

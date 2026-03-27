@@ -1,4 +1,4 @@
-import { Db } from "mongodb";
+import { Db, ObjectId } from "mongodb";
 import { NextRequest } from "next/server";
 import {
   isDemoMode,
@@ -7,7 +7,10 @@ import {
 } from "@/lib/api";
 import {
   addDemoCampusLifeItem,
-  getDemoCampusLife
+  deleteDemoCampusLifeItem,
+  getDemoCampusLife,
+  setDemoCampusLifeItemActive,
+  updateDemoCampusLifeItem
 } from "@/lib/campus-life-demo-store";
 import {
   CampusEventType,
@@ -51,8 +54,65 @@ type InteractionDocument = {
   value?: boolean;
 };
 
+type CampusContentType = keyof typeof CAMPUS_COLLECTIONS;
+
 function safeText(value: unknown, max = 240) {
   return String(value ?? "").trim().slice(0, max);
+}
+
+function isCampusContentType(value: string): value is CampusContentType {
+  return value in CAMPUS_COLLECTIONS;
+}
+
+function parseCampusUpdate(type: CampusContentType, payload: Record<string, unknown>) {
+  if (type === "announcement") {
+    const nextTitle = payload.title !== undefined ? safeText(payload.title, 180) : undefined;
+    const nextDate = payload.date !== undefined ? safeText(payload.date, 20) : undefined;
+    const nextBody = payload.body !== undefined ? safeText(payload.body, 600) : undefined;
+    if (nextTitle === "" || nextDate === "" || nextBody === "") return null;
+
+    const set: Record<string, unknown> = {};
+    if (nextTitle !== undefined) set.title = nextTitle;
+    if (nextDate !== undefined) set.date = nextDate;
+    if (nextBody !== undefined) set.body = nextBody;
+    return Object.keys(set).length ? set : null;
+  }
+
+  if (type === "event") {
+    const nextTitle = payload.title !== undefined ? safeText(payload.title, 180) : undefined;
+    const nextDate = payload.date !== undefined ? safeText(payload.date, 20) : undefined;
+    const nextTime = payload.time !== undefined ? safeText(payload.time, 40) : undefined;
+    const nextLocation = payload.location !== undefined ? safeText(payload.location, 120) : undefined;
+    const nextDescription = payload.description !== undefined ? safeText(payload.description, 500) : undefined;
+    const nextEventTypeRaw =
+      payload.eventType !== undefined ? safeText(payload.eventType, 32).toLowerCase() : undefined;
+    const nextEventType =
+      nextEventTypeRaw && VALID_EVENT_TYPES.includes(nextEventTypeRaw as CampusEventType)
+        ? (nextEventTypeRaw as CampusEventType)
+        : undefined;
+
+    if (
+      nextTitle === "" ||
+      nextDate === "" ||
+      nextTime === "" ||
+      nextLocation === "" ||
+      nextDescription === "" ||
+      (nextEventTypeRaw !== undefined && !nextEventType)
+    ) {
+      return null;
+    }
+
+    const set: Record<string, unknown> = {};
+    if (nextTitle !== undefined) set.title = nextTitle;
+    if (nextDate !== undefined) set.date = nextDate;
+    if (nextTime !== undefined) set.time = nextTime;
+    if (nextLocation !== undefined) set.location = nextLocation;
+    if (nextDescription !== undefined) set.description = nextDescription;
+    if (nextEventType !== undefined) set.type = nextEventType;
+    return Object.keys(set).length ? set : null;
+  }
+
+  return null;
 }
 
 function parseCreateInput(payload: Record<string, unknown>) {
@@ -254,11 +314,19 @@ export async function GET(request: NextRequest) {
   const authResult = await requireSession(request);
   if (authResult.error) return authResult.error;
 
+  const scope = request.nextUrl.searchParams.get("scope");
+  const isAdmin = ["admin", "super_admin"].includes(authResult.session.user?.role ?? "");
+  if (scope === "admin" && !isAdmin) {
+    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+    if (roleCheck) return roleCheck;
+  }
+
   const userId = authResult.session.user?._id;
   const firebaseUid = authResult.session.firebase.uid;
+  const includeInactive = scope === "admin" && isAdmin;
 
   if (isDemoMode()) {
-    return jsonResponse(getDemoCampusLife(userId, firebaseUid));
+    return jsonResponse(getDemoCampusLife(userId, firebaseUid, includeInactive));
   }
 
   try {
@@ -268,27 +336,27 @@ export async function GET(request: NextRequest) {
     const [events, clubs, announcements, discounts, volunteerRoles, interactions] = await Promise.all([
       database
         .collection(CAMPUS_COLLECTIONS.event)
-        .find({ isActive: { $ne: false } })
+        .find(includeInactive ? {} : { isActive: { $ne: false } })
         .sort({ date: -1, createdAt: -1 })
         .toArray(),
       database
         .collection(CAMPUS_COLLECTIONS.club)
-        .find({ isActive: { $ne: false } })
+        .find(includeInactive ? {} : { isActive: { $ne: false } })
         .sort({ createdAt: -1 })
         .toArray(),
       database
         .collection(CAMPUS_COLLECTIONS.announcement)
-        .find({ isActive: { $ne: false } })
+        .find(includeInactive ? {} : { isActive: { $ne: false } })
         .sort({ date: -1, createdAt: -1 })
         .toArray(),
       database
         .collection(CAMPUS_COLLECTIONS.discount)
-        .find({ isActive: { $ne: false } })
+        .find(includeInactive ? {} : { isActive: { $ne: false } })
         .sort({ createdAt: -1 })
         .toArray(),
       database
         .collection(CAMPUS_COLLECTIONS.volunteer)
-        .find({ isActive: { $ne: false } })
+        .find(includeInactive ? {} : { isActive: { $ne: false } })
         .sort({ createdAt: -1 })
         .toArray(),
       database
@@ -321,7 +389,8 @@ export async function GET(request: NextRequest) {
             ? String(item.type ?? "")
             : "social",
           description: String(item.description ?? ""),
-          interested: Boolean(interactionMap.get(`event:${id}`))
+          interested: Boolean(interactionMap.get(`event:${id}`)),
+          isActive: item.isActive !== false
         };
       }),
       clubs: clubs.map((item: CampusDocument) => {
@@ -331,7 +400,8 @@ export async function GET(request: NextRequest) {
           name: String(item.name ?? ""),
           category: String(item.category ?? ""),
           description: String(item.description ?? ""),
-          joined: Boolean(interactionMap.get(`club:${id}`))
+          joined: Boolean(interactionMap.get(`club:${id}`)),
+          isActive: item.isActive !== false
         };
       }),
       announcements: announcements.map((item: CampusDocument) => {
@@ -341,7 +411,8 @@ export async function GET(request: NextRequest) {
           title: String(item.title ?? ""),
           date: String(item.date ?? ""),
           body: String(item.body ?? ""),
-          read: Boolean(interactionMap.get(`announcement:${id}`))
+          read: Boolean(interactionMap.get(`announcement:${id}`)),
+          isActive: item.isActive !== false
         };
       }),
       discounts: discounts.map((item: CampusDocument) => {
@@ -352,7 +423,8 @@ export async function GET(request: NextRequest) {
           category: String(item.category ?? ""),
           description: String(item.description ?? ""),
           location: String(item.location ?? ""),
-          used: Boolean(interactionMap.get(`discount:${id}`))
+          used: Boolean(interactionMap.get(`discount:${id}`)),
+          isActive: item.isActive !== false
         };
       }),
       volunteerRoles: volunteerRoles.map((item: CampusDocument) => {
@@ -364,13 +436,14 @@ export async function GET(request: NextRequest) {
           hoursPerWeek: String(item.hoursPerWeek ?? ""),
           location: String(item.location ?? ""),
           description: String(item.description ?? ""),
-          signedUp: Boolean(interactionMap.get(`volunteer:${id}`))
+          signedUp: Boolean(interactionMap.get(`volunteer:${id}`)),
+          isActive: item.isActive !== false
         };
       })
     });
   } catch (error) {
     if (isMongoConnectionError(error)) {
-      return jsonResponse(getDemoCampusLife(userId, firebaseUid));
+      return jsonResponse(getDemoCampusLife(userId, firebaseUid, includeInactive));
     }
     throw error;
   }
@@ -546,4 +619,172 @@ export async function POST(request: NextRequest) {
     },
     201
   );
+}
+
+export async function PATCH(request: NextRequest) {
+  const payload = await request.json().catch(() => ({} as Record<string, unknown>));
+  const action = safeText(payload.action, 24).toLowerCase();
+  const type = safeText(payload.type, 32).toLowerCase();
+  const id = safeText(payload.id, 64);
+
+  if (!isCampusContentType(type)) {
+    return jsonResponse({ message: "Invalid campus content type." }, 400);
+  }
+  if (!id) {
+    return jsonResponse({ message: "Content id is required." }, 400);
+  }
+
+  const authResult = await requireSession(request);
+  if (authResult.error) return authResult.error;
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  if (roleCheck) return roleCheck;
+
+  if (action === "update") {
+    const updates = parseCampusUpdate(type, payload);
+    if (!updates) {
+      return jsonResponse({ message: "Invalid campus content update payload." }, 400);
+    }
+
+    if (isDemoMode()) {
+      const updated = updateDemoCampusLifeItem(type, id, updates);
+      if (!updated) {
+        return jsonResponse({ message: "Campus content not found." }, 404);
+      }
+      return jsonResponse({ message: "Campus content updated." });
+    }
+
+    if (!ObjectId.isValid(id)) {
+      return jsonResponse({ message: "Invalid campus content id." }, 400);
+    }
+
+    const database = await getMongoDatabase();
+    const collection = database.collection(CAMPUS_COLLECTIONS[type]);
+    const updated = await collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: { ...updates, updatedAt: new Date() } },
+      { returnDocument: "after" }
+    );
+
+    if (!updated) {
+      return jsonResponse({ message: "Campus content not found." }, 404);
+    }
+
+    const contentTitle =
+      type === "announcement"
+        ? String((updated as { title?: string }).title ?? "Campus announcement")
+        : String((updated as { title?: string }).title ?? "Campus event");
+
+    await createNotification(database, {
+      audienceRoles: ["student"],
+      title: "Campus update edited",
+      message: `${contentTitle} has been updated by admin.`,
+      type: "campus-life",
+      sectionId: "campus-life"
+    });
+
+    return jsonResponse({ message: "Campus content updated." });
+  }
+
+  const nextActive = payload.isActive;
+  if (typeof nextActive !== "boolean") {
+    return jsonResponse({ message: "isActive must be true or false." }, 400);
+  }
+
+  if (isDemoMode()) {
+    const updated = setDemoCampusLifeItemActive(type, id, nextActive);
+    if (!updated) {
+      return jsonResponse({ message: "Campus content not found." }, 404);
+    }
+    return jsonResponse({
+      message: nextActive ? "Campus content restored." : "Campus content archived."
+    });
+  }
+
+  if (!ObjectId.isValid(id)) {
+    return jsonResponse({ message: "Invalid campus content id." }, 400);
+  }
+
+  const database = await getMongoDatabase();
+  const collection = database.collection(CAMPUS_COLLECTIONS[type]);
+  const updateResult = await collection.updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { isActive: nextActive, updatedAt: new Date() } }
+  );
+
+  if (!updateResult.matchedCount) {
+    return jsonResponse({ message: "Campus content not found." }, 404);
+  }
+
+  if (nextActive) {
+    await createNotification(database, {
+      audienceRoles: ["student"],
+      title: "Campus update restored",
+      message: "A campus update has been restored in your Campus Life feed.",
+      type: "campus-life",
+      sectionId: "campus-life"
+    });
+  }
+
+  return jsonResponse({
+    message: nextActive ? "Campus content restored." : "Campus content archived."
+  });
+}
+
+export async function DELETE(request: NextRequest) {
+  const payload = await request.json().catch(() => ({} as Record<string, unknown>));
+  const type = safeText(payload.type, 32).toLowerCase();
+  const id = safeText(payload.id, 64);
+
+  if (!isCampusContentType(type)) {
+    return jsonResponse({ message: "Invalid campus content type." }, 400);
+  }
+  if (!id) {
+    return jsonResponse({ message: "Content id is required." }, 400);
+  }
+
+  const authResult = await requireSession(request);
+  if (authResult.error) return authResult.error;
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  if (roleCheck) return roleCheck;
+
+  if (isDemoMode()) {
+    const deleted = deleteDemoCampusLifeItem(type, id);
+    if (!deleted) {
+      return jsonResponse(
+        { message: "Item not found or still active. Archive it first before permanent deletion." },
+        409
+      );
+    }
+    return jsonResponse({ message: "Campus content permanently deleted." });
+  }
+
+  if (!ObjectId.isValid(id)) {
+    return jsonResponse({ message: "Invalid campus content id." }, 400);
+  }
+
+  const database = await getMongoDatabase();
+  const collection = database.collection(CAMPUS_COLLECTIONS[type]);
+  const objectId = new ObjectId(id);
+  const existing = await collection.findOne({ _id: objectId });
+  if (!existing) {
+    return jsonResponse({ message: "Campus content not found." }, 404);
+  }
+
+  if ((existing as { isActive?: boolean }).isActive !== false) {
+    return jsonResponse(
+      { message: "Only archived items can be permanently deleted." },
+      409
+    );
+  }
+
+  const [contentDeleteResult] = await Promise.all([
+    collection.deleteOne({ _id: objectId }),
+    database.collection("campus_life_interactions").deleteMany({ itemType: type, itemId: id })
+  ]);
+
+  if (!contentDeleteResult.deletedCount) {
+    return jsonResponse({ message: "Campus content not found." }, 404);
+  }
+
+  return jsonResponse({ message: "Campus content permanently deleted." });
 }

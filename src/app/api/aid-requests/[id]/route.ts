@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { Db, ObjectId } from "mongodb";
 import { jsonResponse, isDemoMode } from "@/lib/api";
+import {
+  deleteDemoAidRequest,
+  listDemoAidRequests,
+  updateDemoAidRequest
+} from "@/lib/aid-requests-demo-store";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { createNotification } from "@/lib/notifications";
 import { requireRole, requireSession } from "@/lib/session-auth";
@@ -126,13 +131,27 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 
   if (isDemoMode()) {
+    const current = listDemoAidRequests().find((item) => item._id === id || item.id === id);
+    if (!current) {
+      return jsonResponse({ error: "Request not found" }, 404);
+    }
+    if (current.balanceApplied && nextStatus !== "Approved") {
+      return jsonResponse(
+        { error: "Approved requests with credited balance cannot be changed to another status." },
+        409
+      );
+    }
+    const updated = updateDemoAidRequest(id, {
+      status: nextStatus,
+      reviewNote: typeof payload.reviewNote === "string" ? payload.reviewNote.trim() : null,
+      ...(nextStatus === "Approved" ? { balanceApplied: true } : {})
+    });
+    if (!updated) {
+      return jsonResponse({ error: "Request not found" }, 404);
+    }
     return jsonResponse({
       message: "Aid request updated (demo mode)",
-      aidRequest: {
-        _id: id,
-        status: nextStatus,
-        reviewNote: payload.reviewNote ?? ""
-      }
+      aidRequest: updated
     });
   }
 
@@ -169,6 +188,22 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
   let financialCredit: { balanceField: BalanceField; amount: number } | null = null;
   let result: AidRequestDocument | null = null;
+  const existing = await requestsCollection.findOne(
+    { _id: objectId },
+    { projection: { _id: 1, status: 1, balanceApplied: 1 } }
+  );
+
+  if (!existing) {
+    return jsonResponse({ error: "Request not found" }, 404);
+  }
+
+  const alreadyCredited = Boolean(existing.balanceApplied);
+  if (alreadyCredited && nextStatus !== "Approved") {
+    return jsonResponse(
+      { error: "Approved requests with credited balance cannot be changed to another status." },
+      409
+    );
+  }
 
   if (nextStatus === "Approved") {
     result = await requestsCollection.findOneAndUpdate(
@@ -204,9 +239,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  if (!result) {
-    return jsonResponse({ error: "Request not found" }, 404);
-  }
+  if (!result) return jsonResponse({ error: "Request not found" }, 404);
 
   const requestId = result._id.toString();
   const category = String(result.category ?? "financial aid request");
@@ -276,6 +309,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   }
 
   if (isDemoMode()) {
+    const deleted = deleteDemoAidRequest(id);
+    if (!deleted) {
+      return jsonResponse({ error: "Request not found or you cannot delete it" }, 404);
+    }
     return jsonResponse({ message: "Aid request deleted (demo mode)" });
   }
 

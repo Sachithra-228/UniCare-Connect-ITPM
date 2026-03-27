@@ -224,11 +224,15 @@ function sortByDateDesc<T extends { createdAt?: string; date?: string }>(list: T
     });
 }
 
-export function getDemoCampusLife(userId?: string, firebaseUid?: string): CampusLifePayload {
+export function getDemoCampusLife(
+  userId?: string,
+  firebaseUid?: string,
+  includeInactive = false
+): CampusLifePayload {
   const interactionMap = buildInteractionMap(userId, firebaseUid);
   return {
     events: sortByDateDesc(events)
-      .filter((item) => item.isActive !== false)
+      .filter((item) => includeInactive || item.isActive !== false)
       .map((item) => ({
         id: item._id,
         title: item.title,
@@ -237,38 +241,42 @@ export function getDemoCampusLife(userId?: string, firebaseUid?: string): Campus
         location: item.location,
         type: item.type,
         description: item.description,
-        interested: Boolean(interactionMap.get(`event:${item._id}`))
+        interested: Boolean(interactionMap.get(`event:${item._id}`)),
+        isActive: item.isActive !== false
       })),
     clubs: sortByDateDesc(clubs)
-      .filter((item) => item.isActive !== false)
+      .filter((item) => includeInactive || item.isActive !== false)
       .map((item) => ({
         id: item._id,
         name: item.name,
         category: item.category,
         description: item.description,
-        joined: Boolean(interactionMap.get(`club:${item._id}`))
+        joined: Boolean(interactionMap.get(`club:${item._id}`)),
+        isActive: item.isActive !== false
       })),
     announcements: sortByDateDesc(announcements)
-      .filter((item) => item.isActive !== false)
+      .filter((item) => includeInactive || item.isActive !== false)
       .map((item) => ({
         id: item._id,
         title: item.title,
         date: item.date,
         body: item.body,
-        read: Boolean(interactionMap.get(`announcement:${item._id}`))
+        read: Boolean(interactionMap.get(`announcement:${item._id}`)),
+        isActive: item.isActive !== false
       })),
     discounts: sortByDateDesc(discounts)
-      .filter((item) => item.isActive !== false)
+      .filter((item) => includeInactive || item.isActive !== false)
       .map((item) => ({
         id: item._id,
         name: item.name,
         category: item.category,
         description: item.description,
         location: item.location,
-        used: Boolean(interactionMap.get(`discount:${item._id}`))
+        used: Boolean(interactionMap.get(`discount:${item._id}`)),
+        isActive: item.isActive !== false
       })),
     volunteerRoles: sortByDateDesc(volunteerRoles)
-      .filter((item) => item.isActive !== false)
+      .filter((item) => includeInactive || item.isActive !== false)
       .map((item) => ({
         id: item._id,
         title: item.title,
@@ -276,7 +284,8 @@ export function getDemoCampusLife(userId?: string, firebaseUid?: string): Campus
         hoursPerWeek: item.hoursPerWeek,
         location: item.location,
         description: item.description,
-        signedUp: Boolean(interactionMap.get(`volunteer:${item._id}`))
+        signedUp: Boolean(interactionMap.get(`volunteer:${item._id}`)),
+        isActive: item.isActive !== false
       }))
   };
 }
@@ -394,4 +403,148 @@ export function addDemoCampusLifeItem(input: CampusLifeCreateInput) {
   };
   volunteerRoles = [item, ...volunteerRoles];
   return { type: input.type, item };
+}
+
+export function setDemoCampusLifeItemActive(
+  type: CampusLifeInteractionType,
+  itemId: string,
+  isActive: boolean
+) {
+  const updatedAt = nowIso();
+
+  if (type === "event") {
+    let found = false;
+    events = events.map((item) => {
+      if (item._id !== itemId) return item;
+      found = true;
+      return { ...item, isActive, updatedAt };
+    });
+    return found;
+  }
+
+  if (type === "club") {
+    let found = false;
+    clubs = clubs.map((item) => {
+      if (item._id !== itemId) return item;
+      found = true;
+      return { ...item, isActive, updatedAt };
+    });
+    return found;
+  }
+
+  if (type === "announcement") {
+    let found = false;
+    announcements = announcements.map((item) => {
+      if (item._id !== itemId) return item;
+      found = true;
+      return { ...item, isActive, updatedAt };
+    });
+    return found;
+  }
+
+  if (type === "discount") {
+    let found = false;
+    discounts = discounts.map((item) => {
+      if (item._id !== itemId) return item;
+      found = true;
+      return { ...item, isActive, updatedAt };
+    });
+    return found;
+  }
+
+  let found = false;
+  volunteerRoles = volunteerRoles.map((item) => {
+    if (item._id !== itemId) return item;
+    found = true;
+    return { ...item, isActive, updatedAt };
+  });
+  return found;
+}
+
+export function updateDemoCampusLifeItem(
+  type: CampusLifeInteractionType,
+  itemId: string,
+  updates: Record<string, unknown>
+) {
+  const updatedAt = nowIso();
+
+  if (type === "event") {
+    let updated = false;
+    events = events.map((item) => {
+      if (item._id !== itemId) return item;
+      updated = true;
+      return {
+        ...item,
+        title: typeof updates.title === "string" ? updates.title : item.title,
+        date: typeof updates.date === "string" ? updates.date : item.date,
+        time: typeof updates.time === "string" ? updates.time : item.time,
+        location: typeof updates.location === "string" ? updates.location : item.location,
+        type: typeof updates.type === "string" ? (updates.type as CampusEventType) : item.type,
+        description: typeof updates.description === "string" ? updates.description : item.description,
+        updatedAt
+      };
+    });
+    return updated;
+  }
+
+  if (type === "announcement") {
+    let updated = false;
+    announcements = announcements.map((item) => {
+      if (item._id !== itemId) return item;
+      updated = true;
+      return {
+        ...item,
+        title: typeof updates.title === "string" ? updates.title : item.title,
+        date: typeof updates.date === "string" ? updates.date : item.date,
+        body: typeof updates.body === "string" ? updates.body : item.body,
+        updatedAt
+      };
+    });
+    return updated;
+  }
+
+  return false;
+}
+
+export function deleteDemoCampusLifeItem(
+  type: CampusLifeInteractionType,
+  itemId: string
+) {
+  if (type === "event") {
+    const target = events.find((item) => item._id === itemId);
+    if (!target || target.isActive !== false) return false;
+    events = events.filter((item) => item._id !== itemId);
+    interactions = interactions.filter((item) => !(item.itemType === "event" && item.itemId === itemId));
+    return true;
+  }
+
+  if (type === "club") {
+    const target = clubs.find((item) => item._id === itemId);
+    if (!target || target.isActive !== false) return false;
+    clubs = clubs.filter((item) => item._id !== itemId);
+    interactions = interactions.filter((item) => !(item.itemType === "club" && item.itemId === itemId));
+    return true;
+  }
+
+  if (type === "announcement") {
+    const target = announcements.find((item) => item._id === itemId);
+    if (!target || target.isActive !== false) return false;
+    announcements = announcements.filter((item) => item._id !== itemId);
+    interactions = interactions.filter((item) => !(item.itemType === "announcement" && item.itemId === itemId));
+    return true;
+  }
+
+  if (type === "discount") {
+    const target = discounts.find((item) => item._id === itemId);
+    if (!target || target.isActive !== false) return false;
+    discounts = discounts.filter((item) => item._id !== itemId);
+    interactions = interactions.filter((item) => !(item.itemType === "discount" && item.itemId === itemId));
+    return true;
+  }
+
+  const target = volunteerRoles.find((item) => item._id === itemId);
+  if (!target || target.isActive !== false) return false;
+  volunteerRoles = volunteerRoles.filter((item) => item._id !== itemId);
+  interactions = interactions.filter((item) => !(item.itemType === "volunteer" && item.itemId === itemId));
+  return true;
 }
