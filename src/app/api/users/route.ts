@@ -4,6 +4,7 @@ import { demoUsers } from "@/lib/demo-data";
 import { errorMessageForDev, isDemoMode, jsonResponse } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { requireRole, requireSession } from "@/lib/session-auth";
+import { isValidFullName } from "@/lib/validation";
 import { UserRole } from "@/types";
 
 type UserPayload = {
@@ -138,6 +139,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const payload = (await request.json()) as UserPayload;
+  const normalizedName = typeof payload.name === "string" ? payload.name.trim().replace(/\s+/g, " ") : "";
+
+  if (normalizedName && !isValidFullName(normalizedName)) {
+    return jsonResponse({ message: "Name can only contain letters, spaces, apostrophes, and hyphens." }, 400);
+  }
 
   if (isDemoMode()) {
     if (!payload.email) {
@@ -150,7 +156,7 @@ export async function POST(request: NextRequest) {
         user: {
           _id: payload.firebaseUid ?? `demo-${Date.now()}`,
           email: payload.email,
-          name: payload.name ?? payload.email.split("@")[0] ?? "User",
+          name: normalizedName || payload.email.split("@")[0] || "User",
           role: payload.role ?? "student",
           university: payload.university,
           contact: payload.contact,
@@ -221,7 +227,7 @@ export async function POST(request: NextRequest) {
     const setFields: Partial<DbUserInput> & { updatedAt: Date } = {
       updatedAt: now,
       email: normalizedEmail,
-      name: payload.name ?? normalizedEmail.split("@")[0] ?? "User",
+      name: normalizedName || normalizedEmail.split("@")[0] || "User",
       ...(roleToSet != null && { role: roleToSet }),
       firebaseUid: payload.firebaseUid,
       university: payload.university,
@@ -230,7 +236,7 @@ export async function POST(request: NextRequest) {
       ...(completingProfile && { needsProfileCompletion: false })
     };
 
-    if (payload.name) setFields.name = payload.name;
+    if (normalizedName) setFields.name = normalizedName;
     if (roleToSet != null) setFields.role = roleToSet;
     if (payload.university) setFields.university = payload.university;
     if (payload.contact) setFields.contact = payload.contact;

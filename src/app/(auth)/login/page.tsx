@@ -52,6 +52,10 @@ const INITIAL_SIGNUP_DATA: SignUpData = {
   acceptedTerms: false
 };
 
+function sanitizeFullNameInput(value: string): string {
+  return value.replace(/[^\p{L}\s'-]/gu, "");
+}
+
 function resolveFieldA(data: SignUpData): string {
   if (data.fieldA === OTHER_UNIVERSITY_VALUE) return data.fieldAOther.trim();
   return data.fieldA.trim();
@@ -683,6 +687,12 @@ export default function LoginPage() {
       const err: { name?: string; email?: string; password?: string; confirmPassword?: string } = {};
       if (!signUpData.name.trim()) err.name = t.fullNameRequired;
       else if (signUpData.name.trim().length < 2) err.name = t.atLeastTwoChars;
+      else {
+        const nameResult = registerSchema.shape.name.safeParse(signUpData.name);
+        if (!nameResult.success) {
+          err.name = nameResult.error.errors[0]?.message ?? "Name can only contain letters.";
+        }
+      }
       const emailResult = registerSchema.shape.email.safeParse(signUpData.email);
       if (!signUpData.email.trim()) err.email = t.emailRequired;
       else if (!emailResult.success) err.email = t.invalidEmail;
@@ -829,7 +839,7 @@ export default function LoginPage() {
               id="signup-name"
               value={signUpData.name}
               onChange={(event) => {
-                updateSignUpField("name", event.target.value);
+                updateSignUpField("name", sanitizeFullNameInput(event.target.value));
                 if (step2Errors.name) setStep2Errors((e) => ({ ...e, name: undefined }));
               }}
               placeholder={t.yourFullName}
