@@ -1,11 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Card } from "@/components/shared/card";
 import { StatCard } from "@/components/shared/stat-card";
+import { Button } from "@/components/shared/button";
+import { Input } from "@/components/shared/input";
 import { AdminAnalytics } from "./admin-analytics";
-import { RoleProfileShell } from "@/components/profile/role-profile-shell";
 import { useAuth } from "@/context/auth-context";
+import {
+  defaultPreferences,
+  mergePreferences,
+  tabVariants,
+  type ProfilePreferences,
+  type ProfileTab
+} from "@/components/profile/profile-preferences";
 
 type AdminSectionContentProps = {
   sectionId: string;
@@ -2510,48 +2519,22 @@ function AdminAnnouncementsSection() {
 }
 
 function AdminProfileSection() {
-  type ProfilePreferences = {
-    privacy: {
-      shareCareerInterestsWithMentors: boolean;
-      shareFinancialAidWithAdmins: boolean;
-    };
-    notifications: {
-      emailApplicationStatus: boolean;
-      mentorshipSessionReminders: boolean;
-      weeklyWellnessReminder: boolean;
-    };
-    updatedAt?: string;
-  };
-
-  const defaultPreferences: ProfilePreferences = {
-    privacy: {
-      shareCareerInterestsWithMentors: true,
-      shareFinancialAidWithAdmins: true
-    },
-    notifications: {
-      emailApplicationStatus: true,
-      mentorshipSessionReminders: true,
-      weeklyWellnessReminder: false
-    }
-  };
-
-  const { user, updateUserProfile, refreshUser, requestPasswordReset } = useAuth();
+  const { user, refreshUser, updateUserProfile, requestPasswordReset } = useAuth();
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [securityMessage, setSecurityMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
 
   const [name, setName] = useState(user?.name ?? "");
   const [contact, setContact] = useState(user?.contact ?? "");
   const [university, setUniversity] = useState(user?.university ?? "");
-  const [department, setDepartment] = useState(user?.roleDetails?.department ?? user?.roleDetails?.fieldA ?? "");
-  const [office, setOffice] = useState(user?.roleDetails?.office ?? user?.roleDetails?.fieldB ?? "");
-  const [notificationMode, setNotificationMode] = useState(
-    user?.roleDetails?.notificationMode ?? "email_in_app"
-  );
-  const [permissionLevel, setPermissionLevel] = useState(
-    user?.roleDetails?.permissionLevel ?? "approve_financial_aid"
-  );
+  const [department, setDepartment] = useState(user?.roleDetails?.department ?? "");
+  const [office, setOffice] = useState(user?.roleDetails?.office ?? "");
+  const [notificationMode, setNotificationMode] = useState(user?.roleDetails?.notificationMode ?? "email_in_app");
+  const [permissionLevel, setPermissionLevel] = useState(user?.roleDetails?.permissionLevel ?? "view_only");
 
-  const [savingProfile, setSavingProfile] = useState(false);
+  const [profilePicUploading, setProfilePicUploading] = useState(false);
+  const [personalSaving, setPersonalSaving] = useState(false);
+  const [adminSaving, setAdminSaving] = useState(false);
   const [preferencesLoading, setPreferencesLoading] = useState(false);
   const [preferencesSaving, setPreferencesSaving] = useState(false);
   const [preferences, setPreferences] = useState<ProfilePreferences>(defaultPreferences);
@@ -2565,38 +2548,15 @@ function AdminProfileSection() {
     setName(user.name ?? "");
     setContact(user.contact ?? "");
     setUniversity(user.university ?? "");
-    setDepartment(user.roleDetails?.department ?? user.roleDetails?.fieldA ?? "");
-    setOffice(user.roleDetails?.office ?? user.roleDetails?.fieldB ?? "");
+    setDepartment(user.roleDetails?.department ?? "");
+    setOffice(user.roleDetails?.office ?? "");
     setNotificationMode(user.roleDetails?.notificationMode ?? "email_in_app");
-    setPermissionLevel(user.roleDetails?.permissionLevel ?? "approve_financial_aid");
+    setPermissionLevel(user.roleDetails?.permissionLevel ?? "view_only");
   }, [user]);
 
   useEffect(() => {
     if (!user?.email) return;
     let cancelled = false;
-
-    const mergePreferences = (payload: Partial<ProfilePreferences> | null | undefined): ProfilePreferences => ({
-      privacy: {
-        shareCareerInterestsWithMentors:
-          payload?.privacy?.shareCareerInterestsWithMentors ??
-          defaultPreferences.privacy.shareCareerInterestsWithMentors,
-        shareFinancialAidWithAdmins:
-          payload?.privacy?.shareFinancialAidWithAdmins ??
-          defaultPreferences.privacy.shareFinancialAidWithAdmins
-      },
-      notifications: {
-        emailApplicationStatus:
-          payload?.notifications?.emailApplicationStatus ??
-          defaultPreferences.notifications.emailApplicationStatus,
-        mentorshipSessionReminders:
-          payload?.notifications?.mentorshipSessionReminders ??
-          defaultPreferences.notifications.mentorshipSessionReminders,
-        weeklyWellnessReminder:
-          payload?.notifications?.weeklyWellnessReminder ??
-          defaultPreferences.notifications.weeklyWellnessReminder
-      },
-      updatedAt: payload?.updatedAt
-    });
 
     async function loadPreferences() {
       setPreferencesLoading(true);
@@ -2637,21 +2597,11 @@ function AdminProfileSection() {
     };
   }, [user?.email]);
 
-  const saveAdminProfile = async () => {
+  const savePersonal = async () => {
     if (!user?.email) return;
     setMessage(null);
-    setSavingProfile(true);
+    setPersonalSaving(true);
     try {
-      const nextRoleDetails = {
-        ...(user.roleDetails ?? {}),
-        department: department.trim(),
-        office: office.trim(),
-        notificationMode,
-        permissionLevel,
-        fieldA: department.trim(),
-        fieldB: office.trim()
-      };
-
       const response = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -2659,39 +2609,77 @@ function AdminProfileSection() {
           firebaseUid: (user as { firebaseUid?: string }).firebaseUid,
           email: user.email,
           name: name.trim() || user.name,
-          contact: contact.trim() || undefined,
-          university: university.trim() || undefined,
-          roleDetails: nextRoleDetails
+          contact: contact.trim() || undefined
         })
       });
+      const payload = (await response.json()) as { user?: { name?: string; contact?: string }; message?: string };
+      if (response.ok && payload.user) {
+        updateUserProfile({ name: payload.user.name, contact: payload.user.contact });
+        await refreshUser();
+        setMessage({ type: "ok", text: "Personal details updated." });
+      } else {
+        setMessage({ type: "err", text: payload.message ?? "Could not save." });
+      }
+    } catch {
+      setMessage({ type: "err", text: "Could not save. Try again." });
+    } finally {
+      setPersonalSaving(false);
+    }
+  };
 
+  const saveAdminProfile = async () => {
+    if (!user?.email) return;
+    setMessage(null);
+    setAdminSaving(true);
+
+    const currentRoleDetails = { ...(user.roleDetails ?? {}) };
+    const nextDepartment = department.trim();
+    const nextOffice = office.trim();
+
+    if (nextDepartment) {
+      currentRoleDetails.department = nextDepartment;
+    } else {
+      delete currentRoleDetails.department;
+    }
+    if (nextOffice) {
+      currentRoleDetails.office = nextOffice;
+    } else {
+      delete currentRoleDetails.office;
+    }
+    if (notificationMode) {
+      currentRoleDetails.notificationMode = notificationMode;
+    }
+    if (permissionLevel) {
+      currentRoleDetails.permissionLevel = permissionLevel;
+    }
+
+    try {
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firebaseUid: (user as { firebaseUid?: string }).firebaseUid,
+          email: user.email,
+          name: user.name,
+          university: university.trim() || undefined,
+          roleDetails: currentRoleDetails
+        })
+      });
       const payload = (await response.json()) as {
-        user?: {
-          name?: string;
-          contact?: string;
-          university?: string;
-          roleDetails?: Record<string, string>;
-        };
+        user?: { university?: string; roleDetails?: Record<string, string> };
         message?: string;
       };
-
-      if (!response.ok || !payload.user) {
-        setMessage({ type: "err", text: payload.message ?? "Could not save profile." });
-        return;
+      if (response.ok && payload.user) {
+        updateUserProfile({ university: payload.user.university, roleDetails: payload.user.roleDetails });
+        await refreshUser();
+        setMessage({ type: "ok", text: "Admin profile updated." });
+      } else {
+        setMessage({ type: "err", text: payload.message ?? "Could not save." });
       }
-
-      updateUserProfile({
-        name: payload.user.name,
-        contact: payload.user.contact,
-        university: payload.user.university,
-        roleDetails: payload.user.roleDetails
-      });
-      await refreshUser();
-      setMessage({ type: "ok", text: "Profile updated." });
     } catch {
-      setMessage({ type: "err", text: "Could not save profile. Try again." });
+      setMessage({ type: "err", text: "Could not save. Try again." });
     } finally {
-      setSavingProfile(false);
+      setAdminSaving(false);
     }
   };
 
@@ -2707,35 +2695,58 @@ function AdminProfileSection() {
           notifications: preferences.notifications
         })
       });
-      const payload = (await response.json()) as {
-        message?: string;
-        preferences?: Partial<ProfilePreferences>;
-      };
-      if (!response.ok) {
+      const payload = (await response.json()) as { message?: string; preferences?: Partial<ProfilePreferences> };
+      if (response.ok) {
+        if (payload.preferences) {
+          setPreferences(mergePreferences(payload.preferences));
+        }
+        setMessage({ type: "ok", text: successText });
+      } else {
         setMessage({ type: "err", text: payload.message ?? "Could not save preferences." });
-        return;
       }
-      if (payload.preferences) {
-        const nextPreferences = payload.preferences;
-        setPreferences((current) => ({
-          ...current,
-          ...nextPreferences,
-          privacy: {
-            ...current.privacy,
-            ...(nextPreferences.privacy ?? {})
-          },
-          notifications: {
-            ...current.notifications,
-            ...(nextPreferences.notifications ?? {})
-          }
-        }));
-      }
-      setMessage({ type: "ok", text: successText });
     } catch {
       setMessage({ type: "err", text: "Could not save preferences. Try again." });
     } finally {
       setPreferencesSaving(false);
     }
+  };
+
+  const handleProfilePicChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user?.email) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : "";
+      if (!dataUrl) return;
+      setProfilePicUploading(true);
+      setMessage(null);
+      try {
+        const response = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firebaseUid: (user as { firebaseUid?: string }).firebaseUid,
+            email: user.email,
+            profilePic: dataUrl
+          })
+        });
+        const payload = (await response.json()) as { user?: { profilePic?: string }; message?: string };
+        if (response.ok && payload.user) {
+          updateUserProfile({ profilePic: payload.user.profilePic });
+          await refreshUser();
+          setMessage({ type: "ok", text: "Profile picture updated." });
+        } else {
+          setMessage({ type: "err", text: payload.message ?? "Could not update picture." });
+        }
+      } catch {
+        setMessage({ type: "err", text: "Could not update picture. Try again." });
+      } finally {
+        setProfilePicUploading(false);
+      }
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleSendResetEmail = async () => {
@@ -2753,20 +2764,23 @@ function AdminProfileSection() {
     if (!window.confirm("Submit account deletion request for admin review?")) {
       return;
     }
+
     setSecurityMessage(null);
     setDeleteSubmitting(true);
     try {
       const response = await fetch("/api/profile/delete-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: deleteReason.trim() || undefined })
+        body: JSON.stringify({
+          reason: deleteReason.trim() || undefined
+        })
       });
       const payload = (await response.json()) as { message?: string };
       if (response.ok || response.status === 409) {
         setDeletePending(true);
         setSecurityMessage({
           type: "ok",
-          text: payload.message ?? "Deletion request submitted for review."
+          text: payload.message ?? "Deletion request submitted for admin review."
         });
       } else {
         setSecurityMessage({
@@ -2781,307 +2795,385 @@ function AdminProfileSection() {
     }
   };
 
-  return (
-    <RoleProfileShell roleLabel="Admin / faculty profile">
-      <div className="space-y-4">
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          This profile controls only your own admin or faculty account. You cannot change other
-          users from here.
-        </p>
-        {message ? (
-          <p
-            className={`rounded-xl border px-4 py-2 text-sm ${
-              message.type === "ok"
-                ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200"
-                : "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
-            }`}
-          >
-            {message.text}
-          </p>
-        ) : null}
-        {securityMessage ? (
-          <p
-            className={`rounded-xl border px-4 py-2 text-sm ${
-              securityMessage.type === "ok"
-                ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200"
-                : "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
-            }`}
-          >
-            {securityMessage.text}
-          </p>
-        ) : null}
-        <Card className="space-y-4 p-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Display name
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Your name"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Email
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-800"
-                value={user?.email ?? ""}
-                disabled
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Contact number
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-                value={contact}
-                onChange={(event) => setContact(event.target.value)}
-                placeholder="Phone number"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                University
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-                value={university}
-                onChange={(event) => setUniversity(event.target.value)}
-                placeholder="University"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Department / office
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-                value={department}
-                onChange={(event) => setDepartment(event.target.value)}
-                placeholder="E.g. Student Affairs"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Office / faculty unit
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-                value={office}
-                onChange={(event) => setOffice(event.target.value)}
-                placeholder="E.g. Engineering Faculty Office"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Notification preferences
-              </label>
-              <select
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-                value={notificationMode}
-                onChange={(event) => setNotificationMode(event.target.value)}
-              >
-                <option value="email_in_app">Email + in-app</option>
-                <option value="email_only">Email only</option>
-                <option value="in_app_only">In-app only</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Department-level permissions
-              </label>
-              <select
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-                value={permissionLevel}
-                onChange={(event) => setPermissionLevel(event.target.value)}
-              >
-                <option value="view_only">View-only</option>
-                <option value="approve_financial_aid">Approve financial aid</option>
-                <option value="full_admin">Full admin (this faculty)</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <button
-              onClick={saveAdminProfile}
-              disabled={savingProfile}
-              className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {savingProfile ? "Saving..." : "Save changes"}
-            </button>
-          </div>
-        </Card>
+  const tabs: { id: ProfileTab; label: string }[] = [
+    { id: "profile", label: "Profile" },
+    { id: "settings", label: "Preferences" },
+    { id: "security", label: "Security" }
+  ];
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="space-y-4 p-4">
-            <h3 className="text-sm font-semibold">Privacy preferences</h3>
-            <div className="space-y-2 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="rounded"
-                  checked={preferences.privacy.shareCareerInterestsWithMentors}
-                  onChange={(event) =>
-                    setPreferences((current) => ({
-                      ...current,
-                      privacy: {
-                        ...current.privacy,
-                        shareCareerInterestsWithMentors: event.target.checked
-                      }
-                    }))
-                  }
-                  disabled={preferencesLoading}
-                />
-                Share my career interests with mentorship coordinators
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="rounded"
-                  checked={preferences.privacy.shareFinancialAidWithAdmins}
-                  onChange={(event) =>
-                    setPreferences((current) => ({
-                      ...current,
-                      privacy: {
-                        ...current.privacy,
-                        shareFinancialAidWithAdmins: event.target.checked
-                      }
-                    }))
-                  }
-                  disabled={preferencesLoading}
-                />
-                Share financial oversight activity with super admins
-              </label>
+  const initials =
+    (user?.name ?? user?.email ?? "U")
+      .split(/\s+/)
+      .map((segment) => segment[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
+  return (
+    <div className="space-y-6">
+      {message && (
+        <p
+          className={`rounded-xl border px-4 py-2 text-sm ${
+            message.type === "ok"
+              ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200"
+              : "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+          }`}
+        >
+          {message.text}
+        </p>
+      )}
+
+      {securityMessage && (
+        <p
+          className={`rounded-xl border px-4 py-2 text-sm ${
+            securityMessage.type === "ok"
+              ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200"
+              : "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+          }`}
+        >
+          {securityMessage.text}
+        </p>
+      )}
+
+      <Card className="flex flex-wrap items-center justify-between gap-4 border-primary/20 bg-gradient-to-r from-primary/5 via-white to-emerald-50 p-5 dark:from-primary/10 dark:via-slate-900 dark:to-emerald-900/20">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-slate-100 dark:border-primary/60 dark:bg-slate-800">
+              {user?.profilePic ? (
+                <img src={user.profilePic} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-lg font-semibold text-primary">{initials}</span>
+              )}
             </div>
-            <div className="flex justify-end">
-              <button
+          </div>
+          <div>
+            <p className="text-sm font-medium uppercase tracking-wide text-primary">Admin / faculty profile</p>
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">{user?.name ?? "Your name"}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">{user?.email}</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="cursor-pointer text-xs font-medium text-primary hover:underline">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleProfilePicChange}
+              disabled={profilePicUploading}
+            />
+            {profilePicUploading ? "Uploading..." : "Change picture"}
+          </label>
+        </div>
+      </Card>
+
+      <Card className="border-primary/20 bg-primary/5 p-4">
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          Manage your own admin account settings. You cannot change other users from here.
+        </p>
+      </Card>
+
+      <div className="border-b border-slate-200 dark:border-slate-700">
+        <nav className="flex flex-wrap gap-1" role="tablist" aria-label="Profile sections">
+          {tabs.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === id}
+              onClick={() => setActiveTab(id)}
+              className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === id
+                  ? "border-primary text-primary"
+                  : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {activeTab === "profile" && (
+          <motion.div
+            key="profile"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="space-y-4"
+          >
+            <Card className="space-y-4 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Personal details</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Full name</label>
+                  <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
+                  <Input type="email" defaultValue={user?.email ?? ""} placeholder="Email" disabled />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Contact</label>
+                  <Input
+                    value={contact}
+                    onChange={(event) => setContact(event.target.value)}
+                    placeholder="Phone number"
+                  />
+                </div>
+              </div>
+              <Button variant="primary" onClick={savePersonal} disabled={personalSaving}>
+                {personalSaving ? "Saving..." : "Save changes"}
+              </Button>
+            </Card>
+
+            <Card className="space-y-4 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Admin details</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Department and approval scope used for verification and finance reviews.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">University</label>
+                  <Input
+                    value={university}
+                    onChange={(event) => setUniversity(event.target.value)}
+                    placeholder="University"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Department / office</label>
+                  <Input
+                    value={department}
+                    onChange={(event) => setDepartment(event.target.value)}
+                    placeholder="Student affairs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Office / faculty unit</label>
+                  <Input value={office} onChange={(event) => setOffice(event.target.value)} placeholder="Office" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Notification mode</label>
+                  <select
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    value={notificationMode}
+                    onChange={(event) => setNotificationMode(event.target.value)}
+                  >
+                    <option value="email_in_app">Email + in-app</option>
+                    <option value="email_only">Email only</option>
+                    <option value="in_app_only">In-app only</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Permission level</label>
+                  <select
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    value={permissionLevel}
+                    onChange={(event) => setPermissionLevel(event.target.value)}
+                  >
+                    <option value="view_only">View only</option>
+                    <option value="approve_financial_aid">Approve financial aid</option>
+                    <option value="full_admin">Full admin (faculty)</option>
+                  </select>
+                </div>
+              </div>
+              <Button variant="primary" onClick={saveAdminProfile} disabled={adminSaving}>
+                {adminSaving ? "Saving..." : "Update admin profile"}
+              </Button>
+            </Card>
+          </motion.div>
+        )}
+
+        {activeTab === "settings" && (
+          <motion.div
+            key="settings"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="space-y-4"
+          >
+            <Card className="space-y-4 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Privacy preferences</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Control what is shared with other university teams.
+              </p>
+              <div className="space-y-2 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.privacy.shareCareerInterestsWithMentors}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        privacy: {
+                          ...current.privacy,
+                          shareCareerInterestsWithMentors: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
+                  Share career services overview with mentors
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.privacy.shareFinancialAidWithAdmins}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        privacy: {
+                          ...current.privacy,
+                          shareFinancialAidWithAdmins: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
+                  Share financial oversight activity with super admins
+                </label>
+              </div>
+              <Button
+                variant="secondary"
                 onClick={() => savePreferences("Privacy settings saved.")}
                 disabled={preferencesLoading || preferencesSaving}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 {preferencesSaving ? "Saving..." : "Save privacy settings"}
-              </button>
-            </div>
-          </Card>
+              </Button>
+            </Card>
 
-          <Card className="space-y-4 p-4">
-            <h3 className="text-sm font-semibold">Notification settings</h3>
-            <div className="space-y-2 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="rounded"
-                  checked={preferences.notifications.emailApplicationStatus}
-                  onChange={(event) =>
-                    setPreferences((current) => ({
-                      ...current,
-                      notifications: {
-                        ...current.notifications,
-                        emailApplicationStatus: event.target.checked
-                      }
-                    }))
-                  }
-                  disabled={preferencesLoading}
-                />
-                Email for application and request status changes
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="rounded"
-                  checked={preferences.notifications.mentorshipSessionReminders}
-                  onChange={(event) =>
-                    setPreferences((current) => ({
-                      ...current,
-                      notifications: {
-                        ...current.notifications,
-                        mentorshipSessionReminders: event.target.checked
-                      }
-                    }))
-                  }
-                  disabled={preferencesLoading}
-                />
-                Mentorship program reminders
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="rounded"
-                  checked={preferences.notifications.weeklyWellnessReminder}
-                  onChange={(event) =>
-                    setPreferences((current) => ({
-                      ...current,
-                      notifications: {
-                        ...current.notifications,
-                        weeklyWellnessReminder: event.target.checked
-                      }
-                    }))
-                  }
-                  disabled={preferencesLoading}
-                />
-                Weekly wellbeing digest reminder
-              </label>
-            </div>
-            {preferences.updatedAt ? (
-              <p className="text-xs text-slate-500">
-                Last updated: {new Date(preferences.updatedAt).toLocaleString()}
+            <Card className="space-y-4 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Notification settings</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Choose how you receive verification and request updates.
               </p>
-            ) : null}
-            <div className="flex justify-end">
-              <button
+              <div className="space-y-2 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.notifications.emailApplicationStatus}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        notifications: {
+                          ...current.notifications,
+                          emailApplicationStatus: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
+                  Email for application status changes
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.notifications.mentorshipSessionReminders}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        notifications: {
+                          ...current.notifications,
+                          mentorshipSessionReminders: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
+                  Reminders for oversight approvals
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.notifications.weeklyWellnessReminder}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        notifications: {
+                          ...current.notifications,
+                          weeklyWellnessReminder: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
+                  Weekly admin digest reminder
+                </label>
+              </div>
+              <Button
+                variant="secondary"
                 onClick={() => savePreferences("Notification settings saved.")}
                 disabled={preferencesLoading || preferencesSaving}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 {preferencesSaving ? "Saving..." : "Save notification settings"}
-              </button>
-            </div>
-          </Card>
-        </div>
+              </Button>
+              {preferences.updatedAt ? (
+                <p className="text-xs text-slate-500">Last updated: {new Date(preferences.updatedAt).toLocaleString()}</p>
+              ) : null}
+            </Card>
+          </motion.div>
+        )}
 
-        <Card className="space-y-3 border-red-200 bg-red-50/60 p-4 dark:border-red-900 dark:bg-red-950/40">
-          <h3 className="text-sm font-semibold text-red-800 dark:text-red-200">Security and account actions</h3>
-          <p className="text-sm text-red-800 dark:text-red-200">
-            Password reset sends an email link. Account deletion requires review and is not immediate.
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={handleSendResetEmail}
-              disabled={!user?.email}
-              className="rounded-full border border-red-300 px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-70 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
-            >
-              Send password reset link
-            </button>
-          </div>
-          <textarea
-            value={deleteReason}
-            onChange={(event) => setDeleteReason(event.target.value)}
-            placeholder="Optional reason for deletion request"
-            className="min-h-[90px] w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-red-300 dark:border-red-700 dark:bg-slate-900 dark:text-slate-100"
-            disabled={deletePending || deleteSubmitting}
-          />
-          <div className="flex justify-end">
-            <button
-              onClick={handleSubmitDeleteRequest}
-              disabled={deletePending || deleteSubmitting}
-              className="rounded-full border border-red-400 px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-70 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
-            >
-              {deletePending
-                ? "Deletion request pending"
-                : deleteSubmitting
-                  ? "Submitting..."
-                  : "Request account deletion"}
-            </button>
-          </div>
-        </Card>
-      </div>
-    </RoleProfileShell>
+        {activeTab === "security" && (
+          <motion.div
+            key="security"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="space-y-4"
+          >
+            <Card className="space-y-3 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Password and sign-in</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Send yourself a secure link to reset your password.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <Input type="email" value={user?.email ?? ""} disabled className="max-w-xs" />
+                <Button variant="secondary" onClick={handleSendResetEmail} disabled={!user?.email}>
+                  Send reset link
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="space-y-3 border-red-200 bg-red-50/60 p-5 dark:border-red-900 dark:bg-red-950/40">
+              <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Delete account request</h3>
+              <p className="text-sm text-red-800 dark:text-red-200">
+                Submit a request and the university admin team will review it.
+              </p>
+              <textarea
+                value={deleteReason}
+                onChange={(event) => setDeleteReason(event.target.value)}
+                placeholder="Optional reason for deletion request"
+                className="min-h-[90px] w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-0 focus:border-red-300 dark:border-red-700 dark:bg-slate-900 dark:text-slate-100"
+                disabled={deletePending || deleteSubmitting}
+              />
+              <Button
+                variant="secondary"
+                className="border-red-400 text-red-800 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                onClick={handleSubmitDeleteRequest}
+                disabled={deletePending || deleteSubmitting}
+              >
+                {deletePending ? "Deletion request pending" : deleteSubmitting ? "Submitting..." : "Request account deletion"}
+              </Button>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
+
 
 
