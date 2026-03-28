@@ -7,7 +7,11 @@ import { Select } from "@/components/shared/select";
 import { Input } from "@/components/shared/input";
 import { useLanguage } from "@/context/language-context";
 
-export function MoodTracker() {
+type MoodTrackerProps = {
+  onSaved?: () => void;
+};
+
+export function MoodTracker({ onSaved }: MoodTrackerProps) {
   const { language } = useLanguage();
   const text =
     language === "si"
@@ -88,6 +92,7 @@ export function MoodTracker() {
 
       setMessage(text.saved);
       event.currentTarget.reset();
+      onSaved?.();
     } catch {
       setMessage(text.saveNetwork);
     }

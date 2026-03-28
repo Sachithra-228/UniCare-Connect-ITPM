@@ -5,8 +5,20 @@ export const loginSchema = z.object({
   password: z.string().min(6)
 });
 
+export const fullNamePattern = /^[\p{L}]+(?:[ '\-][\p{L}]+)*$/u;
+
+export function isValidFullName(name: string) {
+  const normalized = name.trim().replace(/\s+/g, " ");
+  return fullNamePattern.test(normalized);
+}
+
 export const registerSchema = z.object({
-  name: z.string().min(2),
+  name: z
+    .string()
+    .min(2)
+    .refine((value) => isValidFullName(value), {
+      message: "Name can only contain letters, spaces, apostrophes, and hyphens."
+    }),
   email: z.string().email(),
   password: z.string().min(6)
 });
