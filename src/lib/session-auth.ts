@@ -6,7 +6,9 @@ import { getMongoDatabase } from "@/lib/mongodb";
 import { UserProfile } from "@/types";
 
 export const SESSION_COOKIE_NAME = "session";
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24; // 24 hours – cookie expires after 1 day
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24; // 24 hours - cookie expires after 1 day
+const USER_CACHE_TTL_MS = 30 * 1000;
+const USER_CACHE_MAX_ENTRIES = 500;
 
 type DbUserDocument = {
   _id: { toString: () => string };
@@ -28,6 +30,59 @@ type DbUserDocument = {
     trialEndsAt?: Date | string;
   };
 };
+
+type CachedUser = {
+  user: UserProfile | null;
+  expiresAt: number;
+};
+
+const sessionUserCache = new Map<string, CachedUser>();
+
+function buildSessionCacheKey(identity: { uid: string; email: string | null }) {
+  return `${identity.uid}:${identity.email?.toLowerCase() ?? ""}`;
+}
+
+function getCachedSessionUser(identity: { uid: string; email: string | null }) {
+  const key = buildSessionCacheKey(identity);
+  const now = Date.now();
+  const cached = sessionUserCache.get(key);
+  if (!cached) return undefined;
+  if (cached.expiresAt <= now) {
+    sessionUserCache.delete(key);
+    return undefined;
+  }
+  return cached;
+}
+
+function setCachedSessionUser(identity: { uid: string; email: string | null }, user: UserProfile | null) {
+  const key = buildSessionCacheKey(identity);
+  sessionUserCache.set(key, {
+    user,
+    expiresAt: Date.now() + USER_CACHE_TTL_MS
+  });
+
+  while (sessionUserCache.size > USER_CACHE_MAX_ENTRIES) {
+    const oldestKey = sessionUserCache.keys().next().value;
+    if (!oldestKey) break;
+    sessionUserCache.delete(oldestKey);
+  }
+}
+
+export function invalidateSessionUserCache(identity?: { uid?: string; email?: string | null }) {
+  if (!identity?.uid && !identity?.email) {
+    sessionUserCache.clear();
+    return;
+  }
+
+  for (const key of sessionUserCache.keys()) {
+    const [uid, email] = key.split(":", 2);
+    const uidMatches = identity.uid ? uid === identity.uid : true;
+    const emailMatches = identity.email ? email === identity.email.toLowerCase() : true;
+    if (uidMatches && emailMatches) {
+      sessionUserCache.delete(key);
+    }
+  }
+}
 
 function mapUserDocument(document: DbUserDocument): UserProfile {
   return {
@@ -107,6 +162,11 @@ export async function getSessionFromRequest(request: NextRequest) {
     return { idToken, firebase, user: null };
   }
 
+  const cachedUser = getCachedSessionUser(firebase);
+  if (cachedUser) {
+    return { idToken, firebase, user: cachedUser.user };
+  }
+
   try {
     const database = await getMongoDatabase();
     const usersCollection = database.collection<DbUserDocument>("users");
@@ -114,10 +174,13 @@ export async function getSessionFromRequest(request: NextRequest) {
       (await usersCollection.findOne({ firebaseUid: firebase.uid })) ??
       (firebase.email ? await usersCollection.findOne({ email: firebase.email }) : null);
 
+    const user = userDocument ? mapUserDocument(userDocument) : null;
+    setCachedSessionUser(firebase, user);
+
     return {
       idToken,
       firebase,
-      user: userDocument ? mapUserDocument(userDocument) : null
+      user
     };
   } catch {
     return {

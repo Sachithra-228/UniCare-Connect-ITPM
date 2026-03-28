@@ -1,17 +1,28 @@
+﻿"use client";
+
 import Link from "next/link";
 import { Card } from "@/components/shared/card";
 import { Badge } from "@/components/shared/badge";
 import { demoJobs } from "@/lib/demo-data";
+import { useLanguage } from "@/context/language-context";
 
 export function PartTimeJobPreview() {
+  const { language } = useLanguage();
+  const text =
+    language === "si"
+      ? { title: "අර්ධකාලීන රැකියා ද්වාරය", fullBoard: "සම්පූර්ණ ලැයිස්තුව බලන්න" }
+      : language === "ta"
+        ? { title: "பகுதி நேர வேலை தளம்", fullBoard: "முழு பட்டியலை பார்க்க" }
+        : { title: "Part-time job portal", fullBoard: "View full board" };
+
   const jobs = demoJobs.slice(0, 2);
 
   return (
     <Card className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Part-time job portal</h3>
+        <h3 className="text-lg font-semibold">{text.title}</h3>
         <Link className="text-sm text-primary" href="/career">
-          View full board
+          {text.fullBoard}
         </Link>
       </div>
       <div className="space-y-3">

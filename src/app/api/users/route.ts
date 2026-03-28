@@ -3,7 +3,8 @@ import { WithId, ObjectId } from "mongodb";
 import { demoUsers } from "@/lib/demo-data";
 import { errorMessageForDev, isDemoMode, jsonResponse } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
-import { requireRole, requireSession } from "@/lib/session-auth";
+import { invalidateSessionUserCache, requireRole, requireSession } from "@/lib/session-auth";
+import { isValidFullName } from "@/lib/validation";
 import { UserRole } from "@/types";
 
 type UserPayload = {
@@ -50,6 +51,17 @@ type DbUserDocument = {
 };
 
 type DbUserInput = Omit<DbUserDocument, "_id">;
+
+function fallbackNameFromEmail(email?: string) {
+  if (!email) return "User";
+  const localPart = email.split("@")[0] ?? "";
+  const candidate = localPart
+    .replace(/[._-]+/g, " ")
+    .replace(/[0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return candidate && isValidFullName(candidate) ? candidate : "User";
+}
 
 function mapUserDocument(document: WithId<DbUserInput>) {
   return {
@@ -138,6 +150,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const payload = (await request.json()) as UserPayload;
+  const rawName = typeof payload.name === "string" ? payload.name : "";
+  const normalizedName = rawName.trim().replace(/\s+/g, " ");
+  const safeName = normalizedName && isValidFullName(normalizedName) ? normalizedName : undefined;
 
   if (isDemoMode()) {
     if (!payload.email) {
@@ -150,7 +165,7 @@ export async function POST(request: NextRequest) {
         user: {
           _id: payload.firebaseUid ?? `demo-${Date.now()}`,
           email: payload.email,
-          name: payload.name ?? payload.email.split("@")[0] ?? "User",
+          name: safeName ?? fallbackNameFromEmail(payload.email),
           role: payload.role ?? "student",
           university: payload.university,
           contact: payload.contact,
@@ -205,11 +220,11 @@ export async function POST(request: NextRequest) {
       "ngo",
       "parent"
     ];
-    const rawRole = payload.role != null && payload.role !== "" ? String(payload.role).toLowerCase() : null;
+    const rawRole = payload.role ? String(payload.role).toLowerCase() : null;
     const payloadRole =
       rawRole && validRoles.includes(rawRole as UserRole) ? (rawRole as UserRole) : null;
 
-    // Always prefer payload role for self-request; otherwise new user → student, existing user → leave unchanged.
+    // Always prefer payload role for self-request; otherwise new user -> student, existing user -> leave unchanged.
     const roleFromPayload =
       payloadRole != null
         ? (isPrivileged || !existingUser || isSelf ? payloadRole : undefined)
@@ -221,17 +236,16 @@ export async function POST(request: NextRequest) {
     const setFields: Partial<DbUserInput> & { updatedAt: Date } = {
       updatedAt: now,
       email: normalizedEmail,
-      name: payload.name ?? normalizedEmail.split("@")[0] ?? "User",
+      name: safeName ?? fallbackNameFromEmail(normalizedEmail),
       ...(roleToSet != null && { role: roleToSet }),
       firebaseUid: payload.firebaseUid,
       university: payload.university,
       contact: payload.contact,
-      roleDetails: payload.roleDetails ?? {},
       ...(isNewUserWithoutRole && { needsProfileCompletion: true }),
       ...(completingProfile && { needsProfileCompletion: false })
     };
 
-    if (payload.name) setFields.name = payload.name;
+    if (safeName) setFields.name = safeName;
     if (roleToSet != null) setFields.role = roleToSet;
     if (payload.university) setFields.university = payload.university;
     if (payload.contact) setFields.contact = payload.contact;
@@ -245,7 +259,10 @@ export async function POST(request: NextRequest) {
 
     // No path may appear in both $set and $setOnInsert (MongoDB conflict). Use $setOnInsert only for
     // insert-only defaults; everything else goes in $set.
-    const update = {
+    const update: {
+      $set: Partial<DbUserInput> & { updatedAt: Date };
+      $setOnInsert: Pick<DbUserInput, "createdAt" | "status" | "isDeleted" | "subscription">;
+    } = {
       $set: setFields,
       $setOnInsert: {
         createdAt: now,
@@ -268,7 +285,13 @@ export async function POST(request: NextRequest) {
       return jsonResponse({ message: "Unable to sync user." }, 500);
     }
 
-    return jsonResponse({ message: "User synced", user: mapUserDocument(result) }, 201);
+    const syncedUser = mapUserDocument(result);
+    invalidateSessionUserCache({
+      uid: syncedUser.firebaseUid,
+      email: syncedUser.email
+    });
+
+    return jsonResponse({ message: "User synced", user: syncedUser }, 201);
   } catch (err) {
     console.error("[POST /api/users] MongoDB error:", err instanceof Error ? err.message : err);
     const devMessage = errorMessageForDev(err);
@@ -304,15 +327,21 @@ export async function PUT(request: NextRequest) {
     const database = await getMongoDatabase();
     const usersCollection = database.collection<DbUserInput>("users");
     const now = new Date();
+    const nextProfilePic = payload.profilePic ?? "";
     const result = await usersCollection.findOneAndUpdate(
       { firebaseUid: uid },
-      { $set: { profilePic: payload.profilePic ?? null, updatedAt: now } },
+      { $set: { profilePic: nextProfilePic, updatedAt: now } },
       { returnDocument: "after" }
     );
     if (!result) {
       return jsonResponse({ message: "User not found" }, 404);
     }
-    return jsonResponse({ message: "Profile picture updated", user: mapUserDocument(result) });
+    const updatedUser = mapUserDocument(result);
+    invalidateSessionUserCache({
+      uid: updatedUser.firebaseUid,
+      email: updatedUser.email
+    });
+    return jsonResponse({ message: "Profile picture updated", user: updatedUser });
   } catch (err) {
     console.error("[PUT /api/users] MongoDB error:", err instanceof Error ? err.message : err);
     const devMessage = errorMessageForDev(err);

@@ -3,6 +3,7 @@ import { demoUsers } from "@/lib/demo-data";
 import { getDemoSessionById, updateDemoSession } from "@/lib/mentorship-demo-store";
 import { isDemoMode, jsonResponse } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
+import { createNotification } from "@/lib/notifications";
 import { requireSession } from "@/lib/session-auth";
 import type { MentorshipSession } from "@/types";
 
@@ -23,24 +24,36 @@ export async function PATCH(
     if (session.error) return session.error;
     const uid = session.session.firebase.uid;
     const currentUserId = (session.session.user as { _id?: string } | null)?._id ?? uid;
+    const currentRole = session.session.user?.role ?? "";
+    const isAdmin = currentRole === "admin" || currentRole === "super_admin";
 
     const existing = getDemoSessionById(id);
     if (!existing) {
       return jsonResponse({ message: "Session not found" }, 404);
     }
-    const isStudent = existing.studentId === currentUserId;
+    const isStudent = existing.studentId === currentUserId || existing.studentId === uid;
+    const isMentor = existing.mentorId === currentUserId || existing.mentorId === uid;
+    if (!isStudent && !isMentor && !isAdmin) {
+      return jsonResponse({ message: "Forbidden" }, 403);
+    }
     const updates: Partial<MentorshipSession> = {};
 
     if (status !== undefined) {
-      if (status === "cancelled" && (isStudent || existing.mentorId === currentUserId)) {
+      if (isAdmin && (status === "pending" || status === "confirmed" || status === "scheduled" || status === "completed" || status === "cancelled")) {
+        updates.status = status;
+      } else if (status === "cancelled" && (isStudent || isMentor)) {
         updates.status = "cancelled";
-      } else if ((status === "confirmed" || status === "scheduled") && existing.mentorId === currentUserId) {
+      } else if ((status === "confirmed" || status === "scheduled" || status === "completed") && isMentor) {
         updates.status = status;
       } else if (status === "scheduled" && isStudent) {
         updates.status = "scheduled";
       }
     }
-    if (scheduledTime !== undefined && typeof scheduledTime === "string") {
+    const canSetScheduledTime =
+      isAdmin ||
+      (isMentor && (status === "confirmed" || status === "scheduled" || status === undefined)) ||
+      (isStudent && (existing.status === "confirmed" || existing.status === "scheduled") && status !== "cancelled");
+    if (scheduledTime !== undefined && typeof scheduledTime === "string" && canSetScheduledTime) {
       updates.scheduledTime = scheduledTime;
     }
     if (existing.status === "completed" && isStudent) {
@@ -63,6 +76,8 @@ export async function PATCH(
   if (authResult.error) {
     return authResult.error;
   }
+  const currentRole = authResult.session.user?.role ?? "";
+  const isAdmin = currentRole === "admin" || currentRole === "super_admin";
 
   const isDemoId = id.length !== 24 || !/^[a-f0-9]{24}$/i.test(id);
   if (isDemoId && process.env.NODE_ENV === "development") {
@@ -72,15 +87,27 @@ export async function PATCH(
     }
     const uid = authResult.session.firebase.uid;
     const currentUserId = (authResult.session.user as { _id?: string } | null)?._id ?? uid;
-    const isStudent = existing.studentId === currentUserId;
+    const isStudent = existing.studentId === currentUserId || existing.studentId === uid;
+    const isMentor = existing.mentorId === currentUserId || existing.mentorId === uid;
+    if (!isStudent && !isMentor && !isAdmin) {
+      return jsonResponse({ message: "Forbidden" }, 403);
+    }
     const updates: Partial<MentorshipSession> = {};
 
     if (status !== undefined) {
-      if (status === "cancelled") updates.status = "cancelled";
-      else if ((status === "confirmed" || status === "scheduled") && existing.mentorId === currentUserId) updates.status = status;
+      if (isAdmin && (status === "pending" || status === "confirmed" || status === "scheduled" || status === "completed" || status === "cancelled")) {
+        updates.status = status;
+      } else if (status === "cancelled" && (isStudent || isMentor)) updates.status = "cancelled";
+      else if ((status === "confirmed" || status === "scheduled" || status === "completed") && isMentor) updates.status = status;
       else if (status === "scheduled" && isStudent) updates.status = "scheduled";
     }
-    if (scheduledTime !== undefined && typeof scheduledTime === "string") updates.scheduledTime = scheduledTime;
+    const canSetScheduledTime =
+      isAdmin ||
+      (isMentor && (status === "confirmed" || status === "scheduled" || status === undefined)) ||
+      (isStudent && (existing.status === "confirmed" || existing.status === "scheduled") && status !== "cancelled");
+    if (scheduledTime !== undefined && typeof scheduledTime === "string" && canSetScheduledTime) {
+      updates.scheduledTime = scheduledTime;
+    }
     if (existing.status === "completed" && isStudent) {
       if (typeof rating === "number" && rating >= 1 && rating <= 5) updates.rating = rating;
       if (typeof review === "string") updates.review = review.trim();
@@ -111,19 +138,25 @@ export async function PATCH(
   const uid = authResult.session.firebase.uid;
   const isMentor = sessionDoc.mentorFirebaseUid === uid;
   const isStudent = sessionDoc.studentFirebaseUid === uid;
-  if (!isMentor && !isStudent) {
+  if (!isMentor && !isStudent && !isAdmin) {
     return jsonResponse({ message: "Forbidden" }, 403);
   }
 
   const update: Record<string, unknown> = { updatedAt: new Date() };
   if (status !== undefined) {
-    if (status === "cancelled") update.status = "cancelled";
-    else if (status === "confirmed" || status === "scheduled") {
+    if (isAdmin && (status === "pending" || status === "confirmed" || status === "scheduled" || status === "completed" || status === "cancelled")) {
+      update.status = status;
+    } else if (status === "cancelled") update.status = "cancelled";
+    else if (status === "confirmed" || status === "scheduled" || status === "completed") {
       if (isMentor) update.status = status;
       else if (isStudent && status === "scheduled") update.status = "scheduled";
     }
   }
-  if (scheduledTime !== undefined && typeof scheduledTime === "string") {
+  const canSetScheduledTime =
+    isAdmin ||
+    (isMentor && (status === "confirmed" || status === "scheduled" || status === undefined)) ||
+    (isStudent && (sessionDoc.status === "confirmed" || sessionDoc.status === "scheduled") && status !== "cancelled");
+  if (scheduledTime !== undefined && typeof scheduledTime === "string" && canSetScheduledTime) {
     update.scheduledTime = scheduledTime;
   }
   if (sessionDoc.status === "completed" && isStudent) {
@@ -137,6 +170,99 @@ export async function PATCH(
 
   await sessionsCol.updateOne({ _id: new ObjectId(id) }, { $set: update });
   const updatedDoc = await sessionsCol.findOne({ _id: new ObjectId(id) });
+
+  const recipientTargets: Array<{ userId?: string; firebaseUid?: string; sectionId: string }> = [];
+  if (isAdmin) {
+    recipientTargets.push({
+      userId: typeof sessionDoc.studentId === "string" ? sessionDoc.studentId : undefined,
+      firebaseUid: typeof sessionDoc.studentFirebaseUid === "string" ? sessionDoc.studentFirebaseUid : undefined,
+      sectionId: "mentorship"
+    });
+    recipientTargets.push({
+      userId: typeof sessionDoc.mentorId === "string" ? sessionDoc.mentorId : undefined,
+      firebaseUid: typeof sessionDoc.mentorFirebaseUid === "string" ? sessionDoc.mentorFirebaseUid : undefined,
+      sectionId: "sessions"
+    });
+  } else {
+    recipientTargets.push({
+      userId: isMentor
+        ? (typeof sessionDoc.studentId === "string" ? sessionDoc.studentId : undefined)
+        : (typeof sessionDoc.mentorId === "string" ? sessionDoc.mentorId : undefined),
+      firebaseUid: isMentor
+        ? (typeof sessionDoc.studentFirebaseUid === "string" ? sessionDoc.studentFirebaseUid : undefined)
+        : (typeof sessionDoc.mentorFirebaseUid === "string" ? sessionDoc.mentorFirebaseUid : undefined),
+      sectionId: isMentor ? "mentorship" : "sessions"
+    });
+  }
+  const topic = typeof sessionDoc.topic === "string" ? sessionDoc.topic : "mentorship session";
+  const changedStatus = typeof update.status === "string" ? update.status : null;
+  const ratingValue = typeof update.rating === "number" ? update.rating : null;
+  const reviewValue = typeof update.review === "string" && update.review.trim().length ? update.review.trim() : null;
+
+  if (recipientTargets.length && (changedStatus || ratingValue !== null || reviewValue !== null)) {
+    let title = "Mentorship update";
+    let message = `Session "${topic}" has a new update.`;
+
+    if (ratingValue !== null || reviewValue !== null) {
+      title = "New mentorship feedback";
+      if (ratingValue !== null && reviewValue) {
+        message = `Your session "${topic}" received a ${ratingValue}/5 rating and a new review.`;
+      } else if (ratingValue !== null) {
+        message = `Your session "${topic}" received a ${ratingValue}/5 rating.`;
+      } else {
+        message = `Your session "${topic}" received a new written review.`;
+      }
+    } else if (changedStatus === "confirmed") {
+      message = isAdmin
+        ? `Admin approved mentorship session "${topic}".`
+        : isMentor
+        ? `Your mentorship request "${topic}" was approved by the mentor.`
+        : `You approved the mentorship request "${topic}".`;
+    } else if (changedStatus === "scheduled") {
+      message = isAdmin
+        ? `Admin updated schedule for mentorship session "${topic}".`
+        : isMentor
+        ? `Your mentorship session "${topic}" has a scheduled time.`
+        : `A student scheduled "${topic}".`;
+    } else if (changedStatus === "completed") {
+      message = isAdmin
+        ? `Admin marked mentorship session "${topic}" as completed.`
+        : isMentor
+        ? `Your mentorship session "${topic}" was marked completed. You can now rate and review.`
+        : `You marked "${topic}" as completed.`;
+    } else if (changedStatus === "cancelled") {
+      message = isAdmin
+        ? `Admin cancelled mentorship session "${topic}".`
+        : isMentor
+        ? `Your mentorship session "${topic}" was cancelled.`
+        : `The mentorship session "${topic}" was cancelled by the other participant.`;
+    } else if (changedStatus === "pending") {
+      message = `Admin moved mentorship session "${topic}" back to pending review.`;
+    }
+
+    await Promise.allSettled([
+      ...recipientTargets.map((target) =>
+        createNotification(database, {
+          userId: target.userId,
+          firebaseUid: target.firebaseUid,
+          title,
+          message,
+          type: "mentorship",
+          sectionId: target.sectionId,
+          relatedSessionId: id
+        })
+      ),
+      createNotification(database, {
+        audienceRoles: ["admin", "super_admin"],
+        title: "Mentorship activity update",
+        message: `Mentorship session "${topic}" has a new ${changedStatus ?? "feedback"} update.`,
+        type: "mentorship",
+        sectionId: "mentorship-program",
+        relatedSessionId: id
+      })
+    ]);
+  }
+
   return jsonResponse({
     ...updatedDoc,
     _id: (updatedDoc as { _id?: { toString: () => string } })._id?.toString?.() ?? id

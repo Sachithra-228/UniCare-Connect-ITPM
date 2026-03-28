@@ -4,6 +4,15 @@
 
 :root {
   color-scheme: light;
+  --app-font: var(--font-inter);
+}
+
+:root:lang(si) {
+  --app-font: var(--font-sinhala);
+}
+
+:root:lang(ta) {
+  --app-font: var(--font-tamil);
 }
 
 .dark {

@@ -120,7 +120,7 @@ export function StudentHome() {
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: number) => [value, "Count"]} />
-                <Legend formatter={(_: unknown, entry: { payload?: { name?: string } }, i: number) => (isEmptyState && i > 0 ? "" : entry.payload?.name)} />
+                <Legend formatter={(value, _entry, index) => (isEmptyState && index > 0 ? "" : String(value ?? ""))} />
               </PieChart>
             </ResponsiveContainer>
           </div>

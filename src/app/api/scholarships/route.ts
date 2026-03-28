@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { demoScholarships } from "@/lib/demo-data";
 import { isDemoMode, jsonResponse } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
+import { createNotification } from "@/lib/notifications";
 import { requireRole, requireSession } from "@/lib/session-auth";
 
 export async function GET() {
@@ -62,11 +63,47 @@ export async function POST(request: NextRequest) {
     updatedAt: now
   };
   const result = await scholarshipsCollection.insertOne(document);
+  const scholarshipId = result.insertedId.toString();
+  const title = String(document.title ?? document.name ?? "scholarship");
+  const creatorRole = authResult.session.user?.role ?? "";
+
+  await Promise.allSettled([
+    createNotification(database, {
+      userId: authResult.session.user?._id,
+      firebaseUid: authResult.session.firebase.uid,
+      title: "Scholarship published",
+      message: `Your scholarship "${title}" is now live.`,
+      type: "financial-aid",
+      sectionId:
+        creatorRole === "donor"
+          ? "my-scholarships"
+          : creatorRole === "ngo"
+            ? "programs"
+            : "financial-oversight",
+      relatedScholarshipId: scholarshipId
+    }),
+    createNotification(database, {
+      audienceRoles: ["student"],
+      title: "New scholarship available",
+      message: `A new scholarship "${title}" is available.`,
+      type: "financial-aid",
+      sectionId: "financial-aid",
+      relatedScholarshipId: scholarshipId
+    }),
+    createNotification(database, {
+      audienceRoles: ["parent"],
+      title: "Scholarship update",
+      message: `A new scholarship "${title}" may be relevant to your student.`,
+      type: "financial-aid",
+      sectionId: "financial-overview",
+      relatedScholarshipId: scholarshipId
+    })
+  ]);
 
   return jsonResponse(
     {
       message: "Scholarship created",
-      scholarship: { ...document, _id: result.insertedId.toString() }
+      scholarship: { ...document, _id: scholarshipId }
     },
     201
   );

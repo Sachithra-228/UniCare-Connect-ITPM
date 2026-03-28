@@ -1,10 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Card } from "@/components/shared/card";
 import { StatCard } from "@/components/shared/stat-card";
+import { Button } from "@/components/shared/button";
+import { Input } from "@/components/shared/input";
+import { useAuth } from "@/context/auth-context";
+import {
+  defaultPreferences,
+  mergePreferences,
+  tabVariants,
+  type ProfilePreferences,
+  type ProfileTab
+} from "@/components/profile/profile-preferences";
 import type { MentorshipSession } from "@/types";
-import { RoleProfileShell } from "@/components/profile/role-profile-shell";
 
 type Notification = {
   id?: string;
@@ -52,13 +62,13 @@ export function MentorSectionContent({ sectionId }: MentorSectionContentProps) {
 
 function useMentorSessions() {
   const [sessions, setSessions] = useState<EnrichedSession[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
+  const refreshSessions = useCallback(() => {
+    setLoading(true);
     fetch("/api/mentorship-sessions")
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => {
-        if (cancelled) return;
         if (Array.isArray(data)) {
           setSessions(
             data.map((s: MentorshipSession) => ({
@@ -66,18 +76,21 @@ function useMentorSessions() {
               menteeName: s.studentName
             }))
           );
+        } else {
+          setSessions([]);
         }
       })
       .catch(() => {
-        if (!cancelled) setSessions([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+        setSessions([]);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  return sessions;
+  useEffect(() => {
+    refreshSessions();
+  }, [refreshSessions]);
+
+  return { sessions, loading, refreshSessions };
 }
 
 function useMentorNotifications() {
@@ -111,7 +124,7 @@ function useMentorNotifications() {
 }
 
 function MentorHomeSection() {
-  const sessions = useMentorSessions();
+  const { sessions } = useMentorSessions();
   const notifications = useMentorNotifications();
 
   const upcomingSessions = sessions.filter(
@@ -189,7 +202,7 @@ function MentorHomeSection() {
 }
 
 function MentorMyMenteesSection() {
-  const sessions = useMentorSessions();
+  const { sessions } = useMentorSessions();
 
   const menteeMap = new Map<
     string,
@@ -255,12 +268,36 @@ function MentorMyMenteesSection() {
 }
 
 function MentorSessionsSection() {
-  const sessions = useMentorSessions();
+  const { sessions, loading, refreshSessions } = useMentorSessions();
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const upcoming = sessions.filter(
     (s) => s.status === "scheduled" || s.status === "confirmed" || s.status === "pending"
   );
   const history = sessions.filter((s) => s.status === "completed" || s.status === "cancelled");
+
+  const updateSessionStatus = async (sessionId: string, status: "confirmed" | "completed" | "cancelled") => {
+    setUpdatingId(`${sessionId}:${status}`);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/mentorship-sessions/${sessionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+      const body = await response.json().catch(() => ({} as { message?: string }));
+      if (!response.ok) {
+        setActionError(body.message ?? "Unable to update session status.");
+        return;
+      }
+      refreshSessions();
+    } catch {
+      setActionError("Unable to update session status.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -271,24 +308,62 @@ function MentorSessionsSection() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="space-y-3 p-4">
           <h3 className="text-sm font-semibold">Upcoming & pending</h3>
+          {actionError ? <p className="text-xs text-rose-600 dark:text-rose-400">{actionError}</p> : null}
           <div className="space-y-2 text-sm">
-            {upcoming.map((s) => (
-              <div
-                key={s._id}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
-              >
-                <p className="font-medium">
-                  {s.topic}{" "}
-                  {s.studentName && (
-                    <span className="text-xs font-normal text-slate-500">
-                      with {s.studentName}
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-slate-500">Status: {s.status}</p>
-              </div>
-            ))}
-            {!upcoming.length && (
+            {loading ? (
+              <p className="text-sm text-slate-500">Loading sessions...</p>
+            ) : (
+              upcoming.map((s) => (
+                <div
+                  key={s._id}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+                >
+                  <p className="font-medium">
+                    {s.topic}{" "}
+                    {s.studentName && (
+                      <span className="text-xs font-normal text-slate-500">
+                        with {s.studentName}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-slate-500">Status: {s.status}</p>
+                  {s.scheduledTime && <p className="text-xs text-slate-500">Time: {new Date(s.scheduledTime).toLocaleString()}</p>}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {s.status === "pending" && (
+                      <>
+                        <button
+                          type="button"
+                          className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-900/40 dark:text-emerald-300"
+                          disabled={updatingId !== null}
+                          onClick={() => updateSessionStatus(s._id, "confirmed")}
+                        >
+                          {updatingId === `${s._id}:confirmed` ? "Updating..." : "Approve request"}
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-rose-900/40 dark:text-rose-300"
+                          disabled={updatingId !== null}
+                          onClick={() => updateSessionStatus(s._id, "cancelled")}
+                        >
+                          {updatingId === `${s._id}:cancelled` ? "Updating..." : "Reject request"}
+                        </button>
+                      </>
+                    )}
+                    {(s.status === "confirmed" || s.status === "scheduled") && (
+                      <button
+                        type="button"
+                        className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={updatingId !== null}
+                        onClick={() => updateSessionStatus(s._id, "completed")}
+                      >
+                        {updatingId === `${s._id}:completed` ? "Updating..." : "Mark completed"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+            {!loading && !upcoming.length && (
               <p className="text-sm text-slate-500">
                 No upcoming sessions yet. When students request or you schedule time slots, they will
                 show up here.
@@ -314,6 +389,12 @@ function MentorSessionsSection() {
                 </p>
                 {s.feedback && (
                   <p className="text-xs text-slate-500">Feedback: {s.feedback}</p>
+                )}
+                {typeof s.rating === "number" && (
+                  <p className="text-xs text-slate-500">Student rating: {s.rating}/5</p>
+                )}
+                {s.review && (
+                  <p className="text-xs text-slate-500">Student review: {s.review}</p>
                 )}
               </div>
             ))}
@@ -440,7 +521,7 @@ function MentorWebinarsSection() {
 }
 
 function MentorImpactTrackerSection() {
-  const sessions = useMentorSessions();
+  const { sessions } = useMentorSessions();
 
   const completedSessions = sessions.filter((s) => s.status === "completed").length;
   const uniqueMentees = new Set(sessions.map((s) => s.studentId)).size;
@@ -480,61 +561,654 @@ function MentorImpactTrackerSection() {
 }
 
 function MentorProfileSection() {
+  const { user, refreshUser, updateUserProfile, requestPasswordReset } = useAuth();
+  const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [securityMessage, setSecurityMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
+
+  const [name, setName] = useState(user?.name ?? "");
+  const [contact, setContact] = useState(user?.contact ?? "");
+  const [expertiseAreas, setExpertiseAreas] = useState(user?.roleDetails?.expertiseAreas ?? "");
+  const [availability, setAvailability] = useState(user?.roleDetails?.availability ?? "");
+  const [linkedIn, setLinkedIn] = useState(user?.roleDetails?.linkedIn ?? "");
+  const [notificationMode, setNotificationMode] = useState(user?.roleDetails?.notificationMode ?? "email_in_app");
+
+  const [profilePicUploading, setProfilePicUploading] = useState(false);
+  const [personalSaving, setPersonalSaving] = useState(false);
+  const [mentorSaving, setMentorSaving] = useState(false);
+  const [preferencesLoading, setPreferencesLoading] = useState(false);
+  const [preferencesSaving, setPreferencesSaving] = useState(false);
+  const [preferences, setPreferences] = useState<ProfilePreferences>(defaultPreferences);
+
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    setName(user.name ?? "");
+    setContact(user.contact ?? "");
+    setExpertiseAreas(user.roleDetails?.expertiseAreas ?? "");
+    setAvailability(user.roleDetails?.availability ?? "");
+    setLinkedIn(user.roleDetails?.linkedIn ?? "");
+    setNotificationMode(user.roleDetails?.notificationMode ?? "email_in_app");
+  }, [user]);
+
+  useEffect(() => {
+    if (!user?.email) return;
+    let cancelled = false;
+
+    async function loadPreferences() {
+      setPreferencesLoading(true);
+      try {
+        const response = await fetch("/api/profile/preferences", { cache: "no-store" });
+        const payload = (await response.json()) as Partial<ProfilePreferences>;
+        if (!cancelled && response.ok) {
+          setPreferences(mergePreferences(payload));
+        }
+      } catch {
+        if (!cancelled) setPreferences(mergePreferences(null));
+      } finally {
+        if (!cancelled) setPreferencesLoading(false);
+      }
+    }
+
+    async function loadDeleteRequestStatus() {
+      try {
+        const response = await fetch("/api/profile/delete-request", { cache: "no-store" });
+        const payload = (await response.json()) as {
+          pending?: boolean;
+          request?: { status?: "pending" | "approved" | "rejected" } | null;
+        };
+        if (!cancelled && response.ok) {
+          const isPending = Boolean(payload.pending || payload.request?.status === "pending");
+          setDeletePending(isPending);
+        }
+      } catch {
+        if (!cancelled) setDeletePending(false);
+      }
+    }
+
+    void loadPreferences();
+    void loadDeleteRequestStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.email]);
+
+  const savePersonal = async () => {
+    if (!user?.email) return;
+    setMessage(null);
+    setPersonalSaving(true);
+    try {
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firebaseUid: (user as { firebaseUid?: string }).firebaseUid,
+          email: user.email,
+          name: name.trim() || user.name,
+          contact: contact.trim() || undefined
+        })
+      });
+      const payload = (await response.json()) as { user?: { name?: string; contact?: string }; message?: string };
+      if (response.ok && payload.user) {
+        updateUserProfile({ name: payload.user.name, contact: payload.user.contact });
+        await refreshUser();
+        setMessage({ type: "ok", text: "Personal details updated." });
+      } else {
+        setMessage({ type: "err", text: payload.message ?? "Could not save." });
+      }
+    } catch {
+      setMessage({ type: "err", text: "Could not save. Try again." });
+    } finally {
+      setPersonalSaving(false);
+    }
+  };
+
+  const saveMentorProfile = async () => {
+    if (!user?.email) return;
+    setMessage(null);
+    setMentorSaving(true);
+
+    const currentRoleDetails = { ...(user.roleDetails ?? {}) };
+    const nextExpertise = expertiseAreas.trim();
+    const nextAvailability = availability.trim();
+    const nextLinkedIn = linkedIn.trim();
+
+    if (nextExpertise) {
+      currentRoleDetails.expertiseAreas = nextExpertise;
+    } else {
+      delete currentRoleDetails.expertiseAreas;
+    }
+    if (nextAvailability) {
+      currentRoleDetails.availability = nextAvailability;
+    } else {
+      delete currentRoleDetails.availability;
+    }
+    if (nextLinkedIn) {
+      currentRoleDetails.linkedIn = nextLinkedIn;
+    } else {
+      delete currentRoleDetails.linkedIn;
+    }
+    if (notificationMode) {
+      currentRoleDetails.notificationMode = notificationMode;
+    }
+
+    try {
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firebaseUid: (user as { firebaseUid?: string }).firebaseUid,
+          email: user.email,
+          name: user.name,
+          roleDetails: currentRoleDetails
+        })
+      });
+      const payload = (await response.json()) as {
+        user?: { roleDetails?: Record<string, string> };
+        message?: string;
+      };
+      if (response.ok && payload.user) {
+        updateUserProfile({ roleDetails: payload.user.roleDetails });
+        await refreshUser();
+        setMessage({ type: "ok", text: "Mentor profile updated." });
+      } else {
+        setMessage({ type: "err", text: payload.message ?? "Could not save." });
+      }
+    } catch {
+      setMessage({ type: "err", text: "Could not save. Try again." });
+    } finally {
+      setMentorSaving(false);
+    }
+  };
+
+  const savePreferences = async (successText: string) => {
+    setMessage(null);
+    setPreferencesSaving(true);
+    try {
+      const response = await fetch("/api/profile/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          privacy: preferences.privacy,
+          notifications: preferences.notifications
+        })
+      });
+      const payload = (await response.json()) as { message?: string; preferences?: Partial<ProfilePreferences> };
+      if (response.ok) {
+        if (payload.preferences) {
+          setPreferences(mergePreferences(payload.preferences));
+        }
+        setMessage({ type: "ok", text: successText });
+      } else {
+        setMessage({ type: "err", text: payload.message ?? "Could not save preferences." });
+      }
+    } catch {
+      setMessage({ type: "err", text: "Could not save preferences. Try again." });
+    } finally {
+      setPreferencesSaving(false);
+    }
+  };
+
+  const handleProfilePicChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user?.email) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : "";
+      if (!dataUrl) return;
+      setProfilePicUploading(true);
+      setMessage(null);
+      try {
+        const response = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firebaseUid: (user as { firebaseUid?: string }).firebaseUid,
+            email: user.email,
+            profilePic: dataUrl
+          })
+        });
+        const payload = (await response.json()) as { user?: { profilePic?: string }; message?: string };
+        if (response.ok && payload.user) {
+          updateUserProfile({ profilePic: payload.user.profilePic });
+          await refreshUser();
+          setMessage({ type: "ok", text: "Profile picture updated." });
+        } else {
+          setMessage({ type: "err", text: payload.message ?? "Could not update picture." });
+        }
+      } catch {
+        setMessage({ type: "err", text: "Could not update picture. Try again." });
+      } finally {
+        setProfilePicUploading(false);
+      }
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const handleSendResetEmail = async () => {
+    if (!user?.email) return;
+    setSecurityMessage(null);
+    try {
+      await requestPasswordReset(user.email);
+      setSecurityMessage({ type: "ok", text: "Password reset link sent to your email." });
+    } catch {
+      setSecurityMessage({ type: "err", text: "Could not send reset email. Try again." });
+    }
+  };
+
+  const handleSubmitDeleteRequest = async () => {
+    if (!window.confirm("Submit account deletion request for admin review?")) {
+      return;
+    }
+
+    setSecurityMessage(null);
+    setDeleteSubmitting(true);
+    try {
+      const response = await fetch("/api/profile/delete-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reason: deleteReason.trim() || undefined
+        })
+      });
+      const payload = (await response.json()) as { message?: string };
+      if (response.ok || response.status === 409) {
+        setDeletePending(true);
+        setSecurityMessage({
+          type: "ok",
+          text: payload.message ?? "Deletion request submitted for admin review."
+        });
+      } else {
+        setSecurityMessage({
+          type: "err",
+          text: payload.message ?? "Could not submit deletion request. Try again."
+        });
+      }
+    } catch {
+      setSecurityMessage({ type: "err", text: "Could not submit deletion request. Try again." });
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  };
+
+  const tabs: { id: ProfileTab; label: string }[] = [
+    { id: "profile", label: "Profile" },
+    { id: "settings", label: "Preferences" },
+    { id: "security", label: "Security" }
+  ];
+
+  const initials =
+    (user?.name ?? user?.email ?? "U")
+      .split(/\s+/)
+      .map((segment) => segment[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
   return (
-    <RoleProfileShell roleLabel="Mentor profile">
-      <div className="space-y-4">
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          Update how students see you as a mentor. You can tune your expertise areas, availability,
-          and how you&apos;re contacted, but cannot edit other users&apos; profiles.
+    <div className="space-y-6">
+      {message && (
+        <p
+          className={`rounded-xl border px-4 py-2 text-sm ${
+            message.type === "ok"
+              ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200"
+              : "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+          }`}
+        >
+          {message.text}
         </p>
-        <Card className="space-y-4 p-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Expertise areas
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-                placeholder="E.g. software engineering, data science, product management"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Availability
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-                placeholder="E.g. weekends, evenings, limited slots"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                LinkedIn profile
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-                placeholder="https://linkedin.com/in/..."
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Notification preferences
-              </label>
-              <select className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900">
-                <option>Email + in‑app</option>
-                <option>Email only</option>
-                <option>In‑app only</option>
-              </select>
+      )}
+
+      {securityMessage && (
+        <p
+          className={`rounded-xl border px-4 py-2 text-sm ${
+            securityMessage.type === "ok"
+              ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200"
+              : "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+          }`}
+        >
+          {securityMessage.text}
+        </p>
+      )}
+
+      <Card className="flex flex-wrap items-center justify-between gap-4 border-primary/20 bg-gradient-to-r from-primary/5 via-white to-emerald-50 p-5 dark:from-primary/10 dark:via-slate-900 dark:to-emerald-900/20">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-slate-100 dark:border-primary/60 dark:bg-slate-800">
+              {user?.profilePic ? (
+                <img src={user.profilePic} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-lg font-semibold text-primary">{initials}</span>
+              )}
             </div>
           </div>
-          <div className="flex justify-end">
-            <button className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90">
-              Save profile
+          <div>
+            <p className="text-sm font-medium uppercase tracking-wide text-primary">Mentor profile</p>
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">{user?.name ?? "Your name"}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">{user?.email}</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="cursor-pointer text-xs font-medium text-primary hover:underline">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleProfilePicChange}
+              disabled={profilePicUploading}
+            />
+            {profilePicUploading ? "Uploading..." : "Change picture"}
+          </label>
+        </div>
+      </Card>
+
+      <Card className="border-primary/20 bg-primary/5 p-4">
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          Update how students see you as a mentor. Financial and wellness data remains hidden.
+        </p>
+      </Card>
+
+      <div className="border-b border-slate-200 dark:border-slate-700">
+        <nav className="flex flex-wrap gap-1" role="tablist" aria-label="Profile sections">
+          {tabs.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === id}
+              onClick={() => setActiveTab(id)}
+              className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === id
+                  ? "border-primary text-primary"
+                  : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+              }`}
+            >
+              {label}
             </button>
-          </div>
-        </Card>
+          ))}
+        </nav>
       </div>
-    </RoleProfileShell>
+
+      <AnimatePresence mode="wait">
+        {activeTab === "profile" && (
+          <motion.div
+            key="profile"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="space-y-4"
+          >
+            <Card className="space-y-4 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Personal details</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Full name</label>
+                  <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
+                  <Input type="email" defaultValue={user?.email ?? ""} placeholder="Email" disabled />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Contact</label>
+                  <Input
+                    value={contact}
+                    onChange={(event) => setContact(event.target.value)}
+                    placeholder="Phone number"
+                  />
+                </div>
+              </div>
+              <Button variant="primary" onClick={savePersonal} disabled={personalSaving}>
+                {personalSaving ? "Saving..." : "Save changes"}
+              </Button>
+            </Card>
+
+            <Card className="space-y-4 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Mentor profile</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Expertise, availability, and profile links that students can see.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Expertise areas</label>
+                  <Input
+                    value={expertiseAreas}
+                    onChange={(event) => setExpertiseAreas(event.target.value)}
+                    placeholder="Software engineering, data science, product management"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Availability</label>
+                  <Input
+                    value={availability}
+                    onChange={(event) => setAvailability(event.target.value)}
+                    placeholder="Weekends, evenings, limited slots"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">LinkedIn profile</label>
+                  <Input
+                    value={linkedIn}
+                    onChange={(event) => setLinkedIn(event.target.value)}
+                    placeholder="https://linkedin.com/in/..."
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Notification mode
+                  </label>
+                  <select
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    value={notificationMode}
+                    onChange={(event) => setNotificationMode(event.target.value)}
+                  >
+                    <option value="email_in_app">Email + in-app</option>
+                    <option value="email_only">Email only</option>
+                    <option value="in_app_only">In-app only</option>
+                  </select>
+                </div>
+              </div>
+              <Button variant="primary" onClick={saveMentorProfile} disabled={mentorSaving}>
+                {mentorSaving ? "Saving..." : "Update mentor profile"}
+              </Button>
+            </Card>
+          </motion.div>
+        )}
+
+        {activeTab === "settings" && (
+          <motion.div
+            key="settings"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="space-y-4"
+          >
+            <Card className="space-y-4 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Privacy preferences</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Control what is shared with students and university coordinators.
+              </p>
+              <div className="space-y-2 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.privacy.shareCareerInterestsWithMentors}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        privacy: {
+                          ...current.privacy,
+                          shareCareerInterestsWithMentors: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
+                  Share my career interests with mentorship coordinators
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.privacy.shareFinancialAidWithAdmins}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        privacy: {
+                          ...current.privacy,
+                          shareFinancialAidWithAdmins: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
+                  Share mentoring activity summary with admin teams
+                </label>
+              </div>
+              <Button
+                variant="secondary"
+                onClick={() => savePreferences("Privacy settings saved.")}
+                disabled={preferencesLoading || preferencesSaving}
+              >
+                {preferencesSaving ? "Saving..." : "Save privacy settings"}
+              </Button>
+            </Card>
+
+            <Card className="space-y-4 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Notification settings</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Choose how you receive updates about mentees and sessions.
+              </p>
+              <div className="space-y-2 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.notifications.emailApplicationStatus}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        notifications: {
+                          ...current.notifications,
+                          emailApplicationStatus: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
+                  Email for mentorship status changes
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.notifications.mentorshipSessionReminders}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        notifications: {
+                          ...current.notifications,
+                          mentorshipSessionReminders: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
+                  Reminders for scheduled sessions
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.notifications.weeklyWellnessReminder}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        notifications: {
+                          ...current.notifications,
+                          weeklyWellnessReminder: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
+                  Weekly mentorship digest reminder
+                </label>
+              </div>
+              <Button
+                variant="secondary"
+                onClick={() => savePreferences("Notification settings saved.")}
+                disabled={preferencesLoading || preferencesSaving}
+              >
+                {preferencesSaving ? "Saving..." : "Save notification settings"}
+              </Button>
+              {preferences.updatedAt ? (
+                <p className="text-xs text-slate-500">Last updated: {new Date(preferences.updatedAt).toLocaleString()}</p>
+              ) : null}
+            </Card>
+          </motion.div>
+        )}
+
+        {activeTab === "security" && (
+          <motion.div
+            key="security"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="space-y-4"
+          >
+            <Card className="space-y-3 p-5">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Password and sign-in</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Send yourself a secure link to reset your password.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <Input type="email" value={user?.email ?? ""} disabled className="max-w-xs" />
+                <Button variant="secondary" onClick={handleSendResetEmail} disabled={!user?.email}>
+                  Send reset link
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="space-y-3 border-red-200 bg-red-50/60 p-5 dark:border-red-900 dark:bg-red-950/40">
+              <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Delete account request</h3>
+              <p className="text-sm text-red-800 dark:text-red-200">
+                Submit a request and the university admin team will review it.
+              </p>
+              <textarea
+                value={deleteReason}
+                onChange={(event) => setDeleteReason(event.target.value)}
+                placeholder="Optional reason for deletion request"
+                className="min-h-[90px] w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-0 focus:border-red-300 dark:border-red-700 dark:bg-slate-900 dark:text-slate-100"
+                disabled={deletePending || deleteSubmitting}
+              />
+              <Button
+                variant="secondary"
+                className="border-red-400 text-red-800 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
+                onClick={handleSubmitDeleteRequest}
+                disabled={deletePending || deleteSubmitting}
+              >
+                {deletePending ? "Deletion request pending" : deleteSubmitting ? "Submitting..." : "Request account deletion"}
+              </Button>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
+
 
