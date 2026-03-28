@@ -3,7 +3,8 @@ import { errorMessageForDev, isDemoMode, jsonResponse } from "@/lib/api";
 import {
   applySessionCookie,
   clearSessionCookie,
-  getSessionFromRequest
+  getSessionFromRequest,
+  SESSION_COOKIE_NAME
 } from "@/lib/session-auth";
 import { verifyFirebaseIdToken } from "@/lib/firebase-auth-server";
 
@@ -40,6 +41,11 @@ export async function POST(request: NextRequest) {
     const idToken = payload.idToken;
     if (!idToken) {
       return jsonResponse({ message: "idToken is required." }, 400);
+    }
+
+    const currentToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+    if (currentToken && currentToken === idToken) {
+      return jsonResponse({ status: "session_set" });
     }
 
     await verifyFirebaseIdToken(idToken);

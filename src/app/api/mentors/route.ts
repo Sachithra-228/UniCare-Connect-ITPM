@@ -4,6 +4,14 @@ import { isDemoMode, jsonResponse } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { requireSession } from "@/lib/session-auth";
 
+type MentorUserDocument = {
+  _id: { toString: () => string };
+  name: string;
+  email?: string;
+  profilePic?: string;
+  roleDetails?: Record<string, string>;
+};
+
 export async function GET(request: NextRequest) {
   if (isDemoMode()) {
     const mentors = demoUsers.filter((u) => u.role === "mentor").map((u) => ({
@@ -24,12 +32,12 @@ export async function GET(request: NextRequest) {
 
   const database = await getMongoDatabase();
   const users = await database
-    .collection("users")
+    .collection<MentorUserDocument>("users")
     .find({ role: "mentor" })
     .project({ name: 1, email: 1, profilePic: 1, roleDetails: 1 })
     .toArray();
 
-  let mentors = users.map((u: { _id: { toString: () => string }; name: string; email?: string; profilePic?: string; roleDetails?: Record<string, string> }) => ({
+  let mentors = users.map((u) => ({
     _id: u._id.toString(),
     name: u.name,
     email: u.email,

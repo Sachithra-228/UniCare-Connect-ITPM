@@ -175,9 +175,9 @@ export function StudentMentorship() {
         message: requestMessage.trim() || undefined
       })
     })
-      .then((r) => r.json())
-      .then((data) => {
-        if (r.ok) {
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({} as { message?: string }));
+        if (response.ok) {
           setSelectedMentorForRequest(null);
           setRequestTopic("");
           setRequestMessage("");
@@ -198,9 +198,9 @@ export function StudentMentorship() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "cancelled" })
     })
-      .then((r) => r.json())
-      .then((data) => {
-        if (r.ok) {
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({} as { message?: string }));
+        if (response.ok) {
           showToast("Request cancelled.");
           fetchSessions();
         } else {
@@ -220,9 +220,9 @@ export function StudentMentorship() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ scheduledTime: dateTime, status: "scheduled" })
     })
-      .then((r) => r.json())
-      .then((data) => {
-        if (r.ok) {
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({} as { message?: string }));
+        if (response.ok) {
           showToast("Session scheduled.");
           setScheduleSessionId(null);
           setScheduleTime("");
@@ -245,9 +245,9 @@ export function StudentMentorship() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rating: reviewRating, review: reviewText.trim() || undefined })
     })
-      .then((r) => r.json())
-      .then((data) => {
-        if (r.ok) {
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({} as { message?: string }));
+        if (response.ok) {
           showToast("Thank you for your feedback.");
           setReviewSessionId(null);
           setReviewRating(0);
