@@ -15,10 +15,30 @@ if (allowInsecureTls) {
 
 let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient> | null = null;
+type GlobalMongoCache = {
+  client?: MongoClient;
+  clientPromise?: Promise<MongoClient>;
+};
+
+function getGlobalMongoCache(): GlobalMongoCache {
+  const globalWithMongo = globalThis as typeof globalThis & { __unicareMongoCache?: GlobalMongoCache };
+  if (!globalWithMongo.__unicareMongoCache) {
+    globalWithMongo.__unicareMongoCache = {};
+  }
+  return globalWithMongo.__unicareMongoCache;
+}
 
 export function getMongoClient() {
   if (!uri) {
     throw new Error("MONGODB_URI not configured");
+  }
+
+  const globalCache = getGlobalMongoCache();
+  if (!client && globalCache.client) {
+    client = globalCache.client;
+  }
+  if (!clientPromise && globalCache.clientPromise) {
+    clientPromise = globalCache.clientPromise;
   }
 
   if (client) {
@@ -37,12 +57,16 @@ export function getMongoClient() {
       .connect()
       .then((connectedClient) => {
         client = connectedClient;
+        globalCache.client = connectedClient;
         return connectedClient;
       })
       .catch((error) => {
         clientPromise = null;
+        globalCache.clientPromise = undefined;
         throw error;
       });
+
+    globalCache.clientPromise = clientPromise;
   }
 
   return clientPromise;

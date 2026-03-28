@@ -28,6 +28,46 @@ export type VerifiedFirebaseIdentity = {
   emailVerified: boolean;
 };
 
+const VERIFY_CACHE_TTL_MS = 5 * 60 * 1000;
+const VERIFY_CACHE_MAX_ENTRIES = 500;
+type CachedIdentity = {
+  identity: VerifiedFirebaseIdentity;
+  expiresAt: number;
+};
+
+const verifyCache = new Map<string, CachedIdentity>();
+const inflightLookups = new Map<string, Promise<VerifiedFirebaseIdentity>>();
+
+function decodeJwtExpMs(token: string): number | null {
+  const parts = token.split(".");
+  if (parts.length < 2) return null;
+  try {
+    const payloadBase64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padding = payloadBase64.length % 4 === 0 ? "" : "=".repeat(4 - (payloadBase64.length % 4));
+    const payloadJson = Buffer.from(payloadBase64 + padding, "base64").toString("utf8");
+    const payload = JSON.parse(payloadJson) as { exp?: unknown };
+    return typeof payload.exp === "number" ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+function getCacheExpiry(idToken: string, now: number) {
+  const tokenExpMs = decodeJwtExpMs(idToken);
+  const tokenBoundedExpiry = tokenExpMs ? Math.max(now + 1000, tokenExpMs - 30_000) : now + VERIFY_CACHE_TTL_MS;
+  return Math.min(now + VERIFY_CACHE_TTL_MS, tokenBoundedExpiry);
+}
+
+function trimVerifyCacheIfNeeded() {
+  while (verifyCache.size > VERIFY_CACHE_MAX_ENTRIES) {
+    const oldestKey = verifyCache.keys().next().value;
+    if (!oldestKey) {
+      break;
+    }
+    verifyCache.delete(oldestKey);
+  }
+}
+
 function getFirebaseApiKey() {
   const key = process.env.FIREBASE_WEB_API_KEY ?? process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   if (!key) {
@@ -67,21 +107,51 @@ async function postIdentityToolkit<TResponse>(path: string, payload: Record<stri
 }
 
 export async function verifyFirebaseIdToken(idToken: string): Promise<VerifiedFirebaseIdentity> {
-  const response = await postIdentityToolkit<FirebaseLookupResponse>("accounts:lookup", {
-    idToken
-  });
-
-  const user = response.users?.[0];
-  if (!user) {
-    throw new Error("INVALID_ID_TOKEN");
+  const now = Date.now();
+  const cached = verifyCache.get(idToken);
+  if (cached && cached.expiresAt > now) {
+    return cached.identity;
+  }
+  if (cached) {
+    verifyCache.delete(idToken);
   }
 
-  return {
-    uid: user.localId,
-    email: user.email ?? null,
-    displayName: user.displayName ?? null,
-    emailVerified: Boolean(user.emailVerified)
-  };
+  const inflight = inflightLookups.get(idToken);
+  if (inflight) {
+    return inflight;
+  }
+
+  const lookupPromise = (async () => {
+    const response = await postIdentityToolkit<FirebaseLookupResponse>("accounts:lookup", {
+      idToken
+    });
+
+    const user = response.users?.[0];
+    if (!user) {
+      throw new Error("INVALID_ID_TOKEN");
+    }
+
+    const identity: VerifiedFirebaseIdentity = {
+      uid: user.localId,
+      email: user.email ?? null,
+      displayName: user.displayName ?? null,
+      emailVerified: Boolean(user.emailVerified)
+    };
+
+    verifyCache.set(idToken, {
+      identity,
+      expiresAt: getCacheExpiry(idToken, Date.now())
+    });
+    trimVerifyCacheIfNeeded();
+    return identity;
+  })();
+
+  inflightLookups.set(idToken, lookupPromise);
+  try {
+    return await lookupPromise;
+  } finally {
+    inflightLookups.delete(idToken);
+  }
 }
 
 export async function sendFirebaseVerificationEmail(idToken: string, continueUrl?: string) {
