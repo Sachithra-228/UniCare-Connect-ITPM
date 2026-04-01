@@ -6,6 +6,8 @@ import { Card } from "@/components/shared/card";
 import { Badge } from "@/components/shared/badge";
 import { Button } from "@/components/shared/button";
 import { AidRequestForm } from "@/components/financial/aid-request-form";
+import { Input } from "@/components/shared/input";
+import { getNgoPrograms, addNgoApplication, type NgoProgram } from "@/lib/ngo-demo-store";
 
 type AidRequest = {
   id?: string;
@@ -27,7 +29,7 @@ type FinancialSummary = {
 
 type AidCategoryKey = "emergency" | "equipment" | "boarding" | "tuition" | "other";
 
-const TAB_IDS = ["emergency-aid", "equipment", "meal-voucher", "tuition"] as const;
+const TAB_IDS = ["emergency-aid", "equipment", "meal-voucher", "tuition", "ngo-programs"] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -88,6 +90,12 @@ export function StudentFinancialAid() {
   const [selectedRequest, setSelectedRequest] = useState<AidRequest | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  
+  // NGO states
+  const [ngoPrograms, setNgoPrograms] = useState<NgoProgram[]>([]);
+  const [applyingNgoId, setApplyingNgoId] = useState<string | null>(null);
+  const [ngoApplyReason, setNgoApplyReason] = useState("");
+  const [ngoApplyAmount, setNgoApplyAmount] = useState("");
 
   const fetchAidRequests = useCallback((showLoader = true) => {
     if (showLoader) setLoadingAid(true);
@@ -115,6 +123,7 @@ export function StudentFinancialAid() {
     (showLoader = false) => {
       fetchAidRequests(showLoader);
       fetchFinancialSummary(showLoader);
+      setNgoPrograms(getNgoPrograms().filter(p => p.status === "active"));
     },
     [fetchAidRequests, fetchFinancialSummary]
   );
@@ -166,7 +175,8 @@ export function StudentFinancialAid() {
     { id: "emergency-aid" as const, label: "Emergency aid applications" },
     { id: "equipment" as const, label: "Equipment support" },
     { id: "meal-voucher" as const, label: "Meal voucher support" },
-    { id: "tuition" as const, label: "Tuition support" }
+    { id: "tuition" as const, label: "Tuition support" },
+    { id: "ngo-programs" as const, label: "NGO Support Programs" }
   ];
 
   const renderRequestList = (requests: AidRequest[], emptyMessage: string) => {
@@ -416,6 +426,75 @@ export function StudentFinancialAid() {
             </div>
           </Card>
         </div>
+      )}
+
+      {activeTab === "ngo-programs" && (
+        <Card className="border-slate-200/80 p-5 dark:border-slate-700/50">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Active NGO Support Programs</h3>
+          <p className="mt-1 mb-4 text-sm text-slate-600 dark:text-slate-300">
+            External organizations have partnered with the university to provide these support initiatives. Apply here, and your university admin will verify your eligibility with the NGO.
+          </p>
+
+          <div className="space-y-4">
+            {ngoPrograms.length === 0 ? (
+              <p className="text-sm text-slate-500">No active NGO programs at this time.</p>
+            ) : (
+              ngoPrograms.map(prog => (
+                <div key={prog._id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h4 className="font-semibold text-slate-900 dark:text-white">{prog.title}</h4>
+                      <p className="mt-1 text-sm text-slate-500">{prog.description}</p>
+                      <div className="mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        Eligibility: {prog.eligibility}
+                      </div>
+                    </div>
+                    {applyingNgoId === prog._id ? (
+                      <div className="w-full sm:w-64 space-y-2 rounded-lg bg-slate-50 p-3 outline outline-1 outline-slate-200 dark:bg-slate-900 dark:outline-slate-700">
+                        <Input 
+                          placeholder="Amount requested (LKR)" 
+                          type="number"
+                          value={ngoApplyAmount} 
+                          onChange={(e) => setNgoApplyAmount(e.target.value)} 
+                        />
+                        <textarea 
+                          placeholder="Brief reason for application..."
+                          value={ngoApplyReason}
+                          onChange={(e) => setNgoApplyReason(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700 dark:bg-slate-800"
+                          rows={2}
+                        />
+                        <div className="flex gap-2">
+                          <Button variant="primary" className="flex-1 py-1.5 text-xs" onClick={() => {
+                            if (!ngoApplyReason.trim()) return;
+                            addNgoApplication({
+                              studentId: "student-123", /* demo user id */
+                              programId: prog._id,
+                              programTitle: prog.title,
+                              amountRequested: Number(ngoApplyAmount) || 0,
+                              reason: ngoApplyReason
+                            });
+                            setApplyingNgoId(null);
+                            setToastMessage("Application submitted to Administrative review.");
+                          }}>
+                            Submit
+                          </Button>
+                          <Button className="py-1.5 text-xs" onClick={() => setApplyingNgoId(null)}>Cancel</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button onClick={() => {
+                        setApplyingNgoId(prog._id);
+                        setNgoApplyReason("");
+                        setNgoApplyAmount("");
+                      }}>Apply</Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
       )}
 
       {showSuccessPopup && (

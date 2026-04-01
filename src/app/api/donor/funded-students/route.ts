@@ -26,6 +26,7 @@ type UserDocument = {
   name?: string;
   email?: string;
   university?: string;
+  role?: string;
   roleDetails?: Record<string, unknown>;
 };
 
@@ -226,6 +227,11 @@ export async function GET(request: NextRequest) {
     });
 
     const students = identities
+      .filter((item) => {
+        const user = userByIdentity.get(item.userId ?? item.firebaseUid ?? item.id);
+        const role = String(user?.role ?? "").toLowerCase();
+        return role !== "mentor" && role !== "employer";
+      })
       .map((item, index) => {
         const user = userByIdentity.get(item.userId ?? item.firebaseUid ?? item.id);
         const consented = hasDonorConsent(user, item.consentFromAid);

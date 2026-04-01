@@ -37,6 +37,8 @@ export function AdminSectionContent({ sectionId }: AdminSectionContentProps) {
         return AdminReportsSection;
       case "announcements":
         return AdminAnnouncementsSection;
+      case "partnerships":
+        return AdminPartnershipsSection;
       case "profile":
         return AdminProfileSection;
       default:
@@ -218,7 +220,7 @@ function AdminOverviewSection() {
 function AdminVerificationsSection() {
   type VerificationItem = {
     id: string;
-    kind: "user" | "aid";
+    kind: "user" | "aid" | "ngo";
     type: string;
     role: string;
     status: string;
@@ -243,9 +245,23 @@ function AdminVerificationsSection() {
       if (!response.ok) {
         setError(payload.message ?? "Unable to load verification queue.");
         setItems([]);
-        return;
+      } else {
+        const fetchedItems = Array.isArray(payload.items) ? payload.items : [];
+        import("@/lib/ngo-demo-store").then(({ getNgoApplications }) => {
+          const ngoApps = getNgoApplications().filter(a => a.status === "pending_admin" || a.status === "verified_by_admin" || a.status === "rejected").map(app => ({
+            id: app._id,
+            kind: "ngo" as const,
+            type: "NGO Program Request",
+            role: "Student",
+            status: app.status === "pending_admin" ? "Pending" 
+                  : app.status === "verified_by_admin" ? "Approved" 
+                  : "Rejected",
+            note: `${app.programTitle} - ${app.amountRequested ? `Requested LKR ${app.amountRequested}` : "Needs Support"}`,
+            createdAt: app.appliedAt
+          }));
+          setItems([...fetchedItems, ...ngoApps].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        });
       }
-      setItems(Array.isArray(payload.items) ? payload.items : []);
     } catch {
       setError("Unable to load verification queue.");
       setItems([]);
@@ -276,6 +292,14 @@ function AdminVerificationsSection() {
     setUpdatingId(item.id);
     setError(null);
     try {
+      if (item.kind === "ngo") {
+        const { updateNgoApplicationStatus } = await import("@/lib/ngo-demo-store");
+        updateNgoApplicationStatus(item.id, decision === "approve" ? "verified_by_admin" : "rejected");
+        await loadItems();
+        setUpdatingId(null);
+        return;
+      }
+
       const response =
         item.kind === "user"
           ? await fetch("/api/admin/verifications", {
@@ -363,7 +387,7 @@ function AdminVerificationsSection() {
                       onClick={() => applyDecision(item, "approve")}
                       disabled={actionDisabled || status === "Approved"}
                     >
-                      {updatingId === item.id ? "Updating..." : "Approve"}
+                      {updatingId === item.id ? "Updating..." : item.kind === "ngo" ? "Verify" : "Approve"}
                     </button>
                     <button
                       type="button"
@@ -405,6 +429,10 @@ function AdminFinancialOversightSection() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+  
+  // NGO Funding tracking
+  const [ngoFunding, setNgoFunding] = useState<any[]>([]);
+  const [updatingNgoId, setUpdatingNgoId] = useState<string | null>(null);
 
   const requestId = (request: AidQueueItem, index: number) => request._id || request.id || `request-${index}`;
 
@@ -463,6 +491,12 @@ function AdminFinancialOversightSection() {
         });
         return next;
       });
+      
+      // Load NGO Funding
+      import("@/lib/ngo-demo-store").then(({ getNgoFundingRecords }) => {
+        setNgoFunding(getNgoFundingRecords());
+      });
+      
     } catch {
       setError("Unable to load aid requests.");
       setRequests([]);
@@ -626,6 +660,58 @@ function AdminFinancialOversightSection() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </Card>
+
+      <Card className="space-y-4 p-4 mt-6">
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white">NGO Funding Distribution</h3>
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          Verify funds allocated by NGOs before they are disbursed to student accounts.
+        </p>
+        
+        {ngoFunding.length === 0 ? (
+          <p className="text-sm text-slate-500">No NGO funding records available.</p>
+        ) : (
+          <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
+            {ngoFunding.filter(f => f.status === "allocated" || f.status === "pending").map((fund) => (
+              <div key={fund._id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-medium text-slate-900 dark:text-slate-100">{fund.allocatedTo}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Donor: {fund.donorName} ({fund.donorType})
+                  </p>
+                  <p className="text-xs font-semibold text-primary mt-1">
+                    Amount: LKR {fund.amount.toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                    {fund.status}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setUpdatingNgoId(fund._id);
+                      // Faking delay for demo
+                      await new Promise(r => setTimeout(r, 600));
+                      const { updateNgoFundingStatus } = await import("@/lib/ngo-demo-store");
+                      updateNgoFundingStatus(fund._id, "disbursed");
+                      const { getNgoFundingRecords } = await import("@/lib/ngo-demo-store");
+                      setNgoFunding(getNgoFundingRecords());
+                      setUpdatingNgoId(null);
+                    }}
+                    disabled={updatingNgoId === fund._id}
+                    className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  >
+                    {updatingNgoId === fund._id ? "Verifying..." : "Verify Distribution"}
+                  </button>
+                </div>
+              </div>
+            ))}
+            {ngoFunding.filter(f => f.status === "allocated" || f.status === "pending").length === 0 && (
+              <p className="text-sm text-slate-500 pt-2 pb-1">All current NGO distributions have been verified and disbursed.</p>
+            )}
           </div>
         )}
       </Card>
@@ -3175,5 +3261,60 @@ function AdminProfileSection() {
   );
 }
 
+function AdminPartnershipsSection() {
+  const [partnerships, setPartnerships] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    import("@/lib/ngo-demo-store").then(({ getNgoPartnerships }) => {
+      setPartnerships(getNgoPartnerships().filter(p => p.partnerType === "admin" || p.status === "active"));
+      setLoading(false);
+    });
+  }, []);
 
+  return (
+    <div className="space-y-6">
+      <Card className="border-primary/20 bg-primary/5 p-4 dark:border-primary/10 dark:bg-primary/10">
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          Partner organizations collaborate with University Admins to co-manage scholarships, verify eligibility, 
+          and track resource distribution. View active joint initiatives below.
+        </p>
+      </Card>
+      
+      {loading ? (
+        <p className="text-sm text-slate-500">Loading active partnerships...</p>
+      ) : partnerships.length === 0 ? (
+        <p className="text-sm text-slate-500">No active partnerships found.</p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {partnerships.map((partner) => (
+            <Card key={partner._id} className="p-5 flex flex-col items-start hover:shadow-md transition-shadow">
+              <span className="mb-2 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                {new Date(partner.since).getFullYear()} Partnership
+              </span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-1">{partner.partnerName}</h3>
+              <p className="text-sm text-primary font-medium mb-3">{partner.focusArea}</p>
+              
+              <div className="w-full mt-auto space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Your Role</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">{partner.role}</p>
+                </div>
+                {partner.jointInitiatives && partner.jointInitiatives.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Joint Initiatives</p>
+                    <ul className="list-disc pl-4 text-sm text-slate-600 dark:text-slate-400">
+                      {partner.jointInitiatives.map((ji: string, i: number) => (
+                        <li key={i}>{ji}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

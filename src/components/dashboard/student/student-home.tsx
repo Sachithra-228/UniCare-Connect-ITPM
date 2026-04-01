@@ -13,6 +13,7 @@ import { Card } from "@/components/shared/card";
 import { Badge } from "@/components/shared/badge";
 import type { Scholarship } from "@/types";
 import type { JobListing } from "@/types";
+import { getNgoCommunications, type NgoCommunication } from "@/lib/ngo-demo-store";
 
 type AidRequest = { id?: string; _id?: string; category?: string; status?: string; submittedAt?: string };
 type MentorshipSession = { _id: string; topic: string; scheduledTime: string; status: string };
@@ -25,6 +26,7 @@ export function StudentHome() {
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [aidRequests, setAidRequests] = useState<AidRequest[]>([]);
   const [sessions, setSessions] = useState<MentorshipSession[]>([]);
+  const [ngoComms, setNgoComms] = useState<NgoCommunication[]>([]);
   useEffect(() => {
     Promise.all([
       fetch("/api/scholarships").then((r) => r.json()),
@@ -40,6 +42,9 @@ export function StudentHome() {
       setAidRequests(Array.isArray(aid) ? aid : []);
       setSessions(Array.isArray(sess) ? sess : []);
     });
+    
+    // Load NGO communications for beneficiaries
+    setNgoComms(getNgoCommunications().filter(c => c.audience === "beneficiaries" || c.audience === "all-applicants"));
   }, []);
 
   const upcomingDeadlines = [
@@ -224,6 +229,36 @@ export function StudentHome() {
           )}
         </div>
       </Card>
+
+      {/* NGO Communications Section */}
+      {ngoComms.length > 0 && (
+        <Card className="overflow-hidden border-emerald-200/50 bg-gradient-to-br from-emerald-50 via-white to-white dark:border-emerald-800/30 dark:from-emerald-950/20 dark:via-slate-900/90 dark:to-slate-900">
+          <div className="border-b border-emerald-100 bg-emerald-50/50 px-5 py-4 dark:border-emerald-900/40 dark:bg-emerald-900/20">
+            <h3 className="text-base font-semibold text-emerald-900 dark:text-emerald-400">Updates from Supporting NGOs</h3>
+            <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">
+              Important communications regarding your NGO-funded programs and support initiatives.
+            </p>
+          </div>
+          <div className="divide-y divide-slate-100 p-0 dark:divide-slate-800">
+            {ngoComms.map((comm) => (
+              <div key={comm._id} className="px-5 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h4 className="font-semibold text-slate-900 dark:text-white">{comm.subject}</h4>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{comm.message}</p>
+                    <p className="mt-2 text-xs text-slate-400">
+                      Sent {new Date(comm.sentAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Badge variant={comm.type === "program-update" ? "success" : "info"}>
+                    {comm.type.replace("-", " ")}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
     </div>
   );

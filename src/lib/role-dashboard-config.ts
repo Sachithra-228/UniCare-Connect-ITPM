@@ -232,6 +232,17 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         ]
       },
       {
+        id: "partnerships",
+        menuLabel: "Partnerships",
+        icon: "🤝",
+        title: "Partnerships",
+        items: [
+          "Joint initiatives with NGOs",
+          "Collaboration tracking",
+          "External program administration"
+        ]
+      },
+      {
         id: "profile",
         menuLabel: "Profile",
         icon: "👤",
@@ -546,9 +557,9 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "🏠",
         title: "Organization Home",
         items: [
-          "Active programs",
-          "Beneficiary stats",
-          "Funding overview"
+          "Data flow diagram (Donor → NGO → Admin → Student)",
+          "Connection status & KPI stats",
+          "Recent impact stories"
         ]
       },
       {
@@ -557,9 +568,9 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "🎯",
         title: "Programs",
         items: [
-          "Current initiatives",
-          "Application forms",
-          "Beneficiary management"
+          "Manage NGO support programs",
+          "Create program & define eligibility",
+          "Application pipeline tracking"
         ]
       },
       {
@@ -568,9 +579,9 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "💰",
         title: "Funding",
         items: [
-          "Grant allocations",
-          "Emergency relief funds",
-          "Disbursement tracking"
+          "Budget vs Disbursed tracking",
+          "Donor contribution table",
+          "Funding allocation flow"
         ]
       },
       {
@@ -579,9 +590,9 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "👥",
         title: "Beneficiaries",
         items: [
-          "Student profiles",
-          "Application reviews",
-          "Impact stories"
+          "Anonymized student profiles",
+          "Academic retention progress",
+          "Program-specific filtering"
         ]
       },
       {
@@ -590,9 +601,9 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "📊",
         title: "Reports",
         items: [
-          "Program impact metrics",
-          "Financial reports",
-          "Donor reporting"
+          "Generate impact reports",
+          "Key metrics preview (charts)",
+          "Fund utilization summary"
         ]
       },
       {
@@ -601,9 +612,9 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "🤝",
         title: "Partnerships",
         items: [
-          "University collaborations",
-          "Corporate partners",
-          "Joint initiatives"
+          "University admin collaborations",
+          "Corporate donor partners",
+          "Joint initiatives tracking"
         ]
       },
       {
@@ -612,9 +623,9 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         icon: "📢",
         title: "Communications",
         items: [
-          "Newsletter to students",
-          "Awareness campaigns",
-          "Event promotions"
+          "Program updates to beneficiaries",
+          "Impact newsletters to donors",
+          "Message templates & history"
         ]
       },
       {
