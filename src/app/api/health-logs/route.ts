@@ -33,6 +33,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const payload = await request.json();
+  const getSessionIdentity = (authResult: Awaited<ReturnType<typeof requireSession>>) => {
+    const session = authResult.session;
+    const isAdmin = ["admin", "super_admin"].includes(session.user?.role ?? "");
+    const sessionUserId = session.user?._id;
+    const sessionFirebaseUid = session.firebase.uid;
+    const requestedUserId = isAdmin && typeof payload.userId === "string" ? payload.userId : undefined;
+    const requestedFirebaseUid =
+      isAdmin && typeof payload.firebaseUid === "string" ? payload.firebaseUid : undefined;
+
+    return {
+      userId: requestedUserId ?? sessionUserId,
+      firebaseUid: requestedFirebaseUid ?? sessionFirebaseUid
+    };
+  };
+
   if (isDemoMode()) {
     return jsonResponse({ message: "Health log saved (demo mode)", payload }, 201);
   }
@@ -41,6 +56,7 @@ export async function POST(request: NextRequest) {
   if (authResult.error) {
     return authResult.error;
   }
+  const identity = getSessionIdentity(authResult);
 
   const database = await getMongoDatabase();
   const healthLogsCollection = database.collection("health_logs");
@@ -58,8 +74,8 @@ export async function POST(request: NextRequest) {
     sleepHours,
     recommendations: [recommendation],
     riskLevel: highRisk ? "high" : "normal",
-    userId: payload.userId ?? authResult.session.user?._id,
-    firebaseUid: payload.firebaseUid ?? authResult.session.firebase.uid,
+    userId: identity.userId,
+    firebaseUid: identity.firebaseUid,
     createdAt: now,
     updatedAt: now
   };
@@ -67,8 +83,8 @@ export async function POST(request: NextRequest) {
 
   await Promise.allSettled([
     createNotification(database, {
-      userId: typeof document.userId === "string" ? document.userId : undefined,
-      firebaseUid: typeof document.firebaseUid === "string" ? document.firebaseUid : undefined,
+      userId: typeof identity.userId === "string" ? identity.userId : undefined,
+      firebaseUid: typeof identity.firebaseUid === "string" ? identity.firebaseUid : undefined,
       title: "Wellness check-in saved",
       message: "Your mood check-in has been recorded successfully.",
       type: "wellness",

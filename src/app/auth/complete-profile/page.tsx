@@ -172,7 +172,7 @@ const COMPLETE_PROFILE_TEXT: Record<Language, CompleteProfileText> = {
 };
 
 export default function CompleteProfilePage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { language } = useLanguage();
   const router = useRouter();
   const t = COMPLETE_PROFILE_TEXT[language];
@@ -185,21 +185,17 @@ export default function CompleteProfilePage() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    async function check() {
-      const res = await fetch("/api/auth/session", { cache: "no-store" });
-      if (!res.ok) {
-        router.replace("/login");
-        return;
-      }
-      const data = (await res.json()) as { user?: { needsProfileCompletion?: boolean; role?: string } };
-      if (!data.user?.needsProfileCompletion) {
-        router.replace(getDashboardPathForRole(data.user?.role));
-        return;
-      }
-      setChecking(false);
+    if (loading) return;
+    if (!user) {
+      router.replace("/login");
+      return;
     }
-    check();
-  }, [router]);
+    if (!user.needsProfileCompletion) {
+      router.replace(getDashboardPathForRole(user.role));
+      return;
+    }
+    setChecking(false);
+  }, [loading, user, router]);
 
   const update = (key: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));

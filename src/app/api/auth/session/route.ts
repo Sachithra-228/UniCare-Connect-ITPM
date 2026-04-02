@@ -12,13 +12,19 @@ type SessionPayload = {
   idToken?: string;
 };
 
+const shouldLogTiming = process.env.DEBUG_AUTH_TIMING === "true";
+
 export async function GET(request: NextRequest) {
+  const start = shouldLogTiming ? Date.now() : 0;
   try {
     const session = await getSessionFromRequest(request);
     if (!session) {
       return jsonResponse({ status: "unauthenticated" }, 401);
     }
 
+    if (shouldLogTiming) {
+      console.info(`[auth] GET /api/auth/session in ${Date.now() - start}ms`);
+    }
     return jsonResponse({
       status: "authenticated",
       firebase: session.firebase,
@@ -30,6 +36,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const start = shouldLogTiming ? Date.now() : 0;
   if (isDemoMode()) {
     const response = jsonResponse({ status: "session_set", mode: "demo" });
     applySessionCookie(response, "demo-session");
@@ -51,6 +58,9 @@ export async function POST(request: NextRequest) {
     await verifyFirebaseIdToken(idToken);
     const response = jsonResponse({ status: "session_set" });
     applySessionCookie(response, idToken);
+    if (shouldLogTiming) {
+      console.info(`[auth] POST /api/auth/session in ${Date.now() - start}ms`);
+    }
     return response;
   } catch (err) {
     const devMessage = errorMessageForDev(err);

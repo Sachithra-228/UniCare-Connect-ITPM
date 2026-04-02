@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage, type Language } from "@/context/language-context";
@@ -136,6 +136,7 @@ const AUTH_TEXT: Record<
     signUpSubtitle: string;
     emailVerifiedSuccess: string;
     signInButton: string;
+    signingIn: string;
     signInWithGoogle: string;
     forgotPassword: string;
     createAccountLink: string;
@@ -218,6 +219,7 @@ const AUTH_TEXT: Record<
     signUpSubtitle: "Complete a simple 4-step setup based on your role.",
     emailVerifiedSuccess: "Email verified successfully. You can now sign in.",
     signInButton: "Sign in",
+    signingIn: "Signing in...",
     signInWithGoogle: "Sign in with Google",
     forgotPassword: "Forgot password?",
     createAccountLink: "Create account",
@@ -298,6 +300,7 @@ const AUTH_TEXT: Record<
     signUpSubtitle: "à¶”à¶¶à¶œà·š à¶·à·–à¶¸à·’à¶šà·à·€ à¶…à¶±à·”à·€ à¶´à·’à¶ºà·€à¶» 4à¶š à·ƒà¶»à¶½ à·ƒà·à¶šà·ƒà·”à¶¸ à·ƒà¶¸à·Šà¶´à·–à¶»à·Šà¶« à¶šà¶»à¶±à·Šà¶±.",
     emailVerifiedSuccess: "à¶Šà¶¸à·šà¶½à·Š à·ƒà·à¶»à·Šà¶®à¶šà·€ à¶­à·„à·€à·”à¶»à·” à·€à·’à¶º. à¶¯à·à¶±à·Š à¶”à¶¶à¶§ à¶´à·’à·€à·’à·ƒà·’à¶º à·„à·à¶š.",
     signInButton: "à¶´à·’à·€à·’à·ƒà·™à¶±à·Šà¶±",
+    signingIn: "Signing in...",
     signInWithGoogle: "Google à¶¸à¶Ÿà·’à¶±à·Š à¶´à·’à·€à·’à·ƒà·™à¶±à·Šà¶±",
     forgotPassword: "à¶¸à·”à¶»à¶´à¶¯à¶º à¶…à¶¸à¶­à¶šà¶¯?",
     createAccountLink: "à¶œà·’à¶«à·”à¶¸ à·ƒà·à¶¯à¶±à·Šà¶±",
@@ -378,6 +381,7 @@ const AUTH_TEXT: Record<
     signUpSubtitle: "à®‰à®™à¯à®•à®³à¯ à®ªà®™à¯à®•à¯ˆ à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆà®¯à®¾à®•à®•à¯ à®•à¯Šà®£à¯à®Ÿ à®Žà®³à®¿à®¯ 4 à®ªà®Ÿà®¿ à®…à®®à¯ˆà®ªà¯à®ªà¯ˆ à®®à¯à®Ÿà®¿à®•à¯à®•à®µà¯à®®à¯.",
     emailVerifiedSuccess: "à®®à®¿à®©à¯à®©à®žà¯à®šà®²à¯ à®µà¯†à®±à¯à®±à®¿à®•à®°à®®à®¾à®• à®šà®°à®¿à®ªà®¾à®°à¯à®•à¯à®•à®ªà¯à®ªà®Ÿà¯à®Ÿà®¤à¯. à®‡à®ªà¯à®ªà¯‹à®¤à¯ à®‰à®³à¯à®¨à¯à®´à¯ˆà®¯à®²à®¾à®®à¯.",
     signInButton: "à®‰à®³à¯à®¨à¯à®´à¯ˆ",
+    signingIn: "Signing in...",
     signInWithGoogle: "Google à®®à¯‚à®²à®®à¯ à®‰à®³à¯à®¨à¯à®´à¯ˆ",
     forgotPassword: "à®•à®Ÿà®µà¯à®šà¯à®šà¯Šà®²à¯ à®®à®±à®¨à¯à®¤à¯à®µà®¿à®Ÿà¯à®Ÿà®¤à®¾?",
     createAccountLink: "à®•à®£à®•à¯à®•à¯ˆ à®‰à®°à¯à®µà®¾à®•à¯à®•à®µà¯à®®à¯",
@@ -424,6 +428,7 @@ AUTH_TEXT.si = {
   signUpSubtitle: "ඔබගේ භූමිකාව අනුව පියවර 4ක සරල සැකසුම සම්පූර්ණ කරන්න.",
   emailVerifiedSuccess: "ඊමේල් සාර්ථකව තහවුරු විය. දැන් ඔබට පිවිසිය හැක.",
   signInButton: "පිවිසෙන්න",
+  signingIn: "Signing in...",
   signInWithGoogle: "Google මඟින් පිවිසෙන්න",
   forgotPassword: "මුරපදය අමතකද?",
   createAccountLink: "ගිණුම සාදන්න",
@@ -469,6 +474,7 @@ AUTH_TEXT.ta = {
   signUpSubtitle: "உங்கள் பங்கை அடிப்படையாகக் கொண்ட எளிய 4 படி அமைப்பை முடிக்கவும்.",
   emailVerifiedSuccess: "மின்னஞ்சல் வெற்றிகரமாக சரிபார்க்கப்பட்டது. இப்போது உள்நுழையலாம்.",
   signInButton: "உள்நுழை",
+  signingIn: "Signing in...",
   signInWithGoogle: "Google மூலம் உள்நுழை",
   forgotPassword: "கடவுச்சொல் மறந்துவிட்டதா?",
   createAccountLink: "கணக்கை உருவாக்கவும்",
@@ -482,7 +488,7 @@ AUTH_TEXT.ta = {
 };
 
 export default function LoginPage() {
-  const { signInWithEmail, signInWithGoogle, registerWithEmail } = useAuth();
+  const { signInWithEmail, signInWithGoogle, registerWithEmail, user, firebaseUser, loading } = useAuth();
   const { language } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -572,20 +578,29 @@ export default function LoginPage() {
     return t.unableSignIn;
   };
 
-  const getPostSignInPath = async () => {
-    const response = await fetch("/api/auth/session", { cache: "no-store" });
-    if (!response.ok) {
-      return "/dashboard";
+  const [pendingRedirect, setPendingRedirect] = useState(false);
+  const [signInBusy, setSignInBusy] = useState(false);
+
+  useEffect(() => {
+    if (!pendingRedirect || loading) return;
+
+    if (!firebaseUser) {
+      setPendingRedirect(false);
+      setSignInBusy(false);
+      setSignInError(t.accountBlocked);
+      return;
     }
 
-    const data = (await response.json()) as {
-      user?: { role?: string; needsProfileCompletion?: boolean };
-    };
-    if (data.user?.needsProfileCompletion) {
-      return "/auth/complete-profile";
-    }
-    return getDashboardPathForRole(data.user?.role);
-  };
+    const nextPath = user
+      ? user.needsProfileCompletion
+        ? "/auth/complete-profile"
+        : getDashboardPathForRole(user.role)
+      : "/dashboard";
+
+    setPendingRedirect(false);
+    setSignInBusy(false);
+    router.push(nextPath);
+  }, [pendingRedirect, loading, firebaseUser, user, router, t.accountBlocked]);
 
   const getReadableSignUpError = (error: unknown) => {
     if (error instanceof Error && error.message === "ACCOUNT_SYNC_FAILED") {
@@ -638,6 +653,7 @@ export default function LoginPage() {
   const handleSignInSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSignInError(null);
+    setSignInBusy(true);
 
     const data = new FormData(event.currentTarget);
     const values = {
@@ -648,26 +664,28 @@ export default function LoginPage() {
     const result = loginSchema.safeParse(values);
     if (!result.success) {
       setSignInError(t.validEmailPasswordRequired);
+      setSignInBusy(false);
       return;
     }
 
     try {
       await signInWithEmail(result.data.email, result.data.password);
-      const nextPath = await getPostSignInPath();
-      router.push(nextPath);
+      setPendingRedirect(true);
     } catch (error) {
       setSignInError(getReadableAuthError(error));
+      setSignInBusy(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     setSignInError(null);
+    setSignInBusy(true);
     try {
       await signInWithGoogle();
-      const nextPath = await getPostSignInPath();
-      router.push(nextPath);
+      setPendingRedirect(true);
     } catch (error) {
       setSignInError(getReadableAuthError(error));
+      setSignInBusy(false);
     }
   };
 
@@ -1188,9 +1206,16 @@ export default function LoginPage() {
                 {signUpSuccess ? <p className="text-sm text-green-600">{signUpSuccess}</p> : null}
                 {signInError ? <p className="text-sm text-red-500">{signInError}</p> : null}
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <Button type="submit">{t.signInButton}</Button>
-                  <Button type="button" variant="secondary" onClick={handleGoogleSignIn}>
-                    {t.signInWithGoogle}
+                  <Button type="submit" disabled={signInBusy || pendingRedirect || loading}>
+                    {signInBusy || pendingRedirect || loading ? t.signingIn : t.signInButton}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleGoogleSignIn}
+                    disabled={signInBusy || pendingRedirect || loading}
+                  >
+                    {signInBusy || pendingRedirect || loading ? t.signingIn : t.signInWithGoogle}
                   </Button>
                 </div>
                 <div className="flex items-center justify-between text-sm text-slate-500">

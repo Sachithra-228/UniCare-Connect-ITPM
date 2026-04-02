@@ -7,6 +7,8 @@ import { invalidateSessionUserCache, requireRole, requireSession } from "@/lib/s
 import { isValidFullName } from "@/lib/validation";
 import { UserRole } from "@/types";
 
+const shouldLogTiming = process.env.DEBUG_AUTH_TIMING === "true";
+
 type UserPayload = {
   firebaseUid?: string;
   email?: string;
@@ -149,6 +151,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const start = shouldLogTiming ? Date.now() : 0;
   const payload = (await request.json()) as UserPayload;
   const rawName = typeof payload.name === "string" ? payload.name : "";
   const normalizedName = rawName.trim().replace(/\s+/g, " ");
@@ -200,12 +203,20 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const dbStart = shouldLogTiming ? Date.now() : 0;
     const database = await getMongoDatabase();
+    if (shouldLogTiming) {
+      console.info(`[users] getMongoDatabase in ${Date.now() - dbStart}ms`);
+    }
     const usersCollection = database.collection<DbUserInput>("users");
     const now = new Date();
 
     const filter = payload.firebaseUid ? { firebaseUid: payload.firebaseUid } : { email: normalizedEmail };
+    const matchPath = payload.firebaseUid ? "firebaseUid" : "email";
     const existingUser = await usersCollection.findOne(filter);
+    if (shouldLogTiming) {
+      console.info(`[users] match=${matchPath} existing=${existingUser ? "yes" : "no"}`);
+    }
     const isSelf =
       (payload.firebaseUid && payload.firebaseUid === authResult.session.firebase.uid) ||
       normalizedEmail === (authResult.session.firebase.email ?? "").toLowerCase();
@@ -224,11 +235,14 @@ export async function POST(request: NextRequest) {
     const payloadRole =
       rawRole && validRoles.includes(rawRole as UserRole) ? (rawRole as UserRole) : null;
 
-    // Always prefer payload role for self-request; otherwise new user -> student, existing user -> leave unchanged.
-    const roleFromPayload =
-      payloadRole != null
-        ? (isPrivileged || !existingUser || isSelf ? payloadRole : undefined)
-        : undefined;
+    const privilegedRoles = new Set<UserRole>(["admin", "super_admin"]);
+    const isPrivilegedRole = payloadRole != null && privilegedRoles.has(payloadRole);
+    // Non-privileged users can never set admin/super_admin, even for themselves.
+    const canApplyRole =
+      payloadRole != null &&
+      (isPrivileged || (!isPrivilegedRole && (isSelf || !existingUser)));
+    // Always prefer payload role for allowed self-request/new-user; otherwise new user -> student, existing user -> leave unchanged.
+    const roleFromPayload = canApplyRole ? payloadRole : undefined;
     const roleToSet = roleFromPayload ?? (!existingUser ? "student" : undefined);
     const isNewUserWithoutRole = !existingUser && payloadRole == null;
     const completingProfile = isSelf && (payloadRole != null || (payload.roleDetails && Object.keys(payload.roleDetails).length > 0));
@@ -257,6 +271,44 @@ export async function POST(request: NextRequest) {
     if (isPrivileged && payload.deletedAt) setFields.deletedAt = payload.deletedAt;
     if (isPrivileged && payload.subscription) setFields.subscription = payload.subscription;
 
+    const normalizeForCompare = (value: unknown) => {
+      if (value instanceof Date) return value.toISOString();
+      if (typeof value === "object") return JSON.stringify(value ?? null);
+      return value;
+    };
+
+    const compareFields = { ...setFields };
+    delete compareFields.updatedAt;
+    const changedFields: string[] = [];
+    if (existingUser) {
+      for (const [key, nextValue] of Object.entries(compareFields)) {
+        if (nextValue === undefined) continue;
+        const prevValue = (existingUser as Record<string, unknown>)[key];
+        if (normalizeForCompare(prevValue) !== normalizeForCompare(nextValue)) {
+          changedFields.push(key);
+        }
+      }
+    }
+    const shouldSkipUpdate = existingUser && changedFields.length === 0;
+    if (shouldLogTiming) {
+      console.info(
+        `[users] changes=${changedFields.length ? changedFields.join(",") : "none"} skip=${
+          shouldSkipUpdate ? "yes" : "no"
+        }`
+      );
+    }
+    if (shouldSkipUpdate) {
+      const syncedUser = mapUserDocument(existingUser);
+      invalidateSessionUserCache({
+        uid: syncedUser.firebaseUid,
+        email: syncedUser.email
+      });
+      if (shouldLogTiming) {
+        console.info(`[users] skip update; POST /api/users total in ${Date.now() - start}ms`);
+      }
+      return jsonResponse({ message: "User synced", user: syncedUser }, 201);
+    }
+
     // No path may appear in both $set and $setOnInsert (MongoDB conflict). Use $setOnInsert only for
     // insert-only defaults; everything else goes in $set.
     const update: {
@@ -276,10 +328,14 @@ export async function POST(request: NextRequest) {
       }
     };
 
+    const upsertStart = shouldLogTiming ? Date.now() : 0;
     const result = await usersCollection.findOneAndUpdate(filter, update, {
       upsert: true,
       returnDocument: "after"
     });
+    if (shouldLogTiming) {
+      console.info(`[users] findOneAndUpdate in ${Date.now() - upsertStart}ms`);
+    }
 
     if (!result) {
       return jsonResponse({ message: "Unable to sync user." }, 500);
@@ -291,6 +347,9 @@ export async function POST(request: NextRequest) {
       email: syncedUser.email
     });
 
+    if (shouldLogTiming) {
+      console.info(`[users] POST /api/users total in ${Date.now() - start}ms`);
+    }
     return jsonResponse({ message: "User synced", user: syncedUser }, 201);
   } catch (err) {
     console.error("[POST /api/users] MongoDB error:", err instanceof Error ? err.message : err);
