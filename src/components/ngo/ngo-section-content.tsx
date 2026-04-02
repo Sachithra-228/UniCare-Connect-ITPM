@@ -25,6 +25,9 @@ import {
   getNgoImpactStories,
   getNgoSummaryStats,
   addNgoProgram,
+  updateNgoProgram,
+  deleteNgoProgram,
+  disburseNgoPayment,
   addNgoPartnership,
   addNgoCommunication,
   markReportGenerated,
@@ -124,13 +127,6 @@ function NgoOrganizationHomeSection() {
     setStories(getNgoImpactStories());
   }, []);
 
-  const flowSteps = [
-    { label: "Donor", icon: "🤝", color: "from-amber-400 to-amber-500", desc: "Provides funds" },
-    { label: "NGO", icon: "🏢", color: "from-emerald-500 to-emerald-600", desc: "Manages programs", active: true },
-    { label: "University Admin", icon: "🏛️", color: "from-violet-500 to-violet-600", desc: "Verifies eligibility" },
-    { label: "Student", icon: "🎓", color: "from-blue-500 to-blue-600", desc: "Receives support" },
-  ];
-
   const storyPartyColor: Record<string, string> = {
     student: "border-l-blue-500",
     admin:   "border-l-violet-500",
@@ -139,43 +135,21 @@ function NgoOrganizationHomeSection() {
 
   return (
     <div className="space-y-8">
-      {/* Data flow diagram */}
-      <Card className="p-5">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">Data Flow Architecture</p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {flowSteps.map((step, i) => (
-            <div key={step.label} className="flex items-center gap-2">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.12 }}
-                className={`flex flex-col items-center gap-1 rounded-2xl border-2 px-4 py-3 text-center shadow-sm ${step.active ? "border-emerald-500 bg-emerald-50 dark:border-emerald-600 dark:bg-emerald-900/20" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"}`}
-              >
-                <span className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-xl shadow-sm ${step.color}`}>{step.icon}</span>
-                <p className={`text-xs font-bold ${step.active ? "text-emerald-700 dark:text-emerald-400" : "text-slate-700 dark:text-slate-200"}`}>{step.label}</p>
-                <p className="text-[10px] text-slate-500">{step.desc}</p>
-                {step.active && <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">YOU</span>}
-              </motion.div>
-              {i < flowSteps.length - 1 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.12 + 0.1 }}
-                  className="flex flex-col items-center gap-0.5">
-                  <span className="text-slate-300 dark:text-slate-600 text-lg">→</span>
-                </motion.div>
-              )}
-            </div>
-          ))}
+      {/* Overview & Scope */}
+      <div className="space-y-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Active Programs" value={String(stats.activeProgs)} description="Running support initiatives" />
+          <StatCard label="Beneficiaries" value={String(stats.totalBeneficiaries)} description="Students receiving support" />
+          <StatCard label="Funds Received" value={fmtLKR(stats.totalFundsReceived)} description="Total donor contributions" />
+          <StatCard label="Retention Rate" value={`${stats.retentionRate}%`} description="Students on-track / graduated" />
         </div>
-        <div className="mt-4">
-          <ScopeNotice connects="Student · University Admin · Donor" notConnectedTo="Employer (job system) · Mentor (mentorship) · Career data" />
+        
+        <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <ScopeNotice 
+            connects="Student · University Admin · Donor" 
+            notConnectedTo="Employer (job system) · Mentor (mentorship) · Career data" 
+          />
         </div>
-      </Card>
-
-      {/* KPI stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Active Programs" value={String(stats.activeProgs)} description="Running support initiatives" />
-        <StatCard label="Beneficiaries" value={String(stats.totalBeneficiaries)} description="Students receiving support" />
-        <StatCard label="Funds Received" value={fmtLKR(stats.totalFundsReceived)} description="Total donor contributions" />
-        <StatCard label="Retention Rate" value={`${stats.retentionRate}%`} description="Students on-track / graduated" />
       </div>
 
       {/* Connection status cards */}
@@ -221,10 +195,19 @@ function NgoOrganizationHomeSection() {
 
 function NgoProgramsSection() {
   const [programs, setPrograms] = useState(getNgoPrograms());
-  const [filter, setFilter] = useState<"all" | "active" | "paused" | "completed" | "draft">("all");
+  const [filter, setFilter] = useState<"all" | "active" | "paused" | "completed">("all");
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", budget: "", eligibility: "", targetUniversity: "", category: "education" as NgoProgram["category"] });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ 
+    title: "", 
+    description: "", 
+    budget: "", 
+    eligibility: "", 
+    targetUniversity: "", 
+    category: "education" as NgoProgram["category"],
+    status: "active" as NgoProgram["status"]
+  });
   const [saving, setSaving] = useState(false);
 
   const filtered = programs.filter(p => {
@@ -233,22 +216,68 @@ function NgoProgramsSection() {
     return matchFilter && matchSearch;
   });
 
-  const handleCreate = () => {
+  const handleSave = () => {
     if (!form.title.trim()) return;
     setSaving(true);
     setTimeout(() => {
-      const created = addNgoProgram({
-        title: form.title, description: form.description,
-        category: form.category, status: "active",
-        budget: Number(form.budget) || 0, disbursed: 0,
-        beneficiaryCount: 0, eligibility: form.eligibility,
-        targetUniversity: form.targetUniversity, connectedTo: ["student", "admin"],
-      });
-      setPrograms([created, ...programs]);
-      setForm({ title: "", description: "", budget: "", eligibility: "", targetUniversity: "", category: "education" });
-      setShowForm(false);
+      if (editingId) {
+        const updated = updateNgoProgram(editingId, {
+          title: form.title,
+          description: form.description,
+          category: form.category as any,
+          status: form.status,
+          budget: Number(form.budget) || 0,
+          eligibility: form.eligibility,
+          targetUniversity: form.targetUniversity,
+        });
+        if (updated) {
+          setPrograms(prev => prev.map(p => p._id === editingId ? updated : p));
+        }
+      } else {
+        const created = addNgoProgram({
+          title: form.title, 
+          description: form.description,
+          category: form.category, 
+          status: form.status,
+          budget: Number(form.budget) || 0, 
+          disbursed: 0,
+          beneficiaryCount: 0, 
+          eligibility: form.eligibility,
+          targetUniversity: form.targetUniversity, 
+          connectedTo: ["student", "admin"],
+        });
+        setPrograms([created, ...programs]);
+      }
+      resetForm();
       setSaving(false);
     }, 600);
+  };
+
+  const handleDelete = () => {
+    if (!editingId || !window.confirm("Are you sure you want to remove this program?")) return;
+    deleteNgoProgram(editingId);
+    setPrograms(prev => prev.filter(p => p._id !== editingId));
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setForm({ title: "", description: "", budget: "", eligibility: "", targetUniversity: "", category: "education", status: "active" });
+    setShowForm(false);
+    setEditingId(null);
+  };
+
+  const openEdit = (p: NgoProgram) => {
+    setEditingId(p._id);
+    setForm({
+      title: p.title,
+      description: p.description,
+      budget: String(p.budget),
+      eligibility: p.eligibility,
+      targetUniversity: p.targetUniversity,
+      category: p.category,
+      status: p.status
+    });
+    setShowForm(true);
   };
 
   return (
@@ -259,24 +288,24 @@ function NgoProgramsSection() {
       <div className="flex flex-wrap items-center gap-3">
         <Input placeholder="Search programs…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
         <div className="flex gap-1.5 flex-wrap">
-          {(["all", "active", "paused", "completed", "draft"] as const).map(f => (
+          {(["all", "active", "paused", "completed"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition ${filter === f ? "bg-primary text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
         </div>
-        <Button variant="primary" className="ml-auto" onClick={() => setShowForm(v => !v)}>
+        <Button variant="primary" className="ml-auto" onClick={() => { if(showForm) resetForm(); else setShowForm(true); }}>
           {showForm ? "Cancel" : "+ Create Program"}
         </Button>
       </div>
 
-      {/* Create form */}
+      {/* Form (Create/Update) */}
       <AnimatePresence>
         {showForm && (
           <motion.div key="form" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
             <Card className="space-y-4 p-5 border-emerald-200 bg-emerald-50/40 dark:border-emerald-800 dark:bg-emerald-900/10">
-              <h3 className="text-sm font-semibold">New Support Program</h3>
+              <h3 className="text-sm font-semibold">{editingId ? "Update Program" : "New Support Program"}</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">Title *</label>
@@ -289,6 +318,17 @@ function NgoProgramsSection() {
                     {["education","health","emergency","equipment","general"].map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase()+c.slice(1)}</option>)}
                   </select>
                 </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-600">Status</label>
+                  <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as NgoProgram["status"] }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900">
+                    {["active","paused","completed"].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-600">Target University</label>
+                  <Input value={form.targetUniversity} onChange={e => setForm(f => ({ ...f, targetUniversity: e.target.value }))} placeholder="University name" />
+                </div>
                 <div className="space-y-1 sm:col-span-2">
                   <label className="text-xs font-medium text-slate-600">Description</label>
                   <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
@@ -300,21 +340,26 @@ function NgoProgramsSection() {
                   <Input type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 1500000" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-600">Target University</label>
-                  <Input value={form.targetUniversity} onChange={e => setForm(f => ({ ...f, targetUniversity: e.target.value }))} placeholder="University name" />
-                </div>
-                <div className="space-y-1 sm:col-span-2">
                   <label className="text-xs font-medium text-slate-600">Eligibility Criteria</label>
                   <Input value={form.eligibility} onChange={e => setForm(f => ({ ...f, eligibility: e.target.value }))} placeholder="e.g. Financial need: High · GPA ≥ 2.5" />
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <ConnBadge party="student" /><span>Students can apply</span>
-                <ConnBadge party="admin" /><span>Admin verifies eligibility</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <ConnBadge party="student" /><span>Students can apply</span>
+                  <ConnBadge party="admin" /><span>Admin verifies eligibility</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {editingId && (
+                    <button type="button" onClick={handleDelete} className="text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400">
+                      Remove Program
+                    </button>
+                  )}
+                  <Button variant="primary" onClick={handleSave} disabled={saving || !form.title.trim()}>
+                    {saving ? "Saving…" : editingId ? "Update Program" : "Create Program"}
+                  </Button>
+                </div>
               </div>
-              <Button variant="primary" onClick={handleCreate} disabled={saving || !form.title.trim()}>
-                {saving ? "Creating…" : "Create Program"}
-              </Button>
             </Card>
           </motion.div>
         )}
@@ -326,8 +371,8 @@ function NgoProgramsSection() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {filtered.map(p => (
-            <motion.div key={p._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Card className="p-5 space-y-3">
+            <motion.div key={p._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => openEdit(p)} className="cursor-pointer">
+              <Card className="p-5 space-y-3 hover:border-primary/40 transition-colors">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">{p.title}</p>
                   <StatusBadge status={p.status} />
@@ -476,6 +521,10 @@ function NgoBeneficiariesSection() {
   const [filterProgram, setFilterProgram] = useState("all");
   const [filterStatus, setFilterStatus] = useState<"all"|"active"|"graduated"|"paused">("all");
 
+  useEffect(() => {
+    setBeneficiaries(getNgoBeneficiaries());
+  }, []);
+
   const filtered = beneficiaries.filter(b => {
     const matchProg = filterProgram === "all" || b.programId === filterProgram;
     const matchStat = filterStatus === "all" || b.status === filterStatus;
@@ -486,6 +535,25 @@ function NgoBeneficiariesSection() {
     "on-track": "On Track",
     "at-risk":  "At Risk",
     "graduated":"Graduated",
+  };
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = beneficiaries.find(b => b._id === selectedId);
+  const [processing, setProcessing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleDonate = () => {
+    if (!selectedId) return;
+    setProcessing(true);
+    setTimeout(() => {
+      const updated = disburseNgoPayment(selectedId);
+      if (updated) {
+        setBeneficiaries(prev => prev.map(b => b._id === selectedId ? updated : b));
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      }
+      setProcessing(false);
+    }, 800);
   };
 
   return (
@@ -554,12 +622,80 @@ function NgoBeneficiariesSection() {
                   <StatusBadge status={b.status} />
                   <StatusBadge status={b.retentionIndicator} label={retentionMap[b.retentionIndicator]} />
                   <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{fmtLKR(b.supportReceived)}</span>
+                  <button onClick={() => setSelectedId(b._id)} className="text-xs font-semibold text-primary hover:underline">View Details</button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </Card>
+
+      {/* Beneficiary Detail Modal */}
+      <AnimatePresence>
+        {selected && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+              <Card className="w-full max-w-md overflow-hidden p-0 shadow-2xl">
+                <div className="bg-gradient-to-br from-primary to-emerald-600 px-6 py-8 text-center text-white">
+                  <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
+                    {selected.initials}
+                  </div>
+                  <h3 className="text-xl font-bold">{selected.initials}</h3>
+                  <p className="text-sm opacity-90">{selected.university}</p>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+                      <p className="text-[10px] uppercase tracking-wider text-slate-500">Requested</p>
+                      <p className="text-lg font-bold text-slate-900 dark:text-white">{fmtLKR(selected.supportRequested)}</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+                      <p className="text-[10px] uppercase tracking-wider text-slate-500">Received</p>
+                      <p className="text-lg font-bold text-emerald-600">{fmtLKR(selected.supportReceived)}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
+                      <span className="text-slate-500">Program</span>
+                      <span className="font-medium">{selected.programTitle}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
+                      <span className="text-slate-500">Enrollment Date</span>
+                      <span className="font-medium">{fmtDate(selected.enrolledAt)}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
+                      <span className="text-slate-500">Academic Status</span>
+                      <StatusBadge status={selected.retentionIndicator} label={retentionMap[selected.retentionIndicator]} />
+                    </div>
+                  </div>
+
+                  {showSuccess && (
+                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl bg-emerald-50 p-3 text-center text-sm font-medium text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                      ✨ Donation processed successfully! University Admin notified.
+                    </motion.div>
+                  )}
+
+                  <div className="flex gap-3 pt-2">
+                    <Button variant="secondary" className="flex-1" onClick={() => setSelectedId(null)}>Close</Button>
+                    {!selected.isDisbursed && (
+                      <Button variant="primary" className="flex-1" onClick={handleDonate} disabled={processing}>
+                        {processing ? "Processing..." : "Donate Now"}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <p className="text-[10px] text-center text-slate-400">
+                    Processing a donation will notify the University Admin to confirm disbursement to the student bank account.
+                  </p>
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -469,6 +469,8 @@ export function StudentFinancialAid() {
                             if (!ngoApplyReason.trim()) return;
                             addNgoApplication({
                               studentId: "student-123", /* demo user id */
+                              studentInitials: "S.J.S.",
+                              university: "University of Colombo",
                               programId: prog._id,
                               programTitle: prog.title,
                               amountRequested: Number(ngoApplyAmount) || 0,
