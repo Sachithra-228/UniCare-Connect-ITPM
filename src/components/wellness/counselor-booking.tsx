@@ -61,6 +61,21 @@ export function CounselorBooking() {
     refreshData();
   }, [refreshData]);
 
+  useEffect(() => {
+    const canPoll = () => document.visibilityState === "visible" && document.hasFocus();
+    const poll = () => {
+      if (canPoll()) refreshData();
+    };
+    const intervalId = window.setInterval(poll, 30000);
+    window.addEventListener("focus", poll);
+    document.addEventListener("visibilitychange", poll);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", poll);
+      document.removeEventListener("visibilitychange", poll);
+    };
+  }, [refreshData]);
+
   const selectedCounselor = useMemo(
     () => counselors.find((item) => item._id === selectedCounselorId),
     [counselors, selectedCounselorId]

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { isDemoMode, jsonResponse } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
+import { createNotification } from "@/lib/notifications";
 import { requireSession } from "@/lib/session-auth";
 import { addDemoPeerPost, getDemoPeerPosts, getDemoPeerReplies } from "@/lib/wellness-demo-store";
 
@@ -17,14 +18,39 @@ type PeerPostDocument = {
   updatedAt?: Date;
 };
 
+function canDeletePost(
+  input: { userId?: string; firebaseUid?: string },
+  context: { isAdmin: boolean; sessionUserId?: string; sessionFirebaseUid?: string }
+) {
+  if (context.isAdmin) return true;
+  return (
+    (input.userId && context.sessionUserId && input.userId === context.sessionUserId) ||
+    (input.firebaseUid && context.sessionFirebaseUid && input.firebaseUid === context.sessionFirebaseUid)
+  );
+}
+
 export async function GET(request: NextRequest) {
   const authResult = await requireSession(request);
   if (authResult.error) return authResult.error;
+  const role = authResult.session.user?.role ?? "";
+  const isAdmin = role === "admin" || role === "faculty" || role === "super_admin";
+  const sessionUserId = authResult.session.user?._id;
+  const sessionFirebaseUid = authResult.session.firebase.uid;
 
   if (isDemoMode()) {
     const posts = getDemoPeerPosts().map((item) => ({
-      ...item,
-      replyCount: getDemoPeerReplies(item._id).length
+      _id: item._id,
+      title: item.title,
+      body: item.body,
+      tags: item.tags ?? [],
+      authorName: item.authorName,
+      anonymous: item.anonymous,
+      createdAt: item.createdAt,
+      replyCount: getDemoPeerReplies(item._id).length,
+      canDelete: canDeletePost(
+        { userId: item.userId, firebaseUid: item.firebaseUid },
+        { isAdmin, sessionUserId, sessionFirebaseUid }
+      )
     }));
     return jsonResponse(posts);
   }
@@ -50,9 +76,18 @@ export async function GET(request: NextRequest) {
 
   return jsonResponse(
     posts.map((item: PeerPostDocument) => ({
-      ...item,
       _id: item._id?.toString?.() ?? "",
-      replyCount: replyCountByPostId.get(item._id?.toString?.() ?? "") ?? 0
+      title: item.title ?? "",
+      body: item.body ?? "",
+      tags: Array.isArray(item.tags) ? item.tags : [],
+      authorName: item.authorName ?? "Student",
+      anonymous: Boolean(item.anonymous),
+      createdAt: item.createdAt,
+      replyCount: replyCountByPostId.get(item._id?.toString?.() ?? "") ?? 0,
+      canDelete: canDeletePost(
+        { userId: item.userId, firebaseUid: item.firebaseUid },
+        { isAdmin, sessionUserId, sessionFirebaseUid }
+      )
     }))
   );
 }
@@ -109,6 +144,14 @@ export async function POST(request: NextRequest) {
     updatedAt: now
   };
   const result = await database.collection("peer_support_posts").insertOne(document);
+
+  await createNotification(database, {
+    audienceRoles: ["admin", "super_admin"],
+    title: "New peer support post",
+    message: `${userName} published a peer support post.`,
+    type: "wellness",
+    sectionId: "peer-support"
+  });
 
   return jsonResponse(
     { message: "Post published", post: { ...document, _id: result.insertedId.toString() } },

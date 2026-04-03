@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -21,6 +21,7 @@ import { getRoleConfigs, type UserRole } from "@/lib/signup-role-config";
 import { UniversityPicker } from "@/components/auth/university-picker";
 import { RolePicker } from "@/components/auth/role-picker";
 import { DegreePicker } from "@/components/auth/degree-picker";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
 
 type AuthMode = "signin" | "signup";
 
@@ -589,6 +590,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!pendingRedirect || loading) return;
+
+    if (firebaseUser && !user) {
+      return;
+    }
 
     if (!firebaseUser) {
       setPendingRedirect(false);
@@ -1193,6 +1198,9 @@ export default function LoginPage() {
         </div>
       </aside>
       <section className="relative flex min-h-screen items-center bg-white px-4 py-10 sm:px-8 lg:px-12">
+        <div className="absolute left-4 top-4 flex flex-col items-start gap-2 sm:left-8 sm:top-6 sm:flex-row sm:items-center sm:gap-3 lg:left-12 lg:top-8">
+          <LanguageSwitcher />
+        </div>
         <div className="absolute right-4 top-4 sm:right-8 sm:top-6 lg:right-12 lg:top-8">
           <Image
             src="/logo.png"

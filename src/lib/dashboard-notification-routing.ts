@@ -24,10 +24,11 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
       "disbursement"
     ],
     career: ["career", "job", "internship", "employer", "interview", "placement", "resume"],
-    mentorship: ["mentor", "mentorship", "mentee", "session", "review", "rating", "feedback"],
+    mentorship: ["mentor", "mentorship", "mentee", "session", "review", "rating", "feedback", "chat", "request", "approved"],
     wellness: ["wellness", "mental", "stress", "counsel", "health", "therapy"],
     "campus-life": ["campus", "club", "event", "announcement", "volunteer", "society"],
     "my-applications": ["application", "applied", "approval", "approved", "rejected", "pending"],
+    communications: ["communication", "message", "donor", "csr", "partner", "announcement"],
     profile: ["profile", "account", "settings"]
   },
   admin: {
@@ -44,8 +45,11 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
     ],
     "career-services": ["career", "job", "internship", "employer", "placement"],
     "mentorship-program": ["mentor", "mentorship", "mentee", "session", "review", "rating", "feedback"],
+    "counselor-support": ["wellness", "counsel", "counselor", "therapy", "booking", "mental", "health"],
+    "peer-support": ["peer support", "peer", "forum", "discussion", "post", "reply"],
     reports: ["report", "analytics", "metric", "summary"],
     announcements: ["announcement", "notice", "alert", "broadcast"],
+    communications: ["communication", "message", "donor", "csr", "partner", "announcement"],
     profile: ["profile", "account", "settings"]
   },
   faculty: {
@@ -62,8 +66,10 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
     ],
     "career-services": ["career", "job", "internship", "employer", "placement"],
     "mentorship-program": ["mentor", "mentorship", "mentee", "session", "review", "rating", "feedback"],
+    "counselor-support": ["wellness", "counsel", "counselor", "therapy", "booking", "mental", "health"],
     reports: ["report", "analytics", "metric", "summary"],
     announcements: ["announcement", "notice", "alert", "broadcast"],
+    communications: ["communication", "message", "donor", "csr", "partner", "announcement"],
     profile: ["profile", "account", "settings"]
   },
   mentor: {
@@ -149,7 +155,12 @@ function roleTypeHint(role: DashboardRole, type: string): string | undefined {
     if (role === "admin" || role === "faculty") return "career-services";
     if (role === "employer") return "job-listings";
   }
+  if (normalizedType.includes("wellness") || normalizedType.includes("counsel")) {
+    if (role === "admin" || role === "faculty") return "counselor-support";
+    if (role === "student") return "wellness";
+  }
   if (normalizedType.includes("message") || normalizedType.includes("communication")) {
+    if (role === "student" || role === "admin" || role === "faculty") return "communications";
     if (role === "mentor") return "messages";
     if (role === "donor" || role === "ngo" || role === "parent") return "communications";
   }

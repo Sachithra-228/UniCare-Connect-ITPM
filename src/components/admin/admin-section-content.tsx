@@ -7,6 +7,9 @@ import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/shared/button";
 import { Input } from "@/components/shared/input";
 import { AdminAnalytics } from "./admin-analytics";
+import { AdminCounselorSupportSection } from "./admin-counselor-support";
+import { AdminPeerSupportModerationSection } from "./admin-peer-support";
+import { AdminCommunicationsSection } from "./admin-communications";
 import { useAuth } from "@/context/auth-context";
 import {
   defaultPreferences,
@@ -33,12 +36,18 @@ export function AdminSectionContent({ sectionId }: AdminSectionContentProps) {
         return AdminCareerServicesSection;
       case "mentorship-program":
         return AdminMentorshipProgramSection;
+      case "counselor-support":
+        return AdminCounselorSupportSection;
+      case "peer-support":
+        return AdminPeerSupportModerationSection;
       case "reports":
         return AdminReportsSection;
       case "announcements":
         return AdminAnnouncementsSection;
       case "partnerships":
         return AdminPartnershipsSection;
+      case "communications":
+        return AdminCommunicationsSection;
       case "profile":
         return AdminProfileSection;
       default:

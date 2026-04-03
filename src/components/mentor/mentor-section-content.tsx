@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Card } from "@/components/shared/card";
 import { StatCard } from "@/components/shared/stat-card";
+import { Badge } from "@/components/shared/badge";
 import { Button } from "@/components/shared/button";
 import { Input } from "@/components/shared/input";
+import { TextArea } from "@/components/shared/text-area";
 import { useAuth } from "@/context/auth-context";
 import {
   defaultPreferences,
@@ -14,6 +16,10 @@ import {
   type ProfilePreferences,
   type ProfileTab
 } from "@/components/profile/profile-preferences";
+import { MentorMyMenteesCrudSection } from "./mentor-my-mentees";
+import { MentorCareerInsightsCrudSection } from "./mentor-career-insights";
+import { MentorWebinarsCrudSection } from "./mentor-webinars";
+import { MentorImpactTrackerCrudSection } from "./mentor-impact-tracker";
 import type { MentorshipSession } from "@/types";
 
 type Notification = {
@@ -33,23 +39,56 @@ type EnrichedSession = MentorshipSession & {
   menteeName?: string;
 };
 
+type MentorshipChatMessage = {
+  _id?: string;
+  sessionId: string;
+  senderRole: "student" | "mentor" | "admin";
+  senderUserId?: string;
+  senderFirebaseUid?: string;
+  text: string;
+  createdAt?: string | Date;
+};
+
+function mentorshipStatusVariant(status?: string): "success" | "warning" | "info" {
+  const normalized = String(status ?? "").trim().toLowerCase();
+  if (normalized === "completed" || normalized === "confirmed" || normalized === "scheduled") {
+    return "success";
+  }
+  if (normalized === "cancelled" || normalized === "rejected") {
+    return "warning";
+  }
+  return "info";
+}
+
+function mentorshipCanChat(status?: string) {
+  const normalized = String(status ?? "").trim().toLowerCase();
+  return normalized === "confirmed" || normalized === "scheduled" || normalized === "completed";
+}
+
+function formatMentorshipDate(value?: string | Date) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString();
+}
+
 export function MentorSectionContent({ sectionId }: MentorSectionContentProps) {
   const Section = useMemo(() => {
     switch (sectionId) {
       case "mentor-home":
         return MentorHomeSection;
       case "my-mentees":
-        return MentorMyMenteesSection;
+        return MentorMyMenteesCrudSection;
       case "sessions":
         return MentorSessionsSection;
       case "messages":
         return MentorMessagesSection;
       case "career-insights":
-        return MentorCareerInsightsSection;
+        return MentorCareerInsightsCrudSection;
       case "webinars":
-        return MentorWebinarsSection;
+        return MentorWebinarsCrudSection;
       case "impact-tracker":
-        return MentorImpactTrackerSection;
+        return MentorImpactTrackerCrudSection;
       case "profile":
         return MentorProfileSection;
       default:
@@ -271,11 +310,26 @@ function MentorSessionsSection() {
   const { sessions, loading, refreshSessions } = useMentorSessions();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [creatingSession, setCreatingSession] = useState(false);
+  const [newSessionStudentId, setNewSessionStudentId] = useState("");
+  const [newSessionTopic, setNewSessionTopic] = useState("");
+  const [newSessionTime, setNewSessionTime] = useState("");
 
   const upcoming = sessions.filter(
     (s) => s.status === "scheduled" || s.status === "confirmed" || s.status === "pending"
   );
   const history = sessions.filter((s) => s.status === "completed" || s.status === "cancelled");
+  const menteeOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    sessions.forEach((session) => {
+      const key = session.studentId || session.studentName;
+      if (!key) return;
+      if (!map.has(key)) {
+        map.set(key, session.studentName || "Student");
+      }
+    });
+    return [...map.entries()].map(([id, name]) => ({ id, name }));
+  }, [sessions]);
 
   const updateSessionStatus = async (sessionId: string, status: "confirmed" | "completed" | "cancelled") => {
     setUpdatingId(`${sessionId}:${status}`);
@@ -299,12 +353,78 @@ function MentorSessionsSection() {
     }
   };
 
+  const createFollowUpSession = async () => {
+    if (!newSessionStudentId || !newSessionTopic.trim()) {
+      setActionError("Select a mentee and provide a topic to schedule a follow-up session.");
+      return;
+    }
+
+    setCreatingSession(true);
+    setActionError(null);
+    try {
+      const response = await fetch("/api/mentorship-sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: newSessionStudentId,
+          topic: newSessionTopic.trim(),
+          scheduledTime: newSessionTime ? new Date(newSessionTime).toISOString() : ""
+        })
+      });
+      const body = await response.json().catch(() => ({} as { message?: string }));
+      if (!response.ok) {
+        setActionError(body.message ?? "Unable to create follow-up session.");
+        return;
+      }
+      setNewSessionTopic("");
+      setNewSessionTime("");
+      setActionError(null);
+      refreshSessions();
+    } catch {
+      setActionError("Unable to create follow-up session.");
+    } finally {
+      setCreatingSession(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600 dark:text-slate-300">
         Schedule and track sessions with your mentees. University admins can use this information to
         understand engagement, but cannot see your private notes unless you share them.
       </p>
+      <Card className="space-y-4 border-primary/20 bg-gradient-to-r from-primary/5 via-white to-cyan-50 p-5 dark:from-primary/10 dark:via-slate-900 dark:to-cyan-950/20">
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white">Schedule follow-up session</h3>
+        <div className="grid gap-3 md:grid-cols-3">
+          <select
+            value={newSessionStudentId}
+            onChange={(event) => setNewSessionStudentId(event.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          >
+            <option value="">Select mentee</option>
+            {menteeOptions.map((mentee) => (
+              <option key={mentee.id} value={mentee.id}>
+                {mentee.name}
+              </option>
+            ))}
+          </select>
+          <Input
+            value={newSessionTopic}
+            onChange={(event) => setNewSessionTopic(event.target.value)}
+            placeholder="Session topic"
+          />
+          <Input
+            type="datetime-local"
+            value={newSessionTime}
+            onChange={(event) => setNewSessionTime(event.target.value)}
+          />
+        </div>
+        <div className="flex justify-end">
+          <Button variant="primary" onClick={createFollowUpSession} disabled={creatingSession}>
+            {creatingSession ? "Scheduling..." : "Schedule session"}
+          </Button>
+        </div>
+      </Card>
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="space-y-3 p-4">
           <h3 className="text-sm font-semibold">Upcoming & pending</h3>
@@ -412,34 +532,349 @@ function MentorSessionsSection() {
 }
 
 function MentorMessagesSection() {
-  const notifications = useMentorNotifications();
+  const { sessions, loading, refreshSessions } = useMentorSessions();
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<MentorshipChatMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [messageDraft, setMessageDraft] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const sortedSessions = useMemo(
+    () =>
+      [...sessions].sort((a, b) => {
+        const left = new Date(String(a.updatedAt ?? a.createdAt ?? "")).getTime();
+        const right = new Date(String(b.updatedAt ?? b.createdAt ?? "")).getTime();
+        return right - left;
+      }),
+    [sessions]
+  );
+
+  const pendingSessions = useMemo(
+    () => sortedSessions.filter((session) => session.status === "pending"),
+    [sortedSessions]
+  );
+
+  const conversationSessions = useMemo(
+    () => sortedSessions.filter((session) => session.status !== "pending"),
+    [sortedSessions]
+  );
+
+  const selectedSession = useMemo(
+    () => sortedSessions.find((session) => session._id === selectedSessionId) ?? null,
+    [sortedSessions, selectedSessionId]
+  );
+
+  const fetchMessages = useCallback(async (sessionId: string) => {
+    setLoadingMessages(true);
+    try {
+      const response = await fetch(`/api/mentorship-messages?sessionId=${encodeURIComponent(sessionId)}`);
+      const data = await response.json().catch(() => [] as MentorshipChatMessage[]);
+      setMessages(Array.isArray(data) ? data : []);
+    } catch {
+      setMessages([]);
+    } finally {
+      setLoadingMessages(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSessionId && sortedSessions.length) {
+      setSelectedSessionId(sortedSessions[0]._id);
+    }
+  }, [selectedSessionId, sortedSessions]);
+
+  useEffect(() => {
+    const canPoll = () => document.visibilityState === "visible" && document.hasFocus();
+    const pollSessions = () => {
+      if (canPoll()) refreshSessions();
+    };
+    const intervalId = window.setInterval(pollSessions, 30000);
+    window.addEventListener("focus", pollSessions);
+    document.addEventListener("visibilitychange", pollSessions);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", pollSessions);
+      document.removeEventListener("visibilitychange", pollSessions);
+    };
+  }, [refreshSessions]);
+
+  useEffect(() => {
+    if (!selectedSession?._id) return;
+    if (!mentorshipCanChat(selectedSession.status)) {
+      setMessages([]);
+      return;
+    }
+
+    const canPoll = () => document.visibilityState === "visible" && document.hasFocus();
+    const pollMessages = () => {
+      if (canPoll()) fetchMessages(selectedSession._id);
+    };
+    pollMessages();
+    const intervalId = window.setInterval(pollMessages, 12000);
+    window.addEventListener("focus", pollMessages);
+    document.addEventListener("visibilitychange", pollMessages);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", pollMessages);
+      document.removeEventListener("visibilitychange", pollMessages);
+    };
+  }, [fetchMessages, selectedSession]);
+
+  const updateSessionStatus = async (sessionId: string, status: "confirmed" | "cancelled") => {
+    setUpdatingId(`${sessionId}:${status}`);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/mentorship-sessions/${sessionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+      const body = await response.json().catch(() => ({} as { message?: string }));
+      if (!response.ok) {
+        setActionError(body.message ?? "Unable to update request.");
+        return;
+      }
+      refreshSessions();
+      setSelectedSessionId(sessionId);
+      if (status === "cancelled") {
+        setMessages([]);
+      }
+    } catch {
+      setActionError("Unable to update request.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!selectedSession?._id || !messageDraft.trim()) return;
+
+    setSendingMessage(true);
+    setActionError(null);
+    try {
+      const response = await fetch("/api/mentorship-messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: selectedSession._id,
+          text: messageDraft.trim()
+        })
+      });
+      const body = await response.json().catch(() => ({} as { message?: string }));
+      if (!response.ok) {
+        setActionError(body.message ?? "Unable to send message.");
+        return;
+      }
+      setMessageDraft("");
+      fetchMessages(selectedSession._id);
+      refreshSessions();
+    } catch {
+      setActionError("Unable to send message.");
+    } finally {
+      setSendingMessage(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600 dark:text-slate-300">
-        Use this space to coordinate with mentees. External roles like donors or NGOs cannot see
-        these message threads.
+        Review new mentorship requests and chat with approved mentees in one place.
       </p>
-      <Card className="space-y-4 p-4">
-        <h3 className="text-sm font-semibold">Recent messages</h3>
-        <div className="space-y-2 text-sm">
-          {notifications.slice(0, 8).map((n) => (
-            <div
-              key={n.id}
-              className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
-            >
-              <p className="font-medium">{n.title ?? "Message"}</p>
-              <p className="text-xs text-slate-500">{n.message}</p>
+      {actionError ? <p className="text-xs text-rose-600 dark:text-rose-400">{actionError}</p> : null}
+
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <Card className="space-y-4 p-4">
+          <div>
+            <h3 className="text-sm font-semibold">Pending requests</h3>
+            <p className="mt-1 text-xs text-slate-500">Approve a request to unlock chat.</p>
+          </div>
+
+          <div className="space-y-2">
+            {loading ? (
+              <p className="text-sm text-slate-500">Loading requests...</p>
+            ) : pendingSessions.length ? (
+              pendingSessions.map((session) => (
+                <div
+                  key={session._id}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSessionId(session._id)}
+                    className="w-full text-left"
+                  >
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                      {session.studentName || "Student"}
+                    </p>
+                    <p className="mt-1 line-clamp-1 text-xs text-slate-500">{session.topic}</p>
+                  </button>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      disabled={updatingId !== null}
+                      onClick={() => updateSessionStatus(session._id, "confirmed")}
+                    >
+                      {updatingId === `${session._id}:confirmed` ? "Approving..." : "Approve"}
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-rose-900/40 dark:text-rose-300"
+                      disabled={updatingId !== null}
+                      onClick={() => updateSessionStatus(session._id, "cancelled")}
+                    >
+                      {updatingId === `${session._id}:cancelled` ? "Rejecting..." : "Reject"}
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">No pending requests right now.</p>
+            )}
+          </div>
+
+          <div className="border-t border-slate-200 pt-3 dark:border-slate-700">
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Conversations</h4>
+            <div className="mt-2 space-y-2">
+              {loading ? (
+                <p className="text-sm text-slate-500">Loading conversations...</p>
+              ) : conversationSessions.length ? (
+                conversationSessions.map((session) => (
+                  <button
+                    key={session._id}
+                    type="button"
+                    onClick={() => setSelectedSessionId(session._id)}
+                    className={`w-full rounded-xl border p-3 text-left transition-colors ${
+                      selectedSessionId === session._id
+                        ? "border-primary bg-primary/5 dark:bg-primary/10"
+                        : "border-slate-200 hover:border-slate-300 dark:border-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                        {session.studentName || "Student"}
+                      </p>
+                      <Badge variant={mentorshipStatusVariant(session.status)}>{session.status || "pending"}</Badge>
+                    </div>
+                    <p className="mt-1 line-clamp-1 text-xs text-slate-500">{session.topic}</p>
+                  </button>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">No conversation history yet.</p>
+              )}
             </div>
-          ))}
-          {!notifications.length && (
+          </div>
+        </Card>
+
+        <Card className="space-y-3 p-4">
+          {!selectedSession ? (
             <p className="text-sm text-slate-500">
-              Chat features can be wired to a dedicated messaging service. For now, this area
-              reflects system notifications relevant to your mentoring role.
+              Select a request or conversation from the left to continue.
             </p>
+          ) : (
+            <>
+              <div className="border-b border-slate-200 pb-3 dark:border-slate-700">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {selectedSession.studentName || "Student"}
+                  </p>
+                  <Badge variant={mentorshipStatusVariant(selectedSession.status)}>
+                    {selectedSession.status || "pending"}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-sm text-slate-500">Topic: {selectedSession.topic}</p>
+                {selectedSession.scheduledTime ? (
+                  <p className="mt-1 text-xs text-slate-500">
+                    Scheduled: {formatMentorshipDate(selectedSession.scheduledTime)}
+                  </p>
+                ) : null}
+              </div>
+
+              {selectedSession.status === "pending" ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+                  <p>Approve this request to start mentoring chat.</p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      disabled={updatingId !== null}
+                      onClick={() => updateSessionStatus(selectedSession._id, "confirmed")}
+                    >
+                      {updatingId === `${selectedSession._id}:confirmed` ? "Approving..." : "Approve request"}
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-rose-900/40 dark:text-rose-300"
+                      disabled={updatingId !== null}
+                      onClick={() => updateSessionStatus(selectedSession._id, "cancelled")}
+                    >
+                      {updatingId === `${selectedSession._id}:cancelled` ? "Rejecting..." : "Reject request"}
+                    </button>
+                  </div>
+                </div>
+              ) : !mentorshipCanChat(selectedSession.status) ? (
+                <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
+                  Chat is unavailable for this session status.
+                </p>
+              ) : (
+                <>
+                  <div className="max-h-[360px] space-y-2 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/40">
+                    {loadingMessages ? (
+                      <p className="text-sm text-slate-500">Loading messages...</p>
+                    ) : messages.length === 0 ? (
+                      <p className="text-sm text-slate-500">No messages yet. Start the conversation.</p>
+                    ) : (
+                      messages.map((message) => {
+                        const mine = message.senderRole === "mentor";
+                        return (
+                          <div
+                            key={message._id}
+                            className={`flex ${mine ? "justify-end" : "justify-start"}`}
+                          >
+                            <div
+                              className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                                mine
+                                  ? "bg-primary text-white"
+                                  : "bg-white text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                              }`}
+                            >
+                              <p>{message.text}</p>
+                              <p className={`mt-1 text-[11px] ${mine ? "text-white/80" : "text-slate-400"}`}>
+                                {formatMentorshipDate(message.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <TextArea
+                      rows={3}
+                      value={messageDraft}
+                      onChange={(event) => setMessageDraft(event.target.value)}
+                      placeholder="Write a message to your mentee..."
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        variant="primary"
+                        onClick={sendMessage}
+                        disabled={sendingMessage || !messageDraft.trim()}
+                      >
+                        {sendingMessage ? "Sending..." : "Send"}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
           )}
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

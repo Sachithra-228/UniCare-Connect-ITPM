@@ -46,6 +46,8 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
   "financial-oversight": CircleDollarSign,
   "career-services": Briefcase,
   "mentorship-program": Users,
+  "counselor-support": Heart,
+  "peer-support": MessageCircle,
   reports: BarChart3,
   announcements: Megaphone,
 

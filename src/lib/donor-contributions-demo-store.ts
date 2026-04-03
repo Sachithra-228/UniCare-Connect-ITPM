@@ -4,7 +4,7 @@ export type DemoDonorContribution = {
   donorFirebaseUid?: string;
   donorEmail?: string;
   donorName?: string;
-  contributionType: "emergency_fund" | "equipment" | "scholarship" | "general";
+  contributionType: "emergency_fund" | "equipment" | "scholarship" | "general" | "ngo_program";
   program: string;
   category: string;
   amountLkr: number;
@@ -94,4 +94,26 @@ export function addDemoDonorContribution(
   };
   demoContributions = [created, ...demoContributions];
   return { ...created };
+}
+
+export function updateDemoDonorContribution(
+  id: string,
+  input: Partial<Pick<DemoDonorContribution, "contributionType" | "program" | "category" | "amountLkr" | "note">>
+) {
+  const index = demoContributions.findIndex((item) => item._id === id);
+  if (index < 0) return null;
+  const next: DemoDonorContribution = {
+    ...demoContributions[index],
+    ...input,
+    updatedAt: nowIso()
+  };
+  demoContributions[index] = next;
+  return { ...next };
+}
+
+export function deleteDemoDonorContribution(id: string) {
+  const index = demoContributions.findIndex((item) => item._id === id);
+  if (index < 0) return null;
+  const [removed] = demoContributions.splice(index, 1);
+  return { ...removed };
 }

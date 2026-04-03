@@ -88,10 +88,11 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         title: "Mentorship",
         items: [
           "Browse available mentors (alumni/industry)",
-          "Send mentorship requests",
-          "View current mentors and session history",
-          "Schedule sessions with mentors",
-          "Rate and review mentorship experience"
+          "Request mentorship from mentors",
+          "Track request status",
+          "Chat with approved mentors",
+          "View mentorship session updates",
+          "Share feedback after completed sessions"
         ]
       },
       {
@@ -103,9 +104,7 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Log daily mood/stress/sleep",
           "View wellness trends over time",
           "Book counseling sessions",
-          "Join wellness challenges (steps/meditation)",
-          "Access peer support forums",
-          "Browse health resources library"
+          "Access peer support forums"
         ]
       },
       {
@@ -131,6 +130,17 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "View status (pending/approved/rejected)",
           "Upload missing documents",
           "Receive feedback on rejections"
+        ]
+      },
+      {
+        id: "communications",
+        menuLabel: "Communications",
+        icon: "💬",
+        title: "Communications",
+        items: [
+          "View donor and partner updates",
+          "See scholarship communication history",
+          "Track official support announcements"
         ]
       },
       {
@@ -211,6 +221,29 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         ]
       },
       {
+        id: "counselor-support",
+        menuLabel: "Counselor Support",
+        icon: "❤️",
+        title: "Counselor Support",
+        items: [
+          "Add available counselors",
+          "Review student counseling requests",
+          "Accept/reject bookings",
+          "Track confirmed/completed sessions"
+        ]
+      },
+      {
+        id: "peer-support",
+        menuLabel: "Peer Support",
+        icon: "💬",
+        title: "Peer Support",
+        items: [
+          "View student peer support posts",
+          "Review replies",
+          "Moderate inappropriate content"
+        ]
+      },
+      {
         id: "reports",
         menuLabel: "Reports",
         icon: "📊",
@@ -242,6 +275,17 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Joint initiatives with NGOs",
           "Collaboration tracking",
           "External program administration"
+        ]
+      },
+      {
+        id: "communications",
+        menuLabel: "Communications",
+        icon: "💬",
+        title: "Communications",
+        items: [
+          "Receive donor and CSR updates",
+          "Review communication history by audience",
+          "Track important partner announcements"
         ]
       },
       {
@@ -319,6 +363,18 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         ]
       },
       {
+        id: "counselor-support",
+        menuLabel: "Counselor Support",
+        icon: "❤️",
+        title: "Counselor Support",
+        items: [
+          "Add available counselors",
+          "Review student counseling requests",
+          "Accept/reject bookings",
+          "Track confirmed/completed sessions"
+        ]
+      },
+      {
         id: "reports",
         menuLabel: "Reports",
         icon: "📊",
@@ -339,6 +395,17 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Post campus-wide notices",
           "Event promotions",
           "Emergency alerts"
+        ]
+      },
+      {
+        id: "communications",
+        menuLabel: "Communications",
+        icon: "💬",
+        title: "Communications",
+        items: [
+          "Receive donor and CSR updates",
+          "Review communication history by audience",
+          "Track important partner announcements"
         ]
       },
       {
@@ -653,62 +720,62 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
       {
         id: "organization-home",
         menuLabel: "Organization Home",
-        icon: "🏠",
+        icon: "home",
         title: "Organization Home",
         items: [
-          "Data flow diagram (Donor → NGO → Admin → Student)",
-          "Connection status & KPI stats",
+          "Portfolio overview",
+          "Core KPI metrics",
           "Recent impact stories"
         ]
       },
       {
         id: "programs",
         menuLabel: "Programs",
-        icon: "🎯",
+        icon: "programs",
         title: "Programs",
         items: [
           "Manage NGO support programs",
-          "Create program & define eligibility",
-          "Application pipeline tracking"
+          "Create programs and eligibility rules",
+          "Track application readiness"
         ]
       },
       {
         id: "funding",
         menuLabel: "Funding",
-        icon: "💰",
+        icon: "funding",
         title: "Funding",
         items: [
-          "Budget vs Disbursed tracking",
+          "Budget vs disbursed tracking",
           "Donor contribution table",
-          "Funding allocation flow"
+          "Allocation monitoring"
         ]
       },
       {
         id: "beneficiaries",
         menuLabel: "Beneficiaries",
-        icon: "👥",
+        icon: "beneficiaries",
         title: "Beneficiaries",
         items: [
-          "Anonymized student profiles",
-          "Academic retention progress",
+          "Verified applicant list",
+          "Student support progress",
           "Program-specific filtering"
         ]
       },
       {
         id: "reports",
         menuLabel: "Reports",
-        icon: "📊",
+        icon: "reports",
         title: "Reports",
         items: [
           "Generate impact reports",
-          "Key metrics preview (charts)",
-          "Fund utilization summary"
+          "Review KPI charts",
+          "Export report PDF"
         ]
       },
       {
         id: "partnerships",
         menuLabel: "Partnerships",
-        icon: "🤝",
+        icon: "partnerships",
         title: "Partnerships",
         items: [
           "University admin collaborations",
@@ -719,18 +786,18 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
       {
         id: "communications",
         menuLabel: "Communications",
-        icon: "📢",
+        icon: "communications",
         title: "Communications",
         items: [
           "Program updates to beneficiaries",
           "Impact newsletters to donors",
-          "Message templates & history"
+          "Message templates and history"
         ]
       },
       {
         id: "profile",
         menuLabel: "Profile",
-        icon: "👤",
+        icon: "profile",
         title: "Profile",
         items: [
           "Organization details",
