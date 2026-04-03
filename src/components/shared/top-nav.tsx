@@ -12,7 +12,7 @@ import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { getUiTranslations } from "@/lib/ui-translations";
 
 export function TopNav() {
-  const { user, signOutUser } = useAuth();
+  const { user, signOutUser, loading } = useAuth();
   const { language } = useLanguage();
   const pathname = usePathname();
   const isHomePage = pathname === "/";
@@ -57,6 +57,8 @@ export function TopNav() {
         ? "bg-primary/12 text-primary"
         : "hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-900"
     );
+
+  const isAuthenticated = !loading && Boolean(user);
 
   return (
     <header
@@ -157,7 +159,7 @@ export function TopNav() {
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
             <ThemeToggle />
-            {user ? (
+            {isAuthenticated ? (
               <>
                 <Link
                   href="/dashboard"

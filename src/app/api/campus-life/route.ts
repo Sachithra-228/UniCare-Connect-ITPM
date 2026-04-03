@@ -315,9 +315,9 @@ export async function GET(request: NextRequest) {
   if (authResult.error) return authResult.error;
 
   const scope = request.nextUrl.searchParams.get("scope");
-  const isAdmin = ["admin", "super_admin"].includes(authResult.session.user?.role ?? "");
+  const isAdmin = ["admin", "faculty", "super_admin"].includes(authResult.session.user?.role ?? "");
   if (scope === "admin" && !isAdmin) {
-    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
     if (roleCheck) return roleCheck;
   }
 
@@ -594,7 +594,7 @@ export async function POST(request: NextRequest) {
 
   const authResult = await requireSession(request);
   if (authResult.error) return authResult.error;
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
   if (roleCheck) return roleCheck;
 
   if (isDemoMode()) {
@@ -636,7 +636,7 @@ export async function PATCH(request: NextRequest) {
 
   const authResult = await requireSession(request);
   if (authResult.error) return authResult.error;
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
   if (roleCheck) return roleCheck;
 
   if (action === "update") {
@@ -744,7 +744,7 @@ export async function DELETE(request: NextRequest) {
 
   const authResult = await requireSession(request);
   if (authResult.error) return authResult.error;
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
   if (roleCheck) return roleCheck;
 
   if (isDemoMode()) {
@@ -788,3 +788,4 @@ export async function DELETE(request: NextRequest) {
 
   return jsonResponse({ message: "Campus content permanently deleted." });
 }
+

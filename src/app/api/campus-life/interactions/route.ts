@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
           ? String((target as { name?: string }).name ?? "a club")
           : String((target as { title?: string }).title ?? "a volunteer role");
     await createNotification(database, {
-      audienceRoles: ["admin", "super_admin"],
+      audienceRoles: ["admin", "faculty", "super_admin"],
       title,
       message: `${userName} updated campus participation: ${itemName}.`,
       type: "campus-life",
@@ -118,3 +118,4 @@ export async function POST(request: NextRequest) {
 
   return jsonResponse({ message: "Campus interaction updated" });
 }
+

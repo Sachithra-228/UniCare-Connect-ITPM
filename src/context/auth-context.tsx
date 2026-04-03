@@ -69,17 +69,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const syncKeyRef = useRef<string | null>(null);
 
   const setServerSession = async (idToken: string) => {
-    const response = await fetch("/api/auth/session", {
+    return fetch("/api/auth/session", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ idToken })
     });
-
-    if (!response.ok) {
-      throw new Error("SESSION_SET_FAILED");
-    }
   };
 
   const clearServerSession = async () => {
@@ -227,8 +223,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
         try {
-          const idToken = await currentUser.getIdToken();
-          await setServerSession(idToken);
+          let idToken = await currentUser.getIdToken();
+          let sessionResponse = await setServerSession(idToken);
+          if (!sessionResponse.ok) {
+            idToken = await currentUser.getIdToken(true);
+            sessionResponse = await setServerSession(idToken);
+          }
+          if (!sessionResponse.ok) {
+            throw new Error("SESSION_SET_FAILED");
+          }
           const syncedUser = await syncUserOnce(currentUser);
           if (syncedUser) {
             await enforceUserAccess(syncedUser);
@@ -308,7 +311,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const idToken = await credential.user.getIdToken(true);
-      await setServerSession(idToken);
+      const sessionResponse = await setServerSession(idToken);
+      if (!sessionResponse.ok) {
+        throw new Error("SESSION_SET_FAILED");
+      }
       const syncedUser = await syncUserOnce(credential.user, profile);
       if (!syncedUser) {
         throw new Error("ACCOUNT_SYNC_FAILED");

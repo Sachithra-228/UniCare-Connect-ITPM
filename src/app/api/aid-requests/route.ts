@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
   const isAllScope = scope === "all";
   if (isAllScope) {
-    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
     if (roleCheck) {
       return roleCheck;
     }
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
   const payload = await request.json();
   const getSessionIdentity = (authResult: Awaited<ReturnType<typeof requireSession>>) => {
     const session = authResult.session;
-    const isAdmin = ["admin", "super_admin"].includes(session.user?.role ?? "");
+    const isAdmin = ["admin", "faculty", "super_admin"].includes(session.user?.role ?? "");
     const sessionUserId = session.user?._id;
     const sessionFirebaseUid = session.firebase.uid;
     const requestedUserId = isAdmin && typeof payload.userId === "string" ? payload.userId : undefined;
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
         relatedAidRequestId: aidRequestId
       }),
       createNotification(database, {
-        audienceRoles: ["admin", "super_admin"],
+        audienceRoles: ["admin", "faculty", "super_admin"],
         title: "New aid request",
         message: `A student submitted a new ${category}.`,
         type: "financial-aid",
@@ -176,3 +176,4 @@ export async function POST(request: NextRequest) {
     throw error;
   }
 }
+

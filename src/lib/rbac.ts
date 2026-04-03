@@ -8,6 +8,7 @@ const rolePriority: Record<UserRole, number> = {
   employer: 2,
   ngo: 2,
   admin: 3,
+  faculty: 3,
   super_admin: 4
 };
 

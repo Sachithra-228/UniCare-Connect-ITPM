@@ -50,6 +50,17 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
       { key: "fieldC", label: "Staff ID (Optional)", placeholder: "e.g. STAFF-00192", optional: true }
     ]
   },
+  faculty: {
+    label: "University Staff / Faculty",
+    helper: "Connect your institution and department.",
+    field1Kind: "university",
+    field2Kind: "text",
+    fields: [
+      { key: "fieldA", label: "University / Faculty", placeholder: "Select your university" },
+      { key: "fieldB", label: "Department / Office", placeholder: "e.g. Student Affairs Office" },
+      { key: "fieldC", label: "Staff ID (Optional)", placeholder: "e.g. STAFF-00192", optional: true }
+    ]
+  },
   mentor: {
     label: "Alumni / Industry Mentor",
     helper: "Create your mentor identity and expertise profile.",
@@ -140,6 +151,7 @@ const ROLE_TEXT_TRANSLATIONS: Record<Exclude<Language, "en">, Record<string, str
   si: {
     Student: "ශිෂ්‍ය",
     "University Admin / Faculty": "විශ්වවිද්‍යාල පරිපාලක / ආචාර්ය මණ්ඩලය",
+    "University Staff / Faculty": "විශ්වවිද්‍යාල පරිපාලක / ආචාර්ය මණ්ඩලය",
     "Alumni / Industry Mentor": "පුරෝගාමී / කර්මාන්ත මඟපෙන්වන්නා",
     "Donor / CSR Partner": "දායක / CSR හවුල්කරු",
     "Employer (Job Provider)": "රැකියා දායකයා",
@@ -197,6 +209,7 @@ const ROLE_TEXT_TRANSLATIONS: Record<Exclude<Language, "en">, Record<string, str
   ta: {
     Student: "மாணவர்",
     "University Admin / Faculty": "பல்கலைக்கழக நிர்வாகம் / பேராசிரியர் குழு",
+    "University Staff / Faculty": "பல்கலைக்கழக நிர்வாகம் / பேராசிரியர் குழு",
     "Alumni / Industry Mentor": "பழைய மாணவர் / தொழில் வழிகாட்டி",
     "Donor / CSR Partner": "நன்கொடையாளர் / CSR கூட்டாளர்",
     "Employer (Job Provider)": "பணியாளர் (வேலை வழங்குபவர்)",

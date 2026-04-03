@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     return authResult.error;
   }
 
-  const isAdmin = ["admin", "super_admin"].includes(authResult.session.user?.role ?? "");
+  const isAdmin = ["admin", "faculty", "super_admin"].includes(authResult.session.user?.role ?? "");
 
   try {
     const database = await getMongoDatabase();
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
       return jsonResponse({ user: mapUserDocument(user) });
     }
 
-    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
     if (roleCheck) {
       return roleCheck;
     }
@@ -193,12 +193,13 @@ export async function POST(request: NextRequest) {
 
   const normalizedEmail = payload.email.toLowerCase();
   const requesterRole = authResult.session.user?.role ?? "";
+  const isStaff = ["admin", "faculty", "super_admin"].includes(requesterRole);
   const isPrivileged = ["admin", "super_admin"].includes(requesterRole);
   const isSelfRequest =
     (payload.firebaseUid && payload.firebaseUid === authResult.session.firebase.uid) ||
     normalizedEmail === (authResult.session.firebase.email ?? "").toLowerCase();
 
-  if (!isPrivileged && !isSelfRequest) {
+  if (!isStaff && !isSelfRequest) {
     return jsonResponse({ message: "Forbidden" }, 403);
   }
 
@@ -223,6 +224,7 @@ export async function POST(request: NextRequest) {
 
     const validRoles: UserRole[] = [
       "student",
+      "faculty",
       "mentor",
       "donor",
       "admin",
@@ -414,3 +416,4 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+

@@ -181,7 +181,7 @@ export default function CompleteProfilePage() {
   const [form, setForm] = useState<FormData>(INITIAL);
   const [fieldErrors, setFieldErrors] = useState<{ fieldA?: string; fieldB?: string; fieldC?: string }>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -261,7 +261,7 @@ export default function CompleteProfilePage() {
     setSubmitError(null);
     if (!validate() || !form.role || !user) return;
 
-    setLoading(true);
+    setSubmitting(true);
     try {
       const res = await fetch("/api/users", {
         method: "POST",
@@ -283,7 +283,7 @@ export default function CompleteProfilePage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setSubmitError((data as { error?: string }).error ?? t.saveFailed);
-        setLoading(false);
+        setSubmitting(false);
         return;
       }
 
@@ -291,7 +291,7 @@ export default function CompleteProfilePage() {
       window.location.href = path;
     } catch {
       setSubmitError(t.somethingWentWrong);
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -467,8 +467,8 @@ export default function CompleteProfilePage() {
           {submitError && <p className="text-sm text-red-500">{submitError}</p>}
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Button type="submit" disabled={loading}>
-              {loading ? t.saving : t.saveContinue}
+            <Button type="submit" disabled={submitting}>
+              {submitting ? t.saving : t.saveContinue}
             </Button>
             <Link href="/login" className="text-sm text-slate-500 hover:underline">
               {t.signOutAnother}

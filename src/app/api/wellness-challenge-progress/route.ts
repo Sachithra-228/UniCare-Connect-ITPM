@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         sectionId: "wellness"
       }),
       createNotification(database, {
-        audienceRoles: ["admin", "super_admin"],
+        audienceRoles: ["admin", "faculty", "super_admin"],
         title: "Student wellness achievement",
         message: `${userName} completed a wellness challenge.`,
         type: "wellness",
@@ -107,3 +107,4 @@ export async function POST(request: NextRequest) {
     progress: { ...record, _id: (record as { _id?: { toString: () => string } })._id?.toString?.() }
   });
 }
+

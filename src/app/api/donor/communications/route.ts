@@ -26,7 +26,7 @@ function normalizeText(value: unknown, max = 200) {
 
 function mapAudienceToRoles(audience: string): UserRole[] {
   const normalized = audience.toLowerCase();
-  if (normalized.includes("admin")) return ["admin", "super_admin"];
+  if (normalized.includes("admin")) return ["admin", "faculty", "super_admin"];
   return ["student"];
 }
 
@@ -153,3 +153,4 @@ export async function POST(request: NextRequest) {
     201
   );
 }
+

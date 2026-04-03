@@ -90,6 +90,7 @@ const AUTH_TEXT: Record<
     tooManyAttempts: string;
     unableCreateAccount: string;
     validEmailPasswordRequired: string;
+    adminSignupDisabled: string;
     selectRoleContinue: string;
     fullNameRequired: string;
     atLeastTwoChars: string;
@@ -172,6 +173,8 @@ const AUTH_TEXT: Record<
     tooManyAttempts: "Too many attempts. Please try again later.",
     unableCreateAccount: "Unable to create account. Please try again.",
     validEmailPasswordRequired: "Please provide a valid email and password.",
+    adminSignupDisabled:
+      "University Admin / Faculty accounts require approval. Please contact support to create this role.",
     selectRoleContinue: "Please select your role to continue.",
     fullNameRequired: "Full name is required.",
     atLeastTwoChars: "Please enter at least 2 characters.",
@@ -511,10 +514,13 @@ export default function LoginPage() {
     password?: string;
     confirmPassword?: string;
   }>({});
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showSignUpConfirmPassword, setShowSignUpConfirmPassword] = useState(false);
 
   const selectedRoleConfig = signUpData.role ? roleConfigs[signUpData.role] : null;
   const isStudent = signUpData.role === "student";
-  const isUniversityRole = signUpData.role === "student" || signUpData.role === "admin";
+  const isUniversityRole = signUpData.role === "student" || signUpData.role === "faculty";
   const degreePrograms = isStudent
     ? getDegreeProgramsForUniversity(
         signUpData.fieldA === OTHER_UNIVERSITY_VALUE ? "" : signUpData.fieldA
@@ -697,6 +703,7 @@ export default function LoginPage() {
     setFieldErrors({});
     if (step === 1) {
       if (!signUpData.role) return t.selectRoleContinue;
+      if (signUpData.role === "admin") return t.adminSignupDisabled;
       return null;
     }
 
@@ -822,7 +829,16 @@ export default function LoginPage() {
 
   const renderSignUpStep = () => {
     if (signUpStep === 1) {
-      const roleOptions = (Object.keys(roleConfigs) as UserRole[]).map((role) => ({
+      const signupRoles: UserRole[] = [
+        "student",
+        "faculty",
+        "mentor",
+        "donor",
+        "employer",
+        "ngo",
+        "parent"
+      ];
+      const roleOptions = signupRoles.map((role) => ({
         value: role,
         label: roleConfigs[role].label
       }));
@@ -888,36 +904,78 @@ export default function LoginPage() {
             <label className="text-sm font-medium text-slate-900" htmlFor="signup-password">
               {t.password} <span className="text-red-500">*</span>
             </label>
-            <Input
-              id="signup-password"
-              type="password"
-              value={signUpData.password}
-              onChange={(event) => {
-                updateSignUpField("password", event.target.value);
-                if (step2Errors.password) setStep2Errors((e) => ({ ...e, password: undefined }));
-              }}
-              placeholder={t.min6Chars}
-              required
-              className={step2Errors.password ? "border-red-400 focus-visible:ring-red-400/30" : ""}
-            />
+            <div className="relative">
+              <Input
+                id="signup-password"
+                type={showSignUpPassword ? "text" : "password"}
+                value={signUpData.password}
+                onChange={(event) => {
+                  updateSignUpField("password", event.target.value);
+                  if (step2Errors.password) setStep2Errors((e) => ({ ...e, password: undefined }));
+                }}
+                placeholder={t.min6Chars}
+                required
+                className={`pr-10 ${step2Errors.password ? "border-red-400 focus-visible:ring-red-400/30" : ""}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSignUpPassword((v) => !v)}
+                aria-label={showSignUpPassword ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 hover:text-slate-700"
+              >
+                {showSignUpPassword ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5.52 0-10.19-3.51-11.83-8.38a10.93 10.93 0 0 1 5.17-6.07" />
+                    <path d="M1 1l22 22" />
+                    <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1.5 12s4.5-7 10.5-7 10.5 7 10.5 7-4.5 7-10.5 7-10.5-7-10.5-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
             {step2Errors.password && <p className="text-xs text-red-500">{step2Errors.password}</p>}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-900" htmlFor="signup-confirm-password">
               {t.confirmPassword} <span className="text-red-500">*</span>
             </label>
-            <Input
-              id="signup-confirm-password"
-              type="password"
-              value={signUpData.confirmPassword}
-              onChange={(event) => {
-                updateSignUpField("confirmPassword", event.target.value);
-                if (step2Errors.confirmPassword) setStep2Errors((e) => ({ ...e, confirmPassword: undefined }));
-              }}
-              placeholder={t.reenterPassword}
-              required
-              className={step2Errors.confirmPassword ? "border-red-400 focus-visible:ring-red-400/30" : ""}
-            />
+            <div className="relative">
+              <Input
+                id="signup-confirm-password"
+                type={showSignUpConfirmPassword ? "text" : "password"}
+                value={signUpData.confirmPassword}
+                onChange={(event) => {
+                  updateSignUpField("confirmPassword", event.target.value);
+                  if (step2Errors.confirmPassword) setStep2Errors((e) => ({ ...e, confirmPassword: undefined }));
+                }}
+                placeholder={t.reenterPassword}
+                required
+                className={`pr-10 ${step2Errors.confirmPassword ? "border-red-400 focus-visible:ring-red-400/30" : ""}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSignUpConfirmPassword((v) => !v)}
+                aria-label={showSignUpConfirmPassword ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 hover:text-slate-700"
+              >
+                {showSignUpConfirmPassword ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5.52 0-10.19-3.51-11.83-8.38a10.93 10.93 0 0 1 5.17-6.07" />
+                    <path d="M1 1l22 22" />
+                    <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1.5 12s4.5-7 10.5-7 10.5 7 10.5 7-4.5 7-10.5 7-10.5-7-10.5-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
             {step2Errors.confirmPassword && (
               <p className="text-xs text-red-500">{step2Errors.confirmPassword}</p>
             )}
@@ -1196,7 +1254,35 @@ export default function LoginPage() {
                   <label className="text-sm font-medium" htmlFor="password">
                     {t.password}
                   </label>
-                  <Input id="password" name="password" type="password" required aria-required="true" />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showSignInPassword ? "text" : "password"}
+                      required
+                      aria-required="true"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignInPassword((v) => !v)}
+                      aria-label={showSignInPassword ? "Hide password" : "Show password"}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 hover:text-slate-700"
+                    >
+                      {showSignInPassword ? (
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5.52 0-10.19-3.51-11.83-8.38a10.93 10.93 0 0 1 5.17-6.07" />
+                          <path d="M1 1l22 22" />
+                          <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1.5 12s4.5-7 10.5-7 10.5 7 10.5 7-4.5 7-10.5 7-10.5-7-10.5-7z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 {isVerifiedRedirect ? (
                   <p className="text-sm text-green-600">

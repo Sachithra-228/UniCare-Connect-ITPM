@@ -740,7 +740,7 @@ export async function GET(request: NextRequest) {
   const authResult = await requireSession(request);
   if (authResult.error) return authResult.error;
 
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
   if (roleCheck) return roleCheck;
 
   const template = normalizeTemplate(request.nextUrl.searchParams.get("template"));
@@ -827,3 +827,4 @@ export async function GET(request: NextRequest) {
     throw error;
   }
 }
+

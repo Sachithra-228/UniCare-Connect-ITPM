@@ -160,7 +160,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return authResult.error;
   }
 
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
   if (roleCheck) {
     return roleCheck;
   }
@@ -267,7 +267,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       relatedAidRequestId: requestId
     }),
     createNotification(database, {
-      audienceRoles: ["admin", "super_admin"],
+      audienceRoles: ["admin", "faculty", "super_admin"],
       title: "Aid review updated",
       message: `${category} was marked ${nextStatus}.`,
       type: "financial-aid",
@@ -346,3 +346,4 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
   return jsonResponse({ message: "Aid request deleted" });
 }
+

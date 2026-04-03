@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
       sectionId: "donations"
     }),
     createNotification(database, {
-      audienceRoles: ["admin", "super_admin"],
+      audienceRoles: ["admin", "faculty", "super_admin"],
       title: "New donor contribution",
       message: `${donorName} logged a LKR ${amountLkr} contribution for ${category}.`,
       type: "financial-aid",
@@ -186,3 +186,4 @@ export async function POST(request: NextRequest) {
     201
   );
 }
+

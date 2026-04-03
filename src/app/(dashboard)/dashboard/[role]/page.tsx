@@ -241,7 +241,7 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
         <div className="p-6">
           {routeRole === "student" ? (
             <StudentSectionContent sectionId={activeSection.id} />
-          ) : routeRole === "admin" ? (
+          ) : routeRole === "admin" || routeRole === "faculty" ? (
             <AdminSectionContent sectionId={activeSection.id} />
           ) : routeRole === "donor" ? (
             <DonorSectionContent sectionId={activeSection.id} />

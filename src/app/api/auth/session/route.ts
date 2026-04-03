@@ -50,11 +50,6 @@ export async function POST(request: NextRequest) {
       return jsonResponse({ message: "idToken is required." }, 400);
     }
 
-    const currentToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-    if (currentToken && currentToken === idToken) {
-      return jsonResponse({ status: "session_set" });
-    }
-
     await verifyFirebaseIdToken(idToken);
     const response = jsonResponse({ status: "session_set" });
     applySessionCookie(response, idToken);
