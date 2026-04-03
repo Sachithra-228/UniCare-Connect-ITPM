@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/shared/Card";
-import { Badge } from "@/components/shared/badge";
+import { Badge } from "@/components/shared/Badge";
 import { Button } from "@/components/shared/Button";
 
 type Challenge = {

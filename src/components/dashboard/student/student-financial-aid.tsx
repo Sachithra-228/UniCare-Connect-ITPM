@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { Card } from "@/components/shared/Card";
-import { Badge } from "@/components/shared/badge";
+import { Badge } from "@/components/shared/Badge";
 import { Button } from "@/components/shared/Button";
 import { AidRequestForm } from "@/components/financial/aid-request-form";
 import { Input } from "@/components/shared/Input";

@@ -10,7 +10,7 @@ import {
   Legend
 } from "recharts";
 import { Card } from "@/components/shared/Card";
-import { Badge } from "@/components/shared/badge";
+import { Badge } from "@/components/shared/Badge";
 import type { Scholarship } from "@/types";
 import type { JobListing } from "@/types";
 import { getNgoCommunications, type NgoCommunication } from "@/lib/ngo-demo-store";

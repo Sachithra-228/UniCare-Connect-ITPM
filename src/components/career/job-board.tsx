@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/shared/Card";
 import { Input } from "@/components/shared/Input";
 import { Select } from "@/components/shared/select";
-import { Badge } from "@/components/shared/badge";
+import { Badge } from "@/components/shared/Badge";
 import { Button } from "@/components/shared/Button";
 import type { JobListing } from "@/types";
 import { useLanguage } from "@/context/language-context";
