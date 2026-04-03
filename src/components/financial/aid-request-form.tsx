@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { aidRequestSchema } from "@/lib/validation";
-import { Button } from "@/components/shared/button";
-import { Input } from "@/components/shared/input";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
 import { Select } from "@/components/shared/select";
 import { TextArea } from "@/components/shared/text-area";
 import { useLanguage } from "@/context/language-context";

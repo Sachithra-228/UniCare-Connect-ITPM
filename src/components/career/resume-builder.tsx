@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Card } from "@/components/shared/card";
-import { Button } from "@/components/shared/button";
-import { Input } from "@/components/shared/input";
+import { Card } from "@/components/shared/Card";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/text-area";
 
 export type ResumePersonal = {

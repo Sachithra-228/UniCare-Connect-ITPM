@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -9,7 +9,7 @@ import {
   Cell,
   Legend
 } from "recharts";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { Badge } from "@/components/shared/badge";
 import type { Scholarship } from "@/types";
 import type { JobListing } from "@/types";
