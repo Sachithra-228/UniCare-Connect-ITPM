@@ -70,11 +70,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const payload = await request.json();
-  const getSessionIdentity = (authResult: Awaited<ReturnType<typeof requireSession>>) => {
-    const session = authResult.session;
+  const getSessionIdentity = (session: {
+    user?: { role?: string; _id?: string } | null;
+    firebase?: { uid?: string };
+  }) => {
     const isAdmin = ["admin", "faculty", "super_admin"].includes(session.user?.role ?? "");
     const sessionUserId = session.user?._id;
-    const sessionFirebaseUid = session.firebase.uid;
+    const sessionFirebaseUid = session.firebase?.uid;
     const requestedUserId = isAdmin && typeof payload.userId === "string" ? payload.userId : undefined;
     const requestedFirebaseUid =
       isAdmin && typeof payload.firebaseUid === "string" ? payload.firebaseUid : undefined;
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
     if (authResult.error) {
       return authResult.error;
     }
-    const identity = getSessionIdentity(authResult);
+    const identity = getSessionIdentity(authResult.session);
     const created = createDemoAidRequest({
       ...payload,
       userId: identity.userId,
@@ -103,7 +105,7 @@ export async function POST(request: NextRequest) {
   if (authResult.error) {
     return authResult.error;
   }
-  const identity = getSessionIdentity(authResult);
+  const identity = getSessionIdentity(authResult.session);
 
   try {
     const database = await getMongoDatabase();
