@@ -32,7 +32,7 @@ type Scholarship = {
 
 type DonorContribution = {
   _id?: string;
-  contributionType?: "emergency_fund" | "equipment" | "scholarship" | "general";
+  contributionType?: "emergency_fund" | "equipment" | "scholarship" | "general" | "ngo_program";
   program?: string;
   category?: string;
   amountLkr?: number;
@@ -256,7 +256,7 @@ function DonorPartnerHomeSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [contributionType, setContributionType] = useState<
-    "emergency_fund" | "equipment" | "scholarship" | "general"
+    "emergency_fund" | "equipment" | "scholarship" | "general" | "ngo_program"
   >("emergency_fund");
   const [program, setProgram] = useState("Emergency Support Fund");
   const [amountLkr, setAmountLkr] = useState("");
@@ -365,13 +365,14 @@ function DonorPartnerHomeSection() {
                 value={contributionType}
                 onChange={(event) =>
                   setContributionType(
-                    event.target.value as "emergency_fund" | "equipment" | "scholarship" | "general"
+                    event.target.value as "emergency_fund" | "equipment" | "scholarship" | "general" | "ngo_program"
                   )
                 }
               >
                 <option value="emergency_fund">Emergency fund</option>
                 <option value="equipment">Equipment</option>
                 <option value="scholarship">Scholarship</option>
+                <option value="ngo_program">NGO Program</option>
                 <option value="general">General</option>
               </select>
             </div>
@@ -992,6 +993,7 @@ function DonorDonationsSection() {
 }
 function DonorImpactReportsSection() {
   const [report, setReport] = useState<DonorImpactReport | null>(null);
+  const [ngoReports, setNgoReports] = useState<any[]>([]);
   const [rangeDays, setRangeDays] = useState(90);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1000,6 +1002,9 @@ function DonorImpactReportsSection() {
     setLoading(true);
     setError(null);
     try {
+      import("@/lib/ngo-demo-store").then(({ getNgoReports }) => {
+        setNgoReports(getNgoReports());
+      });
       const response = await fetch(`/api/donor/impact-reports?rangeDays=${rangeDays}`);
       const payload = (await response.json().catch(() => ({}))) as DonorImpactReport & { message?: string };
       if (!response.ok) {
@@ -1152,6 +1157,40 @@ function DonorImpactReportsSection() {
               >
                 <p className="font-medium">{item.title}</p>
                 <p className="text-xs text-slate-500">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="space-y-3 p-4">
+        <h3 className="text-sm font-semibold">NGO Impact Reports</h3>
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading NGO reports...</p>
+        ) : !ngoReports.length ? (
+          <p className="text-sm text-slate-500">No NGO partner reports available yet.</p>
+        ) : (
+          <div className="space-y-3 text-sm">
+            {ngoReports.map((report) => (
+              <div key={report._id} className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800">
+                <div className="flex justify-between items-start mb-1">
+                  <p className="font-semibold text-slate-900 dark:text-white">{report.title}</p>
+                  <span className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 rounded-full py-0.5">
+                    {new Date(report.generatedAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium mb-1">
+                  {report.organizationName} - Program: {report.programName}
+                </p>
+                <div className="flex gap-4 mt-2 mb-2 text-xs text-slate-500">
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">Total Funds: LKR {report.totalFundsUtilized.toLocaleString()}</span>
+                  <span>Beneficiaries: {report.beneficiariesSupported}</span>
+                </div>
+                {report.keyOutcomes?.length > 0 && (
+                  <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
+                    {report.keyOutcomes.map((outcome: string, idx: number) => <li key={idx}>{outcome}</li>)}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
