@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
   const result = await collection.insertOne(requestDoc);
 
   await createNotification(database, {
-    audienceRoles: ["admin", "super_admin"],
+    audienceRoles: ["admin", "faculty", "super_admin"],
     title: "New account deletion request",
     message: `${name ?? email ?? "A user"} requested account deletion review.`,
     type: "profile",
@@ -138,3 +138,4 @@ export async function POST(request: NextRequest) {
     201
   );
 }
+

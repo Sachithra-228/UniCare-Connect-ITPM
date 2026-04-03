@@ -2,6 +2,7 @@ import { UserRole } from "@/types";
 
 export type DashboardRole =
   | "student"
+  | "faculty"
   | "admin"
   | "mentor"
   | "donor"
@@ -26,6 +27,7 @@ export type DashboardRoleConfig = {
 
 export const DASHBOARD_ROLE_ORDER: DashboardRole[] = [
   "student",
+  "faculty",
   "admin",
   "mentor",
   "donor",
@@ -238,6 +240,103 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         title: "Profile",
         items: [
           "Admin settings",
+          "Department management"
+        ]
+      }
+    ]
+  },
+  faculty: {
+    label: "University Staff / Faculty",
+    workspaceLabel: "Faculty Dashboard",
+    description: "Oversee support operations, approvals, and institutional impact.",
+    sections: [
+      {
+        id: "overview",
+        menuLabel: "Overview",
+        icon: "🏠",
+        title: "Overview",
+        items: [
+          "Student stats (total, active)",
+          "Pending verifications badge",
+          "Recent activity feed"
+        ]
+      },
+      {
+        id: "verifications",
+        menuLabel: "Verifications",
+        icon: "✅",
+        title: "Verifications",
+        items: [
+          "Student enrollment verifications",
+          "Financial aid applications",
+          "Scholarship eligibility checks",
+          "Document validation queue"
+        ]
+      },
+      {
+        id: "financial-oversight",
+        menuLabel: "Financial Oversight",
+        icon: "💰",
+        title: "Financial Oversight",
+        items: [
+          "Emergency fund requests",
+          "Fee waiver applications",
+          "Equipment requests from students",
+          "Disbursement tracking"
+        ]
+      },
+      {
+        id: "career-services",
+        menuLabel: "Career Services",
+        icon: "💼",
+        title: "Career Services",
+        items: [
+          "Job postings from employers",
+          "Internship opportunities",
+          "Placement statistics"
+        ]
+      },
+      {
+        id: "mentorship-program",
+        menuLabel: "Mentorship Program",
+        icon: "👥",
+        title: "Mentorship Program",
+        items: [
+          "Mentor approval queue",
+          "Active mentorship pairs",
+          "Session reports"
+        ]
+      },
+      {
+        id: "reports",
+        menuLabel: "Reports",
+        icon: "📊",
+        title: "Reports",
+        items: [
+          "Student support metrics",
+          "Financial aid distribution",
+          "Mental health trends (anonymized)",
+          "Export data"
+        ]
+      },
+      {
+        id: "announcements",
+        menuLabel: "Announcements",
+        icon: "📢",
+        title: "Announcements",
+        items: [
+          "Post campus-wide notices",
+          "Event promotions",
+          "Emergency alerts"
+        ]
+      },
+      {
+        id: "profile",
+        menuLabel: "Profile",
+        icon: "👤",
+        title: "Profile",
+        items: [
+          "Faculty settings",
           "Department management"
         ]
       }
@@ -731,6 +830,7 @@ const AUTH_ROLE_TO_DASHBOARD_ROLE: Record<UserRole, DashboardRole> = {
   mentor: "mentor",
   donor: "donor",
   admin: "admin",
+  faculty: "faculty",
   super_admin: "admin",
   employer: "employer",
   ngo: "ngo",

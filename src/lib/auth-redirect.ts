@@ -9,6 +9,10 @@ export function getDashboardPathForRole(role?: string | null) {
     return "/dashboard/admin";
   }
 
+  if (normalizedRole === "faculty") {
+    return "/dashboard/faculty";
+  }
+
   if (normalizedRole === "mentor") {
     return "/dashboard/mentor";
   }

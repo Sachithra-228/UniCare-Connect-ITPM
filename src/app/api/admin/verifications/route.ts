@@ -99,7 +99,7 @@ function profileSectionForRole(role?: UserRole) {
 export async function GET(request: NextRequest) {
   const authResult = await requireSession(request);
   if (authResult.error) return authResult.error;
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
   if (roleCheck) return roleCheck;
 
   if (isDemoMode()) {
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const authResult = await requireSession(request);
   if (authResult.error) return authResult.error;
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
   if (roleCheck) return roleCheck;
 
   const payload = (await request.json().catch(() => ({}))) as {
@@ -279,7 +279,7 @@ export async function PATCH(request: NextRequest) {
   });
 
   await createNotification(database, {
-    audienceRoles: ["admin", "super_admin"],
+    audienceRoles: ["admin", "faculty", "super_admin"],
     title: "Verification updated",
     message: `${personName} verification was ${statusText}.`,
     type: "verification",
@@ -288,3 +288,4 @@ export async function PATCH(request: NextRequest) {
 
   return jsonResponse({ message: "Verification updated." });
 }
+

@@ -65,19 +65,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<UserProfile | null>(demoUsers[0] ?? null);
   const [loading, setLoading] = useState(true);
   const registeringUidRef = useRef<string | null>(null);
+  const syncPromiseRef = useRef<Promise<UserProfile | null> | null>(null);
+  const syncKeyRef = useRef<string | null>(null);
 
   const setServerSession = async (idToken: string) => {
-    const response = await fetch("/api/auth/session", {
+    return fetch("/api/auth/session", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ idToken })
     });
-
-    if (!response.ok) {
-      throw new Error("SESSION_SET_FAILED");
-    }
   };
 
   const clearServerSession = async () => {
@@ -172,6 +170,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return data.user ?? null;
   };
 
+  const syncUserOnce = async (
+    currentUser: FirebaseAuthUser,
+    profile?: RegisterProfileInput
+  ): Promise<UserProfile | null> => {
+    if (!currentUser.email) {
+      return null;
+    }
+
+    const key = `${currentUser.uid}:${currentUser.email.toLowerCase()}:${profile ? "profile" : "basic"}`;
+    if (syncPromiseRef.current && syncKeyRef.current === key) {
+      return syncPromiseRef.current;
+    }
+
+    const nextPromise = syncUserWithDatabase(currentUser, profile);
+    syncKeyRef.current = key;
+    syncPromiseRef.current = nextPromise.finally(() => {
+      syncPromiseRef.current = null;
+      syncKeyRef.current = null;
+    });
+    return syncPromiseRef.current;
+  };
+
   const enforceUserAccess = async (profile: UserProfile | null) => {
     if (!profile) {
       return;
@@ -203,15 +223,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
         try {
-          const idToken = await currentUser.getIdToken();
-          await setServerSession(idToken);
-          const syncedUser = await syncUserWithDatabase(currentUser);
+          let idToken = await currentUser.getIdToken();
+          let sessionResponse = await setServerSession(idToken);
+          if (!sessionResponse.ok) {
+            idToken = await currentUser.getIdToken(true);
+            sessionResponse = await setServerSession(idToken);
+          }
+          if (!sessionResponse.ok) {
+            throw new Error("SESSION_SET_FAILED");
+          }
+          const syncedUser = await syncUserOnce(currentUser);
           if (syncedUser) {
+            await enforceUserAccess(syncedUser);
             setUser(syncedUser);
           } else {
             setUser(createFallbackProfile(currentUser));
           }
-        } catch {
+        } catch (error) {
+          if (error instanceof Error && error.message === "ACCOUNT_BLOCKED") {
+            setUser(null);
+            setLoading(false);
+            return;
+          }
           const matched = demoUsers.find((demoUser) => demoUser.email === currentUser.email);
           setUser(matched ?? createFallbackProfile(currentUser));
         }
@@ -248,16 +281,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error("EMAIL_NOT_VERIFIED");
     }
 
-    const idToken = await signedInUser.getIdToken(true);
-    await setServerSession(idToken);
-
-    try {
-      const syncedUser = await syncUserWithDatabase(signedInUser);
-      await enforceUserAccess(syncedUser);
-    } catch {
-      // MongoDB/sync unavailable – user is still signed in via Firebase and session is set.
-      // onIdTokenChanged will set a fallback profile so the user can continue.
-    }
+    // Session sync + profile fetch handled by onIdTokenChanged.
   };
 
   const signInWithGoogle = async () => {
@@ -269,10 +293,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const provider = new GoogleAuthProvider();
     const credential = await signInWithPopup(auth, provider);
     const signedInUser = credential.user as FirebaseAuthUser;
-    const idToken = await signedInUser.getIdToken(true);
-    await setServerSession(idToken);
-    const syncedUser = await syncUserWithDatabase(signedInUser);
-    await enforceUserAccess(syncedUser);
+    // Session sync + profile fetch handled by onIdTokenChanged.
   };
 
   const registerWithEmail = async (
@@ -290,8 +311,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const idToken = await credential.user.getIdToken(true);
-      await setServerSession(idToken);
-      const syncedUser = await syncUserWithDatabase(credential.user, profile);
+      const sessionResponse = await setServerSession(idToken);
+      if (!sessionResponse.ok) {
+        throw new Error("SESSION_SET_FAILED");
+      }
+      const syncedUser = await syncUserOnce(credential.user, profile);
       if (!syncedUser) {
         throw new Error("ACCOUNT_SYNC_FAILED");
       }
@@ -392,3 +416,5 @@ export function useAuth() {
   }
   return context;
 }
+
+

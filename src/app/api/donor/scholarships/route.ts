@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
       relatedScholarshipId: scholarshipId
     }),
     createNotification(database, {
-      audienceRoles: ["admin", "super_admin"],
+      audienceRoles: ["admin", "faculty", "super_admin"],
       title: "Scholarship published",
       message: `Donor scholarship "${title}" has been created.`,
       type: "financial-aid",
@@ -211,3 +211,4 @@ export async function POST(request: NextRequest) {
     201
   );
 }
+

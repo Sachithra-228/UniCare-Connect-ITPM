@@ -70,7 +70,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return authResult.error;
   }
 
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
   if (roleCheck) {
     return roleCheck;
   }
@@ -144,7 +144,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       relatedJobId: jobId
     }),
     createNotification(database, {
-      audienceRoles: ["admin", "super_admin"],
+      audienceRoles: ["admin", "faculty", "super_admin"],
       title: "Career moderation updated",
       message: adminMessage,
       type: "career",
@@ -178,3 +178,4 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
   });
 }
+

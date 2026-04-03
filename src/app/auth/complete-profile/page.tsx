@@ -172,7 +172,7 @@ const COMPLETE_PROFILE_TEXT: Record<Language, CompleteProfileText> = {
 };
 
 export default function CompleteProfilePage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { language } = useLanguage();
   const router = useRouter();
   const t = COMPLETE_PROFILE_TEXT[language];
@@ -181,25 +181,21 @@ export default function CompleteProfilePage() {
   const [form, setForm] = useState<FormData>(INITIAL);
   const [fieldErrors, setFieldErrors] = useState<{ fieldA?: string; fieldB?: string; fieldC?: string }>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    async function check() {
-      const res = await fetch("/api/auth/session", { cache: "no-store" });
-      if (!res.ok) {
-        router.replace("/login");
-        return;
-      }
-      const data = (await res.json()) as { user?: { needsProfileCompletion?: boolean; role?: string } };
-      if (!data.user?.needsProfileCompletion) {
-        router.replace(getDashboardPathForRole(data.user?.role));
-        return;
-      }
-      setChecking(false);
+    if (loading) return;
+    if (!user) {
+      router.replace("/login");
+      return;
     }
-    check();
-  }, [router]);
+    if (!user.needsProfileCompletion) {
+      router.replace(getDashboardPathForRole(user.role));
+      return;
+    }
+    setChecking(false);
+  }, [loading, user, router]);
 
   const update = (key: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -265,7 +261,7 @@ export default function CompleteProfilePage() {
     setSubmitError(null);
     if (!validate() || !form.role || !user) return;
 
-    setLoading(true);
+    setSubmitting(true);
     try {
       const res = await fetch("/api/users", {
         method: "POST",
@@ -287,7 +283,7 @@ export default function CompleteProfilePage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setSubmitError((data as { error?: string }).error ?? t.saveFailed);
-        setLoading(false);
+        setSubmitting(false);
         return;
       }
 
@@ -295,7 +291,7 @@ export default function CompleteProfilePage() {
       window.location.href = path;
     } catch {
       setSubmitError(t.somethingWentWrong);
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -471,8 +467,8 @@ export default function CompleteProfilePage() {
           {submitError && <p className="text-sm text-red-500">{submitError}</p>}
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Button type="submit" disabled={loading}>
-              {loading ? t.saving : t.saveContinue}
+            <Button type="submit" disabled={submitting}>
+              {submitting ? t.saving : t.saveContinue}
             </Button>
             <Link href="/login" className="text-sm text-slate-500 hover:underline">
               {t.signOutAnother}

@@ -28,6 +28,8 @@ export type VerifiedFirebaseIdentity = {
   emailVerified: boolean;
 };
 
+const shouldLogTiming = process.env.DEBUG_AUTH_TIMING === "true";
+
 const VERIFY_CACHE_TTL_MS = 5 * 60 * 1000;
 const VERIFY_CACHE_MAX_ENTRIES = 500;
 type CachedIdentity = {
@@ -107,9 +109,13 @@ async function postIdentityToolkit<TResponse>(path: string, payload: Record<stri
 }
 
 export async function verifyFirebaseIdToken(idToken: string): Promise<VerifiedFirebaseIdentity> {
+  const verifyStart = shouldLogTiming ? Date.now() : 0;
   const now = Date.now();
   const cached = verifyCache.get(idToken);
   if (cached && cached.expiresAt > now) {
+    if (shouldLogTiming) {
+      console.info(`[auth] verifyFirebaseIdToken cache hit in ${Date.now() - verifyStart}ms`);
+    }
     return cached.identity;
   }
   if (cached) {
@@ -118,6 +124,9 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<VerifiedFi
 
   const inflight = inflightLookups.get(idToken);
   if (inflight) {
+    if (shouldLogTiming) {
+      console.info(`[auth] verifyFirebaseIdToken inflight await`);
+    }
     return inflight;
   }
 
@@ -148,7 +157,11 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<VerifiedFi
 
   inflightLookups.set(idToken, lookupPromise);
   try {
-    return await lookupPromise;
+    const result = await lookupPromise;
+    if (shouldLogTiming) {
+      console.info(`[auth] verifyFirebaseIdToken in ${Date.now() - verifyStart}ms`);
+    }
+    return result;
   } finally {
     inflightLookups.delete(idToken);
   }

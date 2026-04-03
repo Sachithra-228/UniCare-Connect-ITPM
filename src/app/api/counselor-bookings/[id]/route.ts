@@ -30,7 +30,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (authResult.error) return authResult.error;
 
   const role = authResult.session.user?.role ?? "";
-  const isAdmin = role === "admin" || role === "super_admin";
+  const isAdmin = role === "admin" || role === "faculty" || role === "super_admin";
   const userId = authResult.session.user?._id;
   const firebaseUid = authResult.session.firebase.uid;
 
@@ -82,7 +82,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       ? []
       : [
           createNotification(database, {
-            audienceRoles: ["admin", "super_admin"],
+            audienceRoles: ["admin", "faculty", "super_admin"],
             title: "Counselor booking cancelled",
             message: "A student cancelled a counselor booking request.",
             type: "wellness",
@@ -96,3 +96,4 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     booking: { ...updated, _id: updated?._id?.toString?.() ?? id }
   });
 }
+

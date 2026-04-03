@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       if (authResult.error) {
         return authResult.error;
       }
-      const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+      const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
       if (roleCheck) {
         return roleCheck;
       }
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
   const uid = authResult.session.firebase.uid;
   const isAllScope = scope === "all";
   if (isAllScope) {
-    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
     if (roleCheck) {
       return roleCheck;
     }
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
       relatedSessionId: sessionId
     }),
     createNotification(database, {
-      audienceRoles: ["admin", "super_admin"],
+      audienceRoles: ["admin", "faculty", "super_admin"],
       title: "Mentorship request submitted",
       message: `A new mentorship request was submitted for "${topic}".`,
       type: "mentorship",
@@ -267,3 +267,4 @@ export async function POST(request: NextRequest) {
 
   return jsonResponse({ message: "Request sent", session: inserted }, 201);
 }
+
