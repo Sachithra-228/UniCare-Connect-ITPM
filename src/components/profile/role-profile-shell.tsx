@@ -111,7 +111,7 @@ export function RoleProfileShell({ roleLabel, children }: RoleProfileShellProps)
               onChange={handleProfilePicChange}
               disabled={uploading}
             />
-            {uploading ? "Uploading…" : "Change picture"}
+            {uploading ? "Uploading..." : "Change picture"}
           </label>
         </div>
       </Card>

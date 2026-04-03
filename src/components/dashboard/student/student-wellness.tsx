@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/shared/card";
 import { MoodTracker } from "@/components/wellness/mood-tracker";
@@ -17,12 +17,22 @@ export function StudentWellness() {
   const [logs, setLogs] = useState<HealthLog[]>([]);
   const [activeTab, setActiveTab] = useState<WellnessTab>("checkins");
 
-  useEffect(() => {
+  const refreshLogs = useCallback(() => {
     fetch("/api/health-logs")
       .then((r) => r.json())
       .then((data) => setLogs(Array.isArray(data) ? data : []))
       .catch(() => setLogs([]));
   }, []);
+
+  useEffect(() => {
+    refreshLogs();
+  }, [refreshLogs]);
+
+  useEffect(() => {
+    if (activeTab !== "checkins") return;
+    const intervalId = window.setInterval(refreshLogs, 30000);
+    return () => window.clearInterval(intervalId);
+  }, [activeTab, refreshLogs]);
 
   const tabs: { id: WellnessTab; label: string; description: string }[] = [
     {
@@ -103,7 +113,7 @@ export function StudentWellness() {
                   </p>
                 </div>
               </div>
-              <MoodTracker />
+              <MoodTracker onSaved={refreshLogs} />
             </Card>
 
             {logs.length > 0 && (

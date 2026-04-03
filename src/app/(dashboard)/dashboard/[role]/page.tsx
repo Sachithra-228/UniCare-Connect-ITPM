@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
@@ -36,6 +36,16 @@ type QuickStats = {
   unreadNotifications: number;
 };
 
+type DashboardNotification = {
+  id?: string;
+  _id?: string;
+  title?: string;
+  message?: string;
+  date?: string;
+  createdAt?: string;
+  read?: boolean;
+};
+
 export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
   const routeRole = resolveRouteRole(params.role);
   const { user, loading } = useAuth();
@@ -47,6 +57,8 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
     upcomingDeadlines: 0,
     unreadNotifications: 0
   });
+  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
+  const unreadNotificationCount = notifications.filter((item) => !item.read).length;
 
   const roleConfig = useMemo(
     () => (routeRole ? DASHBOARD_ROLE_CONFIG[routeRole] : null),
@@ -111,14 +123,35 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
     }
   }, [loading, routeRole, router, user]);
 
+  const fetchNotifications = useCallback(() => {
+    fetch("/api/notifications")
+      .then((response) => (response.ok ? response.json() : {}))
+      .then((data) => {
+        const notificationList = Array.isArray((data as { notifications?: unknown[] }).notifications)
+          ? ((data as { notifications: DashboardNotification[] }).notifications ?? []).map((item) => ({
+              ...item,
+              id: item.id ?? item._id
+            }))
+          : [];
+        setNotifications(notificationList);
+      })
+      .catch(() => setNotifications([]));
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchNotifications();
+    const intervalId = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(intervalId);
+  }, [fetchNotifications, user]);
+
   useEffect(() => {
     if (routeRole !== "student") return;
     Promise.all([
       fetch("/api/aid-requests").then((r) => r.json()).catch(() => []),
       fetch("/api/scholarships").then((r) => r.json()).catch(() => []),
-      fetch("/api/jobs").then((r) => r.json()).catch(() => []),
-      fetch("/api/notifications").then((r) => r.json()).catch(() => ({}))
-    ]).then(([aid, scholarships, jobs, notifData]) => {
+      fetch("/api/jobs").then((r) => r.json()).catch(() => [])
+    ]).then(([aid, scholarships, jobs]) => {
       const aidList = Array.isArray(aid) ? aid : [];
       const pendingApps = aidList.filter(
         (a: { status?: string }) =>
@@ -133,17 +166,13 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
           .map((j: { applicationDeadline?: string }) => j.applicationDeadline)
           .filter((d): d is string => Boolean(d))
       ].filter((d) => d >= today).length;
-      const notifications = Array.isArray((notifData as { notifications?: unknown[] }).notifications)
-        ? (notifData as { notifications: { read?: boolean }[] }).notifications
-        : [];
-      const unread = notifications.filter((n: { read?: boolean }) => !n.read).length;
       setQuickStats({
         pendingApplications: pendingApps,
         upcomingDeadlines: deadlines,
-        unreadNotifications: unread
+        unreadNotifications: unreadNotificationCount
       });
     });
-  }, [routeRole]);
+  }, [routeRole, unreadNotificationCount]);
 
   if (loading || !roleConfig || !routeRole) {
     return (
@@ -196,15 +225,17 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
       )}
 
       <Card className="overflow-hidden border-slate-200/80 shadow-sm dark:border-slate-700/50">
-        <div className="flex items-center gap-4 border-b border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-slate-800 dark:bg-slate-800/30">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <ActiveSectionIcon className="size-6" />
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              {activeSection.menuLabel}
-            </p>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{activeSection.title}</h2>
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-slate-800 dark:bg-slate-800/30">
+          <div className="flex items-center gap-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <ActiveSectionIcon className="size-6" />
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {activeSection.menuLabel}
+              </p>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{activeSection.title}</h2>
+            </div>
           </div>
         </div>
         <div className="p-6">

@@ -9,37 +9,144 @@ import { useAuth } from "@/context/auth-context";
 
 type ProfileTab = "profile" | "settings" | "security";
 
+type ProfilePreferences = {
+  privacy: {
+    shareCareerInterestsWithMentors: boolean;
+    shareFinancialAidWithAdmins: boolean;
+  };
+  notifications: {
+    emailApplicationStatus: boolean;
+    mentorshipSessionReminders: boolean;
+    weeklyWellnessReminder: boolean;
+  };
+  updatedAt?: string;
+};
+
+const defaultPreferences: ProfilePreferences = {
+  privacy: {
+    shareCareerInterestsWithMentors: true,
+    shareFinancialAidWithAdmins: true
+  },
+  notifications: {
+    emailApplicationStatus: true,
+    mentorshipSessionReminders: true,
+    weeklyWellnessReminder: false
+  }
+};
+
 const tabVariants = {
   initial: { opacity: 0, y: 8, scale: 0.98 },
   animate: { opacity: 1, y: 0, scale: 1 },
   exit: { opacity: 0, y: -8, scale: 0.98 }
 };
 
+function mergePreferences(payload: Partial<ProfilePreferences> | null | undefined): ProfilePreferences {
+  return {
+    privacy: {
+      shareCareerInterestsWithMentors:
+        payload?.privacy?.shareCareerInterestsWithMentors ?? defaultPreferences.privacy.shareCareerInterestsWithMentors,
+      shareFinancialAidWithAdmins:
+        payload?.privacy?.shareFinancialAidWithAdmins ?? defaultPreferences.privacy.shareFinancialAidWithAdmins
+    },
+    notifications: {
+      emailApplicationStatus:
+        payload?.notifications?.emailApplicationStatus ?? defaultPreferences.notifications.emailApplicationStatus,
+      mentorshipSessionReminders:
+        payload?.notifications?.mentorshipSessionReminders ?? defaultPreferences.notifications.mentorshipSessionReminders,
+      weeklyWellnessReminder:
+        payload?.notifications?.weeklyWellnessReminder ?? defaultPreferences.notifications.weeklyWellnessReminder
+    },
+    updatedAt: payload?.updatedAt
+  };
+}
+
 export function StudentProfile() {
-  const { user, refreshUser, updateUserProfile, requestPasswordReset, signOutUser } = useAuth();
-  const [saving, setSaving] = useState(false);
+  const { user, refreshUser, updateUserProfile, requestPasswordReset } = useAuth();
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [securityMessage, setSecurityMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
+
   const [name, setName] = useState(user?.name ?? "");
   const [contact, setContact] = useState(user?.contact ?? "");
   const [university, setUniversity] = useState(user?.university ?? "");
+  const [degreeProgram, setDegreeProgram] = useState(user?.roleDetails?.degreeProgram ?? "");
+  const [studyYear, setStudyYear] = useState(user?.roleDetails?.studyYear ?? "");
+
   const [profilePicUploading, setProfilePicUploading] = useState(false);
+  const [personalSaving, setPersonalSaving] = useState(false);
+  const [academicSaving, setAcademicSaving] = useState(false);
+  const [preferencesLoading, setPreferencesLoading] = useState(false);
+  const [preferencesSaving, setPreferencesSaving] = useState(false);
+  const [preferences, setPreferences] = useState<ProfilePreferences>(defaultPreferences);
+
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setName(user.name ?? "");
-      setContact(user.contact ?? "");
-      setUniversity(user.university ?? "");
-    }
+    if (!user) return;
+    setName(user.name ?? "");
+    setContact(user.contact ?? "");
+    setUniversity(user.university ?? "");
+    setDegreeProgram(user.roleDetails?.degreeProgram ?? "");
+    setStudyYear(user.roleDetails?.studyYear ?? "");
   }, [user]);
+
+  useEffect(() => {
+    if (!user?.email) return;
+    let cancelled = false;
+
+    async function loadProfilePreferences() {
+      setPreferencesLoading(true);
+      try {
+        const response = await fetch("/api/profile/preferences", { cache: "no-store" });
+        const payload = (await response.json()) as Partial<ProfilePreferences>;
+        if (!cancelled && response.ok) {
+          setPreferences(mergePreferences(payload));
+        }
+      } catch {
+        if (!cancelled) {
+          setPreferences(mergePreferences(null));
+        }
+      } finally {
+        if (!cancelled) {
+          setPreferencesLoading(false);
+        }
+      }
+    }
+
+    async function loadDeleteRequestStatus() {
+      try {
+        const response = await fetch("/api/profile/delete-request", { cache: "no-store" });
+        const payload = (await response.json()) as {
+          pending?: boolean;
+          request?: { status?: "pending" | "approved" | "rejected" } | null;
+        };
+        if (!cancelled && response.ok) {
+          const isPending = Boolean(payload.pending || payload.request?.status === "pending");
+          setDeletePending(isPending);
+        }
+      } catch {
+        if (!cancelled) {
+          setDeletePending(false);
+        }
+      }
+    }
+
+    loadProfilePreferences();
+    loadDeleteRequestStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.email]);
 
   const savePersonal = async () => {
     if (!user?.email) return;
     setMessage(null);
-    setSaving(true);
+    setPersonalSaving(true);
     try {
-      const res = await fetch("/api/users", {
+      const response = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -49,54 +156,110 @@ export function StudentProfile() {
           contact: contact.trim() || undefined
         })
       });
-      const data = (await res.json()) as { user?: { name?: string; contact?: string }; message?: string };
-      if (res.ok && data.user) {
-        updateUserProfile({ name: data.user.name, contact: data.user.contact });
+      const payload = (await response.json()) as {
+        user?: { name?: string; contact?: string };
+        message?: string;
+      };
+      if (response.ok && payload.user) {
+        updateUserProfile({ name: payload.user.name, contact: payload.user.contact });
         await refreshUser();
         setMessage({ type: "ok", text: "Personal details updated." });
       } else {
-        setMessage({ type: "err", text: (data as { message?: string }).message ?? "Could not save." });
+        setMessage({ type: "err", text: payload.message ?? "Could not save." });
       }
     } catch {
       setMessage({ type: "err", text: "Could not save. Try again." });
     } finally {
-      setSaving(false);
+      setPersonalSaving(false);
     }
   };
 
   const saveAcademic = async () => {
     if (!user?.email) return;
     setMessage(null);
-    setSaving(true);
+    setAcademicSaving(true);
+
+    const currentRoleDetails = { ...(user.roleDetails ?? {}) };
+    const nextDegree = degreeProgram.trim();
+    const nextYear = studyYear.trim();
+
+    if (nextDegree) {
+      currentRoleDetails.degreeProgram = nextDegree;
+    } else {
+      delete currentRoleDetails.degreeProgram;
+    }
+
+    if (nextYear) {
+      currentRoleDetails.studyYear = nextYear;
+    } else {
+      delete currentRoleDetails.studyYear;
+    }
+
     try {
-      const res = await fetch("/api/users", {
+      const response = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           firebaseUid: (user as { firebaseUid?: string }).firebaseUid,
           email: user.email,
           name: user.name,
-          university: university.trim() || undefined
+          university: university.trim() || undefined,
+          roleDetails: currentRoleDetails
         })
       });
-      const data = (await res.json()) as { user?: { university?: string }; message?: string };
-      if (res.ok && data.user) {
-        updateUserProfile({ university: data.user.university });
+      const payload = (await response.json()) as {
+        user?: { university?: string; roleDetails?: Record<string, string> };
+        message?: string;
+      };
+      if (response.ok && payload.user) {
+        updateUserProfile({ university: payload.user.university, roleDetails: payload.user.roleDetails });
         await refreshUser();
         setMessage({ type: "ok", text: "Academic info updated." });
       } else {
-        setMessage({ type: "err", text: (data as { message?: string }).message ?? "Could not save." });
+        setMessage({ type: "err", text: payload.message ?? "Could not save." });
       }
     } catch {
       setMessage({ type: "err", text: "Could not save. Try again." });
     } finally {
-      setSaving(false);
+      setAcademicSaving(false);
+    }
+  };
+
+  const savePreferences = async (successText: string) => {
+    setMessage(null);
+    setPreferencesSaving(true);
+    try {
+      const response = await fetch("/api/profile/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          privacy: preferences.privacy,
+          notifications: preferences.notifications
+        })
+      });
+      const payload = (await response.json()) as {
+        message?: string;
+        preferences?: Partial<ProfilePreferences>;
+      };
+      if (response.ok) {
+        if (payload.preferences) {
+          setPreferences(mergePreferences(payload.preferences));
+        }
+        setMessage({ type: "ok", text: successText });
+      } else {
+        setMessage({ type: "err", text: payload.message ?? "Could not save preferences." });
+      }
+    } catch {
+      setMessage({ type: "err", text: "Could not save preferences. Try again." });
+    } finally {
+      setPreferencesSaving(false);
     }
   };
 
   const handleProfilePicChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user?.email) return;
+
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUrl = typeof reader.result === "string" ? reader.result : "";
@@ -104,7 +267,7 @@ export function StudentProfile() {
       setProfilePicUploading(true);
       setMessage(null);
       try {
-        const res = await fetch("/api/users", {
+        const response = await fetch("/api/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -113,13 +276,13 @@ export function StudentProfile() {
             profilePic: dataUrl
           })
         });
-        const data = (await res.json()) as { user?: { profilePic?: string }; message?: string };
-        if (res.ok && data.user) {
-          updateUserProfile({ profilePic: data.user.profilePic });
+        const payload = (await response.json()) as { user?: { profilePic?: string }; message?: string };
+        if (response.ok && payload.user) {
+          updateUserProfile({ profilePic: payload.user.profilePic });
           await refreshUser();
           setMessage({ type: "ok", text: "Profile picture updated." });
         } else {
-          setMessage({ type: "err", text: (data as { message?: string }).message ?? "Could not update picture." });
+          setMessage({ type: "err", text: payload.message ?? "Could not update picture." });
         }
       } catch {
         setMessage({ type: "err", text: "Could not update picture. Try again." });
@@ -127,6 +290,7 @@ export function StudentProfile() {
         setProfilePicUploading(false);
       }
     };
+
     reader.readAsDataURL(file);
   };
 
@@ -141,15 +305,38 @@ export function StudentProfile() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!window.confirm("Are you sure you want to sign out? In this demo, account deletion signs you out.")) {
+  const handleSubmitDeleteRequest = async () => {
+    if (!window.confirm("Submit account deletion request for admin review?")) {
       return;
     }
+
     setSecurityMessage(null);
+    setDeleteSubmitting(true);
     try {
-      await signOutUser();
+      const response = await fetch("/api/profile/delete-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reason: deleteReason.trim() || undefined
+        })
+      });
+      const payload = (await response.json()) as { message?: string };
+      if (response.ok || response.status === 409) {
+        setDeletePending(true);
+        setSecurityMessage({
+          type: "ok",
+          text: payload.message ?? "Deletion request submitted for admin review."
+        });
+      } else {
+        setSecurityMessage({
+          type: "err",
+          text: payload.message ?? "Could not submit deletion request. Try again."
+        });
+      }
     } catch {
-      setSecurityMessage({ type: "err", text: "Could not sign out. Try again." });
+      setSecurityMessage({ type: "err", text: "Could not submit deletion request. Try again." });
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -162,7 +349,7 @@ export function StudentProfile() {
   const initials =
     (user?.name ?? user?.email ?? "U")
       .split(/\s+/)
-      .map((n) => n[0])
+      .map((segment) => segment[0])
       .join("")
       .slice(0, 2)
       .toUpperCase();
@@ -180,6 +367,7 @@ export function StudentProfile() {
           {message.text}
         </p>
       )}
+
       {securityMessage && (
         <p
           className={`rounded-xl border px-4 py-2 text-sm ${
@@ -192,7 +380,6 @@ export function StudentProfile() {
         </p>
       )}
 
-      {/* Hero with profile picture */}
       <Card className="flex flex-wrap items-center justify-between gap-4 border-primary/20 bg-gradient-to-r from-primary/5 via-white to-emerald-50 p-5 dark:from-primary/10 dark:via-slate-900 dark:to-emerald-900/20">
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -219,7 +406,7 @@ export function StudentProfile() {
               onChange={handleProfilePicChange}
               disabled={profilePicUploading}
             />
-            {profilePicUploading ? "Uploading…" : "Change picture"}
+            {profilePicUploading ? "Uploading..." : "Change picture"}
           </label>
         </div>
       </Card>
@@ -267,7 +454,7 @@ export function StudentProfile() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Full name</label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
+                  <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Full name" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
@@ -277,13 +464,13 @@ export function StudentProfile() {
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Contact</label>
                   <Input
                     value={contact}
-                    onChange={(e) => setContact(e.target.value)}
+                    onChange={(event) => setContact(event.target.value)}
                     placeholder="Phone number"
                   />
                 </div>
               </div>
-              <Button variant="primary" onClick={savePersonal} disabled={saving}>
-                {saving ? "Saving…" : "Save changes"}
+              <Button variant="primary" onClick={savePersonal} disabled={personalSaving}>
+                {personalSaving ? "Saving..." : "Save changes"}
               </Button>
             </Card>
 
@@ -297,23 +484,29 @@ export function StudentProfile() {
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">University</label>
                   <Input
                     value={university}
-                    onChange={(e) => setUniversity(e.target.value)}
+                    onChange={(event) => setUniversity(event.target.value)}
                     placeholder="University"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Degree / program
-                  </label>
-                  <Input placeholder="e.g. BSc Computer Science" />
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Degree / program</label>
+                  <Input
+                    value={degreeProgram}
+                    onChange={(event) => setDegreeProgram(event.target.value)}
+                    placeholder="e.g. BSc Computer Science"
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Year</label>
-                  <Input placeholder="e.g. 2" />
+                  <Input
+                    value={studyYear}
+                    onChange={(event) => setStudyYear(event.target.value)}
+                    placeholder="e.g. 2"
+                  />
                 </div>
               </div>
-              <Button variant="primary" onClick={saveAcademic} disabled={saving}>
-                {saving ? "Saving…" : "Update academic info"}
+              <Button variant="primary" onClick={saveAcademic} disabled={academicSaving}>
+                {academicSaving ? "Saving..." : "Update academic info"}
               </Button>
             </Card>
           </motion.div>
@@ -336,16 +529,48 @@ export function StudentProfile() {
               </p>
               <div className="space-y-2 text-sm">
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.privacy.shareCareerInterestsWithMentors}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        privacy: {
+                          ...current.privacy,
+                          shareCareerInterestsWithMentors: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
                   Allow mentors to see my career interests
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.privacy.shareFinancialAidWithAdmins}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        privacy: {
+                          ...current.privacy,
+                          shareFinancialAidWithAdmins: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
                   Allow admins to see my financial aid status
                 </label>
               </div>
-              <Button variant="secondary" disabled>
-                Save privacy settings (coming soon)
+              <Button
+                variant="secondary"
+                onClick={() => savePreferences("Privacy settings saved.")}
+                disabled={preferencesLoading || preferencesSaving}
+              >
+                {preferencesSaving ? "Saving..." : "Save privacy settings"}
               </Button>
             </Card>
 
@@ -356,21 +581,70 @@ export function StudentProfile() {
               </p>
               <div className="space-y-2 text-sm">
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.notifications.emailApplicationStatus}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        notifications: {
+                          ...current.notifications,
+                          emailApplicationStatus: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
                   Email for application status changes
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" defaultChecked className="rounded" />
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.notifications.mentorshipSessionReminders}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        notifications: {
+                          ...current.notifications,
+                          mentorshipSessionReminders: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
                   Reminders for mentorship sessions
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" className="rounded" />
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={preferences.notifications.weeklyWellnessReminder}
+                    onChange={(event) =>
+                      setPreferences((current) => ({
+                        ...current,
+                        notifications: {
+                          ...current.notifications,
+                          weeklyWellnessReminder: event.target.checked
+                        }
+                      }))
+                    }
+                    disabled={preferencesLoading}
+                  />
                   Weekly wellness check-in reminder
                 </label>
               </div>
-              <Button variant="secondary" disabled>
-                Save notification settings (coming soon)
+              <Button
+                variant="secondary"
+                onClick={() => savePreferences("Notification settings saved.")}
+                disabled={preferencesLoading || preferencesSaving}
+              >
+                {preferencesSaving ? "Saving..." : "Save notification settings"}
               </Button>
+              {preferences.updatedAt ? (
+                <p className="text-xs text-slate-500">Last updated: {new Date(preferences.updatedAt).toLocaleString()}</p>
+              ) : null}
             </Card>
           </motion.div>
         )}
@@ -386,7 +660,7 @@ export function StudentProfile() {
             className="space-y-4"
           >
             <Card className="space-y-3 p-5">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Password & sign‑in</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Password and sign-in</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Send yourself a secure link to reset your password. This uses your login email address.
               </p>
@@ -399,17 +673,24 @@ export function StudentProfile() {
             </Card>
 
             <Card className="space-y-3 border-red-200 bg-red-50/60 p-5 dark:border-red-900 dark:bg-red-950/40">
-              <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Delete / sign out</h3>
+              <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Delete account request</h3>
               <p className="text-sm text-red-800 dark:text-red-200">
-                In this demo, deleting your account will sign you out of UniCare Connect. In production, your university
-                can enable a full account deletion workflow.
+                Submit a request and the university admin team will review it. Your account is not deleted instantly.
               </p>
+              <textarea
+                value={deleteReason}
+                onChange={(event) => setDeleteReason(event.target.value)}
+                placeholder="Optional reason for deletion request"
+                className="min-h-[90px] w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-0 focus:border-red-300 dark:border-red-700 dark:bg-slate-900 dark:text-slate-100"
+                disabled={deletePending || deleteSubmitting}
+              />
               <Button
                 variant="secondary"
                 className="border-red-400 text-red-800 hover:bg-red-100 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-900/40"
-                onClick={handleDeleteAccount}
+                onClick={handleSubmitDeleteRequest}
+                disabled={deletePending || deleteSubmitting}
               >
-                Delete my account (sign out)
+                {deletePending ? "Deletion request pending" : deleteSubmitting ? "Submitting..." : "Request account deletion"}
               </Button>
             </Card>
           </motion.div>
