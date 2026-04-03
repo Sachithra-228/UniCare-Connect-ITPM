@@ -14,6 +14,15 @@ import {
   type ProfilePreferences,
   type ProfileTab
 } from "@/components/profile/profile-preferences";
+import {
+  ParentLiveAlertsSection,
+  ParentLiveCommunicationsSection,
+  ParentLiveFinancialOverviewSection,
+  ParentLiveHomeSection,
+  ParentLiveImportantDatesSection,
+  ParentLiveMyStudentSection,
+  ParentLiveResourcesSection
+} from "@/components/parent/parent-live-sections";
 
 type Notification = {
   id?: string;
@@ -53,19 +62,19 @@ export function ParentSectionContent({ sectionId }: ParentSectionContentProps) {
   const Section = useMemo(() => {
     switch (sectionId) {
       case "parent-home":
-        return ParentHomeSection;
+        return ParentLiveHomeSection;
       case "my-student":
-        return ParentMyStudentSection;
+        return ParentLiveMyStudentSection;
       case "financial-overview":
-        return ParentFinancialOverviewSection;
+        return ParentLiveFinancialOverviewSection;
       case "important-dates":
-        return ParentImportantDatesSection;
+        return ParentLiveImportantDatesSection;
       case "communications":
-        return ParentCommunicationsSection;
+        return ParentLiveCommunicationsSection;
       case "resources":
-        return ParentResourcesSection;
+        return ParentLiveResourcesSection;
       case "alerts":
-        return ParentAlertsSection;
+        return ParentLiveAlertsSection;
       case "profile":
         return ParentProfileSection;
       default:

@@ -14,6 +14,7 @@ type MessageDoc = {
   donorUserId?: string;
   donorFirebaseUid?: string;
   audience?: string;
+  recipientRoles?: UserRole[];
   messageType?: string;
   subject?: string;
   body?: string;
@@ -26,8 +27,21 @@ function normalizeText(value: unknown, max = 200) {
 
 function mapAudienceToRoles(audience: string): UserRole[] {
   const normalized = audience.toLowerCase();
+  if (normalized.includes("students_admin_faculty") || (normalized.includes("student") && normalized.includes("admin"))) {
+    return ["student", "admin", "faculty", "super_admin"];
+  }
   if (normalized.includes("admin")) return ["admin", "faculty", "super_admin"];
   return ["student"];
+}
+
+function normalizeAudience(value: unknown) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (normalized === "students") return "Students";
+  if (normalized === "admin_faculty") return "University Admin / Faculty";
+  if (normalized === "students_admin_faculty") return "Students + University Admin / Faculty";
+  if (normalized.includes("admin") && normalized.includes("student")) return "Students + University Admin / Faculty";
+  if (normalized.includes("admin")) return "University Admin / Faculty";
+  return "Students";
 }
 
 export async function GET(request: NextRequest) {
@@ -87,7 +101,7 @@ export async function POST(request: NextRequest) {
   const roleCheck = requireRole(authResult.session.user?.role, ["donor", "super_admin"]);
   if (roleCheck) return roleCheck;
 
-  const audience = normalizeText(payload.audience, 80);
+  const audience = normalizeAudience(payload.audience);
   const messageType = normalizeText(payload.messageType, 80);
   const subject = normalizeText(payload.subject, 160);
   const body = normalizeText(payload.body, 1000);
@@ -99,6 +113,7 @@ export async function POST(request: NextRequest) {
   const donorUserId = authResult.session.user?._id;
   const donorFirebaseUid = authResult.session.firebase.uid;
   const donorName = authResult.session.user?.name ?? authResult.session.firebase.displayName ?? "Donor";
+  const recipientRoles = mapAudienceToRoles(audience);
 
   if (isDemoMode()) {
     const created = addDemoDonorMessage({
@@ -118,6 +133,7 @@ export async function POST(request: NextRequest) {
     donorUserId,
     donorFirebaseUid,
     audience,
+    recipientRoles,
     messageType,
     subject,
     body,
@@ -137,7 +153,7 @@ export async function POST(request: NextRequest) {
       sectionId: "communications"
     }),
     createNotification(database, {
-      audienceRoles: mapAudienceToRoles(audience),
+      audienceRoles: recipientRoles,
       title: `Donor message: ${subject}`,
       message: `${donorName} sent a ${messageType.toLowerCase()} update.`,
       type: "communication",

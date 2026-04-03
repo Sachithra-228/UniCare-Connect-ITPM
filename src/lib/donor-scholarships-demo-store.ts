@@ -94,3 +94,10 @@ export function updateDemoDonorScholarship(
   demoScholarships[index] = next;
   return { ...next };
 }
+
+export function deleteDemoDonorScholarship(id: string) {
+  const index = demoScholarships.findIndex((item) => item._id === id);
+  if (index < 0) return null;
+  const [removed] = demoScholarships.splice(index, 1);
+  return { ...removed };
+}

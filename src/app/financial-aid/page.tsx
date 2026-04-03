@@ -1,12 +1,6 @@
-"use client";
+﻿"use client";
 
-import { Card } from "@/components/shared/card";
-import { SectionHeading } from "@/components/shared/section-heading";
-import { AidRequestForm } from "@/components/financial/aid-request-form";
-import { EquipmentSupport } from "@/components/financial/equipment-support";
-import { BoardingSupport } from "@/components/financial/boarding-support";
-import { TuitionSupport } from "@/components/financial/tuition-support";
-import { PartTimeJobPreview } from "@/components/financial/part-time-job-preview";
+import { ModuleHero } from "@/components/shared/module-hero";
 import { useLanguage } from "@/context/language-context";
 
 export default function FinancialAidPage() {
@@ -15,46 +9,60 @@ export default function FinancialAidPage() {
   const text =
     language === "si"
       ? {
-          eyebrow: "මූල්‍ය සහාය සහ රැකියා ද්වාරය",
-          title: "අධ්‍යයන ආධාර සහ දෛනික අවශ්‍යතා සඳහා අයදුම් කරන්න",
-          subtitle: "හදිසි අධ්‍යයන සහාය, උපාංග ණය, නවාතැන් සහාය සහ පාඨමාලා ආධාර.",
-          formTitle: "හදිසි අධ්‍යයන ආධාර අයදුම්පත"
+          eyebrow: "à¶¸à·–à¶½à·Šâ€à¶º à·ƒà·„à·à¶º à·ƒà·„ à¶»à·à¶šà·’à¶ºà· à¶¯à·Šà·€à·à¶»à¶º",
+          title: "à¶…à¶°à·Šâ€à¶ºà¶ºà¶± à¶†à¶°à·à¶» à·ƒà·„ à¶¯à·›à¶±à·’à¶š à¶…à·€à·à·Šâ€à¶ºà¶­à· à·ƒà¶³à·„à· à¶…à¶ºà¶¯à·”à¶¸à·Š à¶šà¶»à¶±à·Šà¶±",
+          subtitle: "à·„à¶¯à·’à·ƒà·’ à¶…à¶°à·Šâ€à¶ºà¶ºà¶± à·ƒà·„à·à¶º, à¶‹à¶´à·à¶‚à¶œ à¶«à¶º, à¶±à·€à·à¶­à·à¶±à·Š à·ƒà·„à·à¶º à·ƒà·„ à¶´à·à¶¨à¶¸à·à¶½à· à¶†à¶°à·à¶».",
+          highlights: ["Emergency aid", "Device loans", "Tuition support"],
+          stats: [
+            { label: "Avg approval time", value: "3 days" },
+            { label: "Partner donors", value: "12" },
+            { label: "Active requests", value: "28" }
+          ],
+          primaryAction: "Start aid request",
+          secondaryAction: "See job portal"
         }
       : language === "ta"
         ? {
-            eyebrow: "நிதி ஆதரவு மற்றும் வேலை தளம்",
-            title: "கல்வி உதவி மற்றும் அன்றாட தேவைகளுக்கு விண்ணப்பிக்கவும்",
-            subtitle: "அவசர கல்வி ஆதரவு, சாதனக் கடன், தங்குமிடம் உதவி, மற்றும் கட்டண உதவி.",
-            formTitle: "அவசர கல்வி உதவி விண்ணப்பம்"
+            eyebrow: "à®¨à®¿à®¤à®¿ à®†à®¤à®°à®µà¯ à®®à®±à¯à®±à¯à®®à¯ à®µà¯‡à®²à¯ˆ à®¤à®³à®®à¯",
+            title: "à®•à®²à¯à®µà®¿ à®‰à®¤à®µà®¿ à®®à®±à¯à®±à¯à®®à¯ à®…à®©à¯à®±à®¾à®Ÿ à®¤à¯‡à®µà¯ˆà®•à®³à¯à®•à¯à®•à¯ à®µà®¿à®£à¯à®£à®ªà¯à®ªà®¿à®•à¯à®•à®µà¯à®®à¯",
+            subtitle: "à®…à®µà®šà®° à®•à®²à¯à®µà®¿ à®†à®¤à®°à®µà¯, à®šà®¾à®¤à®©à®•à¯ à®•à®Ÿà®©à¯, à®¤à®™à¯à®•à¯à®®à®¿à®Ÿà®®à¯ à®‰à®¤à®µà®¿, à®®à®±à¯à®±à¯à®®à¯ à®•à®Ÿà¯à®Ÿà®£ à®‰à®¤à®µà®¿.",
+            highlights: ["Emergency aid", "Device loans", "Tuition support"],
+            stats: [
+              { label: "Avg approval time", value: "3 days" },
+              { label: "Partner donors", value: "12" },
+              { label: "Active requests", value: "28" }
+            ],
+            primaryAction: "Start aid request",
+            secondaryAction: "See job portal"
           }
         : {
             eyebrow: "Financial support & job portal",
             title: "Apply for academic aid and daily necessities",
             subtitle: "Emergency academic support, device loans, boarding help, and tuition assistance.",
-            formTitle: "Emergency academic aid application"
+            highlights: ["Emergency aid", "Device loans", "Tuition support"],
+            stats: [
+              { label: "Avg approval time", value: "3 days" },
+              { label: "Partner donors", value: "12" },
+              { label: "Active requests", value: "28" }
+            ],
+            primaryAction: "Start aid request",
+            secondaryAction: "See job portal"
           };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-10 px-4 py-10">
-      <SectionHeading
+    <div className="mx-auto w-full max-w-6xl px-4 py-10">
+      <ModuleHero
         eyebrow={text.eyebrow}
         title={text.title}
         subtitle={text.subtitle}
+        accent="from-emerald-400/45 via-emerald-400/15 to-transparent"
+        highlights={text.highlights}
+        stats={text.stats}
+        actions={[
+          { label: text.primaryAction, href: "/financial-aid" },
+          { label: text.secondaryAction, href: "/career", variant: "ghost" }
+        ]}
       />
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <Card className="space-y-4">
-          <h3 className="text-lg font-semibold">{text.formTitle}</h3>
-          <AidRequestForm />
-        </Card>
-        <div className="space-y-6">
-          <EquipmentSupport />
-          <PartTimeJobPreview />
-        </div>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <BoardingSupport />
-        <TuitionSupport />
-      </div>
     </div>
   );
 }

@@ -16,6 +16,7 @@ type PeerPost = {
   anonymous?: boolean;
   replyCount?: number;
   createdAt?: string;
+  canDelete?: boolean;
 };
 
 type PeerReply = {
@@ -44,6 +45,7 @@ export function PeerSupport() {
   const [replyMessageByPostId, setReplyMessageByPostId] = useState<Record<string, string>>({});
   const [anonymousReplyByPostId, setAnonymousReplyByPostId] = useState<Record<string, boolean>>({});
   const [postingReplyPostId, setPostingReplyPostId] = useState<string | null>(null);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   const refreshPosts = useCallback(() => {
     setLoading(true);
@@ -147,6 +149,32 @@ export function PeerSupport() {
     }
   };
 
+  const deletePost = async (postId: string) => {
+    const confirmed = window.confirm("Delete this post? This action cannot be undone.");
+    if (!confirmed) return;
+
+    setDeletingPostId(postId);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await fetch(`/api/peer-support-posts/${postId}`, { method: "DELETE" });
+      const payload = await response.json().catch(() => ({} as { message?: string }));
+      if (!response.ok) {
+        setError(payload.message ?? "Unable to delete post.");
+        return;
+      }
+      if (openPostId === postId) {
+        setOpenPostId(null);
+      }
+      setMessage("Post deleted.");
+      refreshPosts();
+    } catch {
+      setError("Unable to delete post.");
+    } finally {
+      setDeletingPostId(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card className="space-y-4 p-4">
@@ -212,6 +240,15 @@ export function PeerSupport() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="info">{post.replyCount ?? 0} replies</Badge>
+                      {post.canDelete ? (
+                        <Button
+                          variant="ghost"
+                          disabled={deletingPostId === post._id}
+                          onClick={() => deletePost(post._id)}
+                        >
+                          {deletingPostId === post._id ? "Deleting..." : "Delete"}
+                        </Button>
+                      ) : null}
                       <Button
                         variant="secondary"
                         onClick={async () => {

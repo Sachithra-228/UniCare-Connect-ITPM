@@ -135,6 +135,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const payload = await request.json().catch(() => ({}));
   const mentorId = payload.mentorId ?? payload.mentor_id;
+  const studentId = payload.studentId ?? payload.student_id;
+  const scheduledTime = String(payload.scheduledTime ?? "").trim();
   const topic = String(payload.topic ?? "").trim();
   const message = payload.message ? String(payload.message).trim() : undefined;
 
@@ -146,8 +148,33 @@ export async function POST(request: NextRequest) {
     const session = await requireSession(request);
     if (session.error) return session.error;
     const currentUser = session.session.user ?? session.session.firebase;
+    const currentRole = (session.session.user as { role?: string } | null)?.role ?? "";
     const studentId = (currentUser as { _id?: string })._id ?? "u1";
     const mentor = demoUsers.find((u) => u._id === mentorId && u.role === "mentor");
+
+    if ((currentRole === "mentor" || currentRole === "super_admin") && studentId && typeof payload.studentId === "string") {
+      const selectedStudent = demoUsers.find((u) => u._id === payload.studentId && u.role === "student");
+      if (!selectedStudent) {
+        return jsonResponse({ message: "Student not found" }, 404);
+      }
+      const mentorCurrentId = (currentUser as { _id?: string })._id ?? "u4";
+      const newSession: MentorshipSession = {
+        _id: `m${Date.now()}`,
+        mentorId: mentorCurrentId,
+        studentId: selectedStudent._id,
+        mentorName: (currentUser as { name?: string }).name ?? "Mentor",
+        studentName: selectedStudent.name,
+        topic,
+        scheduledTime,
+        status: scheduledTime ? "scheduled" : "confirmed",
+        message,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      addDemoSession(newSession);
+      return jsonResponse({ message: "Session scheduled", session: newSession }, 201);
+    }
+
     if (!mentor) {
       return jsonResponse({ message: "Mentor not found" }, 404);
     }
@@ -173,8 +200,13 @@ export async function POST(request: NextRequest) {
     return authResult.error;
   }
 
-  if (!mentorId) {
+  const currentRole = authResult.session.user?.role ?? "";
+  const isMentorRole = currentRole === "mentor" || currentRole === "super_admin";
+  if (!isMentorRole && !mentorId) {
     return jsonResponse({ message: "mentorId is required" }, 400);
+  }
+  if (isMentorRole && !studentId) {
+    return jsonResponse({ message: "studentId is required for mentor scheduling" }, 400);
   }
 
   const isDemoId = typeof mentorId === "string" && mentorId.length > 0 && (mentorId.length !== 24 || !/^[a-f0-9]{24}$/i.test(mentorId));
@@ -206,6 +238,86 @@ export async function POST(request: NextRequest) {
 
   const database = await getMongoDatabase();
   const usersCol = database.collection("users");
+
+  if (isMentorRole) {
+    const mentorUserId = authResult.session.user?._id;
+    const mentorFirebaseUid = authResult.session.firebase.uid;
+
+    const studentQueryId =
+      typeof studentId === "string" && studentId.length === 24 ? new ObjectId(studentId) : studentId;
+    const studentUser = await usersCol.findOne({
+      $or: [
+        { _id: studentQueryId },
+        { firebaseUid: studentId }
+      ],
+      role: "student"
+    });
+    if (!studentUser) {
+      return jsonResponse({ message: "Student not found" }, 404);
+    }
+
+    const now = new Date();
+    const scheduledStatus: MentorshipSession["status"] = scheduledTime ? "scheduled" : "confirmed";
+    const mentorScheduledDocument = {
+      mentorId: mentorUserId ?? mentorFirebaseUid,
+      mentorFirebaseUid,
+      studentFirebaseUid: String(studentUser.firebaseUid ?? studentId),
+      studentId: studentUser._id.toString(),
+      topic,
+      message,
+      scheduledTime,
+      status: scheduledStatus,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const sessionsCollection = database.collection("mentorship_sessions");
+    const result = await sessionsCollection.insertOne(mentorScheduledDocument as Record<string, unknown>);
+    const sessionId = result.insertedId.toString();
+
+    await Promise.allSettled([
+      createNotification(database, {
+        userId: studentUser._id.toString(),
+        firebaseUid: typeof studentUser.firebaseUid === "string" ? studentUser.firebaseUid : undefined,
+        title: "New mentorship session scheduled",
+        message: scheduledTime
+          ? `Your mentor scheduled "${topic}" for ${scheduledTime}.`
+          : `Your mentor scheduled "${topic}".`,
+        type: "mentorship",
+        sectionId: "mentorship",
+        relatedSessionId: sessionId
+      }),
+      createNotification(database, {
+        userId: mentorUserId,
+        firebaseUid: mentorFirebaseUid,
+        title: "Session scheduled",
+        message: `You scheduled "${topic}" with your mentee.`,
+        type: "mentorship",
+        sectionId: "sessions",
+        relatedSessionId: sessionId
+      }),
+      createNotification(database, {
+        audienceRoles: ["admin", "faculty", "super_admin"],
+        title: "Mentor scheduled a session",
+        message: `A mentor scheduled "${topic}" for a student.`,
+        type: "mentorship",
+        sectionId: "mentorship-program",
+        relatedSessionId: sessionId
+      })
+    ]);
+
+    return jsonResponse(
+      {
+        message: "Session scheduled",
+        session: {
+          ...mentorScheduledDocument,
+          _id: sessionId
+        }
+      },
+      201
+    );
+  }
+
   const mentorUser = await usersCol.findOne({
     _id: typeof mentorId === "string" && mentorId.length === 24 ? new ObjectId(mentorId) : mentorId,
     role: "mentor"
@@ -237,8 +349,8 @@ export async function POST(request: NextRequest) {
       firebaseUid: mentorUser.firebaseUid,
       title: "New mentorship request",
       message: `A student requested mentorship on "${topic}".`,
-      type: "mentorship",
-      sectionId: "sessions",
+      type: "chat",
+      sectionId: "messages",
       relatedSessionId: sessionId
     }),
     createNotification(database, {

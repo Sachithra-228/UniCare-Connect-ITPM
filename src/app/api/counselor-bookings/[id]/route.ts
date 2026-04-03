@@ -86,7 +86,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             title: "Counselor booking cancelled",
             message: "A student cancelled a counselor booking request.",
             type: "wellness",
-            sectionId: "reports"
+            sectionId: "counselor-support"
           })
         ])
   ]);

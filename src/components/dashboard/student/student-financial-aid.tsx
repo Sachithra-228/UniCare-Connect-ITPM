@@ -1,13 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { Card } from "@/components/shared/card";
 import { Badge } from "@/components/shared/badge";
 import { Button } from "@/components/shared/button";
 import { AidRequestForm } from "@/components/financial/aid-request-form";
 import { Input } from "@/components/shared/input";
-import { getNgoPrograms, addNgoApplication, type NgoProgram } from "@/lib/ngo-demo-store";
+import {
+  getNgoPrograms,
+  getNgoApplications,
+  getNgoBeneficiaries,
+  addNgoApplication,
+  type NgoProgram
+} from "@/lib/ngo-demo-store";
+import { useAuth } from "@/context/auth-context";
 
 type AidRequest = {
   id?: string;
@@ -80,7 +88,15 @@ function getStatusBadgeVariant(status?: string): "success" | "warning" | "info" 
   return "info";
 }
 
+function parseAmountValue(input?: string): number {
+  if (!input) return 0;
+  const cleaned = String(input).replace(/[^0-9.-]/g, "");
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export function StudentFinancialAid() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("emergency-aid");
   const [aidRequests, setAidRequests] = useState<AidRequest[]>([]);
   const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
@@ -88,11 +104,14 @@ export function StudentFinancialAid() {
   const [loadingFin, setLoadingFin] = useState(true);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<AidRequest | null>(null);
+  const [showBalanceCardPopup, setShowBalanceCardPopup] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   
   // NGO states
   const [ngoPrograms, setNgoPrograms] = useState<NgoProgram[]>([]);
+  const [ngoApplications, setNgoApplications] = useState(getNgoApplications());
+  const [ngoBeneficiaries, setNgoBeneficiaries] = useState(getNgoBeneficiaries());
   const [applyingNgoId, setApplyingNgoId] = useState<string | null>(null);
   const [ngoApplyReason, setNgoApplyReason] = useState("");
   const [ngoApplyAmount, setNgoApplyAmount] = useState("");
@@ -123,7 +142,9 @@ export function StudentFinancialAid() {
     (showLoader = false) => {
       fetchAidRequests(showLoader);
       fetchFinancialSummary(showLoader);
-      setNgoPrograms(getNgoPrograms().filter(p => p.status === "active"));
+      setNgoPrograms(getNgoPrograms().filter((p) => p.status === "active"));
+      setNgoApplications([...getNgoApplications()]);
+      setNgoBeneficiaries([...getNgoBeneficiaries()]);
     },
     [fetchAidRequests, fetchFinancialSummary]
   );
@@ -168,8 +189,29 @@ export function StudentFinancialAid() {
 
   const mealBalance = financialSummary?.mealVoucherBalance ?? 0;
   const tuitionBalance = financialSummary?.tuitionSupportBalance ?? 0;
-  const totalBalance = mealBalance + tuitionBalance;
   const currency = financialSummary?.currency ?? "LKR";
+  const displayName = (user?.name || "Student").trim();
+  const displayEmail = (user?.email || "student@university.edu").trim();
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("") || "ST";
+  const currentStudentId = user?.firebaseUid || user?._id || "student-demo";
+  const studentNgoApplications = ngoApplications.filter((app) => app.studentId === currentStudentId);
+  const studentNgoApplicationIds = new Set(studentNgoApplications.map((app) => app._id));
+  const ngoTotalReceived = ngoBeneficiaries.reduce((sum, beneficiary) => {
+    if (!beneficiary.applicationId || !studentNgoApplicationIds.has(beneficiary.applicationId)) return sum;
+    return sum + (beneficiary.supportReceived || 0);
+  }, 0);
+  const emergencyAidReceived = aidRequests.reduce((sum, request) => {
+    const isEmergency = normalizeCategory(request.category) === "emergency";
+    const isApproved = normalizeStatus(request.status) === "Approved";
+    if (!isEmergency || !isApproved) return sum;
+    return sum + parseAmountValue(request.amount);
+  }, 0);
+  const totalBalance = mealBalance + tuitionBalance + ngoTotalReceived + emergencyAidReceived;
 
   const tabs = [
     { id: "emergency-aid" as const, label: "Emergency aid applications" },
@@ -178,6 +220,75 @@ export function StudentFinancialAid() {
     { id: "tuition" as const, label: "Tuition support" },
     { id: "ngo-programs" as const, label: "NGO Support Programs" }
   ];
+
+  const renderBalanceCardContent = (isPopup = false) => {
+    const profileSize = isPopup ? 72 : 64;
+    const profileClass = isPopup ? "h-[72px] w-[72px]" : "h-16 w-16";
+    const nameClass = isPopup ? "text-base" : "text-sm";
+    const balanceClass = isPopup ? "text-3xl md:text-4xl" : "text-2xl md:text-3xl";
+
+    return (
+      <>
+        <div className="pointer-events-none absolute inset-0 opacity-20">
+          <div className="absolute -left-8 -top-8 h-28 w-28 rounded-full bg-white/20 blur-2xl" />
+          <div className="absolute -bottom-10 right-8 h-32 w-32 rounded-full bg-primary/50 blur-3xl" />
+        </div>
+        <div className={isPopup ? "relative px-6 py-6" : "relative px-5 py-5"}>
+          <div className="flex items-start justify-between gap-5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                {user?.profilePic ? (
+                  <Image
+                    src={user.profilePic}
+                    alt={displayName}
+                    width={profileSize}
+                    height={profileSize}
+                    className={`${profileClass} rounded-full border border-white/30 object-cover`}
+                  />
+                ) : (
+                  <div
+                    className={`flex ${profileClass} items-center justify-center rounded-full border border-white/30 bg-white/10 text-base font-semibold text-white`}
+                  >
+                    {initials}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className={`truncate font-semibold text-white ${nameClass}`}>{displayName}</p>
+                  <p className="truncate text-xs text-slate-300">{displayEmail}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Total balance</p>
+              {loadingFin ? (
+                <p className="mt-2 text-2xl font-bold text-slate-300">Loading...</p>
+              ) : (
+                <p className={`mt-2 font-bold ${balanceClass}`}>
+                  {currency} {totalBalance.toLocaleString()}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5 border-t border-white/10 pt-3 text-xs text-slate-300">
+            {loadingFin ? (
+              <span>Fetching latest balances...</span>
+            ) : (
+              <span>
+                Meal vouchers {currency} {mealBalance.toLocaleString()} + Tuition support {currency}{" "}
+                {tuitionBalance.toLocaleString()} + NGO {currency} {ngoTotalReceived.toLocaleString()} + Emergency aid{" "}
+                {currency} {emergencyAidReceived.toLocaleString()}
+              </span>
+            )}
+            {financialSummary?.lastUpdated && (
+              <p className="mt-1 text-[11px] text-slate-400">Updated: {financialSummary.lastUpdated}</p>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  };
 
   const renderRequestList = (requests: AidRequest[], emptyMessage: string) => {
     if (requests.length === 0) {
@@ -209,28 +320,23 @@ export function StudentFinancialAid() {
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-white to-primary/5 shadow-sm dark:from-primary/20 dark:via-slate-900/90 dark:to-primary/15">
-        <div className="px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            Your total financial support balance
-          </p>
-          {loadingFin ? (
-            <p className="mt-2 text-2xl font-bold text-slate-400 dark:text-slate-500">Loading...</p>
-          ) : (
-            <>
-              <p className="mt-2 text-3xl font-bold text-primary md:text-4xl">
-                {currency} {totalBalance.toLocaleString()}
-              </p>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Meal vouchers ({currency} {mealBalance.toLocaleString()}) + Tuition support ({currency} {tuitionBalance.toLocaleString()})
-              </p>
-              {financialSummary?.lastUpdated && (
-                <p className="mt-0.5 text-xs text-slate-500">Updated: {financialSummary.lastUpdated}</p>
-              )}
-            </>
-          )}
-        </div>
-      </Card>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setShowBalanceCardPopup(true)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setShowBalanceCardPopup(true);
+          }
+        }}
+        className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
+        aria-label="Open balance card"
+      >
+        <Card className="relative overflow-hidden border-slate-900/60 bg-gradient-to-br from-slate-950 via-black to-slate-900 text-white shadow-lg transition-transform duration-200 hover:scale-[1.01]">
+          {renderBalanceCardContent()}
+        </Card>
+      </div>
 
       <div className="border-b border-slate-200 dark:border-slate-700">
         <nav className="flex flex-wrap gap-1" aria-label="Financial aid sections">
@@ -439,7 +545,9 @@ export function StudentFinancialAid() {
             {ngoPrograms.length === 0 ? (
               <p className="text-sm text-slate-500">No active NGO programs at this time.</p>
             ) : (
-              ngoPrograms.map(prog => (
+              ngoPrograms.map((prog) => {
+                const hasApplied = studentNgoApplications.some((application) => application.programId === prog._id);
+                return (
                 <div key={prog._id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -467,16 +575,31 @@ export function StudentFinancialAid() {
                         <div className="flex gap-2">
                           <Button variant="primary" className="flex-1 py-1.5 text-xs" onClick={() => {
                             if (!ngoApplyReason.trim()) return;
+                            const studentId = currentStudentId;
+                            const studentInitials = initials || "ST";
+                            const studentUniversity = user?.university?.trim() || "University";
+                            const hasExistingApplication = getNgoApplications().some(
+                              (app) =>
+                                app.programId === prog._id &&
+                                app.studentId === studentId
+                            );
+                            if (hasExistingApplication) {
+                              setToastMessage("You already applied for this program.");
+                              return;
+                            }
                             addNgoApplication({
-                              studentId: "student-123", /* demo user id */
-                              studentInitials: "S.J.S.",
-                              university: "University of Colombo",
+                              studentId,
+                              studentInitials,
+                              university: studentUniversity,
                               programId: prog._id,
                               programTitle: prog.title,
                               amountRequested: Number(ngoApplyAmount) || 0,
                               reason: ngoApplyReason
                             });
                             setApplyingNgoId(null);
+                            setNgoApplyReason("");
+                            setNgoApplyAmount("");
+                            refreshAidAndSummary(false);
                             setToastMessage("Application submitted to Administrative review.");
                           }}>
                             Submit
@@ -485,15 +608,23 @@ export function StudentFinancialAid() {
                         </div>
                       </div>
                     ) : (
-                      <Button onClick={() => {
-                        setApplyingNgoId(prog._id);
-                        setNgoApplyReason("");
-                        setNgoApplyAmount("");
-                      }}>Apply</Button>
+                      <Button
+                        disabled={hasApplied}
+                        className={hasApplied ? "cursor-not-allowed opacity-60" : ""}
+                        onClick={() => {
+                          if (hasApplied) return;
+                          setApplyingNgoId(prog._id);
+                          setNgoApplyReason("");
+                          setNgoApplyAmount("");
+                        }}
+                      >
+                        {hasApplied ? "Applied" : "Apply"}
+                      </Button>
                     )}
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
         </Card>
@@ -520,6 +651,22 @@ export function StudentFinancialAid() {
                   OK
                 </Button>
               </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {showBalanceCardPopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Balance card preview"
+          onClick={() => setShowBalanceCardPopup(false)}
+        >
+          <div onClick={(event) => event.stopPropagation()} className="w-full max-w-2xl">
+            <Card className="relative overflow-hidden border-slate-900/60 bg-gradient-to-br from-slate-950 via-black to-slate-900 p-0 text-white shadow-2xl">
+              {renderBalanceCardContent(true)}
             </Card>
           </div>
         </div>

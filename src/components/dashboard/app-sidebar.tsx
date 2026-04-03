@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, PanelLeftClose, ChevronDown, UserCircle, LogOut } from "lucide-react";
+import { User, PanelLeftClose, ChevronDown, UserCircle, LogOut, Moon, Sun } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -30,6 +30,7 @@ import {
 } from "@/lib/dashboard-notification-routing";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
+import { useTheme } from "@/context/theme-context";
 import type { UserProfile } from "@/types";
 
 type AppSidebarProps = {
@@ -43,6 +44,7 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
   const isCompact = !isMobile && collapsed;
   const { signOutUser } = useAuth();
   const { language } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const [hash, setHash] = useState("");
   const [accountOpen, setAccountOpen] = useState(false);
   const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
@@ -80,7 +82,10 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
   useEffect(() => {
     let cancelled = false;
 
+    const canPoll = () => document.visibilityState === "visible" && document.hasFocus();
+
     const fetchNotifications = () => {
+      if (!canPoll()) return;
       fetch("/api/notifications")
         .then((response) => (response.ok ? response.json() : {}))
         .then((data) => {
@@ -99,10 +104,17 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
     };
 
     fetchNotifications();
-    const intervalId = window.setInterval(fetchNotifications, 30000);
+    const intervalId = window.setInterval(fetchNotifications, 60000);
+    const handleVisibilityOrFocus = () => {
+      fetchNotifications();
+    };
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
     return () => {
       cancelled = true;
       window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
     };
   }, []);
 
@@ -226,6 +238,21 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
       </SidebarContent>
 
       <SidebarFooter>
+        <div className="mb-2">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={clsx(
+              "flex w-full items-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800",
+              isCompact ? "justify-center px-2" : "gap-2"
+            )}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? <Sun className="size-4 shrink-0" /> : <Moon className="size-4 shrink-0" />}
+            {!isCompact && <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>}
+          </button>
+        </div>
+
         <div className="relative" ref={accountRef}>
           <button
             type="button"

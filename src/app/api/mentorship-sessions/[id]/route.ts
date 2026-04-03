@@ -216,7 +216,7 @@ export async function PATCH(
       message = isAdmin
         ? `Admin approved mentorship session "${topic}".`
         : isMentor
-        ? `Your mentorship request "${topic}" was approved by the mentor.`
+        ? `Your mentorship request "${topic}" was approved by the mentor. You can now start chatting.`
         : `You approved the mentorship request "${topic}".`;
     } else if (changedStatus === "scheduled") {
       message = isAdmin
@@ -247,7 +247,7 @@ export async function PATCH(
           firebaseUid: target.firebaseUid,
           title,
           message,
-          type: "mentorship",
+          type: changedStatus === "confirmed" ? "chat" : "mentorship",
           sectionId: target.sectionId,
           relatedSessionId: id
         })

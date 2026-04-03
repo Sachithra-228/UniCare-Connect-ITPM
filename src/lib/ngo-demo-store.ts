@@ -13,6 +13,7 @@ function saveToStorage() {
   const data = {
     programs,
     beneficiaries,
+    ngoVerificationNotifications,
     fundingRecords,
     partnerships,
     communications,
@@ -31,6 +32,7 @@ function loadFromStorage() {
     const data = JSON.parse(saved);
     if (data.programs) programs = data.programs;
     if (data.beneficiaries) beneficiaries = data.beneficiaries;
+    if (data.ngoVerificationNotifications) ngoVerificationNotifications = data.ngoVerificationNotifications;
     if (data.fundingRecords) fundingRecords = data.fundingRecords;
     if (data.partnerships) partnerships = data.partnerships;
     if (data.communications) communications = data.communications;
@@ -75,6 +77,20 @@ export type NgoBeneficiary = {
   enrolledAt: string;
   consentRecorded: boolean;
   applicationId?: string;
+  lastDisbursedAmount?: number;
+  lastDisbursedAt?: string;
+};
+
+export type NgoVerificationNotification = {
+  _id: string;
+  applicationId: string;
+  programId: string;
+  programTitle: string;
+  studentInitials: string;
+  university: string;
+  amountRequested: number;
+  createdAt: string;
+  readAt?: string;
 };
 
 export type NgoDisbursementNotification = {
@@ -159,6 +175,7 @@ export type NgoApplication = {
 
 let programs: NgoProgram[] = [];
 let beneficiaries: NgoBeneficiary[] = [];
+let ngoVerificationNotifications: NgoVerificationNotification[] = [];
 let disbursementNotifications: NgoDisbursementNotification[] = [];
 let fundingRecords: NgoFundingRecord[] = [];
 let partnerships: NgoPartnership[] = [];
@@ -171,6 +188,7 @@ let applications: NgoApplication[] = [];
 
 export function getNgoPrograms() { return programs; }
 export function getNgoBeneficiaries() { return beneficiaries; }
+export function getNgoVerificationNotifications() { return ngoVerificationNotifications; }
 export function getNgoFundingRecords(): NgoFundingRecord[] {
   return [...fundingRecords];
 }
@@ -189,6 +207,39 @@ export function getNgoReports() { return reports; }
 export function getNgoImpactStories() { return impactStories; }
 export function getNgoApplications() { return applications; }
 export function getAdminNotifications() { return disbursementNotifications; }
+
+export function markNgoVerificationNotificationRead(notificationId: string) {
+  const idx = ngoVerificationNotifications.findIndex((item) => item._id === notificationId);
+  if (idx === -1) return null;
+  const next = {
+    ...ngoVerificationNotifications[idx],
+    readAt: ngoVerificationNotifications[idx].readAt ?? new Date().toISOString()
+  };
+  ngoVerificationNotifications = ngoVerificationNotifications.slice();
+  ngoVerificationNotifications[idx] = next;
+  saveToStorage();
+  return next;
+}
+
+export function markNgoVerificationNotificationsReadByApplication(applicationId: string) {
+  let changed = false;
+  ngoVerificationNotifications = ngoVerificationNotifications.map((item) => {
+    if (item.applicationId !== applicationId || item.readAt) return item;
+    changed = true;
+    return { ...item, readAt: new Date().toISOString() };
+  });
+  if (changed) saveToStorage();
+}
+
+export function markAllNgoVerificationNotificationsRead() {
+  let changed = false;
+  ngoVerificationNotifications = ngoVerificationNotifications.map((item) => {
+    if (item.readAt) return item;
+    changed = true;
+    return { ...item, readAt: new Date().toISOString() };
+  });
+  if (changed) saveToStorage();
+}
 
 // ─── Mutators ────────────────────────────────────────────────────
 
@@ -283,11 +334,14 @@ export function disburseNgoPayment(id: string) {
 
   // 1. Update beneficiary
   const amountToDisburse = b.supportRequested - b.supportReceived;
+  if (amountToDisburse <= 0) return null;
   const updatedBeneficiary = {
     ...b,
     supportReceived: b.supportRequested,
     isDisbursed: true,
-    status: "active" as const
+    status: "active" as const,
+    lastDisbursedAmount: amountToDisburse,
+    lastDisbursedAt: new Date().toISOString()
   };
   beneficiaries = beneficiaries.slice();
   beneficiaries[bIdx] = updatedBeneficiary;
@@ -313,6 +367,9 @@ export function disburseNgoPayment(id: string) {
     date: new Date().toISOString()
   };
   disbursementNotifications = [notification, ...disbursementNotifications];
+  if (b.applicationId) {
+    markNgoVerificationNotificationsReadByApplication(b.applicationId);
+  }
 
   saveToStorage();
   return updatedBeneficiary;
@@ -337,7 +394,25 @@ export function updateNgoApplicationStatus(id: string, status: NgoApplication["s
   applications = applications.slice();
   applications[idx] = updated;
 
-  // If approved by admin OR NGO, automatically add to beneficiaries if not already there
+  // When university admin verifies, notify NGO and add beneficiary once.
+  if (status === "verified_by_admin") {
+    const existingNotification = ngoVerificationNotifications.find((item) => item.applicationId === updated._id);
+    if (!existingNotification) {
+      const notification: NgoVerificationNotification = {
+        _id: `nver${Date.now()}`,
+        applicationId: updated._id,
+        programId: updated.programId,
+        programTitle: updated.programTitle,
+        studentInitials: updated.studentInitials || "St.U.",
+        university: updated.university || "University",
+        amountRequested: updated.amountRequested > 0 ? updated.amountRequested : 0,
+        createdAt: new Date().toISOString()
+      };
+      ngoVerificationNotifications = [notification, ...ngoVerificationNotifications];
+    }
+  }
+
+  // If approved by admin OR NGO, automatically add to beneficiaries if not already there.
   if (status === "approved_by_ngo" || status === "verified_by_admin") {
     const exists = beneficiaries.some(b => b.programId === updated.programId && b.initials === updated.studentInitials);
     if (!exists) {

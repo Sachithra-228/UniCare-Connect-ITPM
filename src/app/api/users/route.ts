@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { WithId, ObjectId } from "mongodb";
 import { demoUsers } from "@/lib/demo-data";
 import { errorMessageForDev, isDemoMode, jsonResponse } from "@/lib/api";
-import { getMongoDatabase } from "@/lib/mongodb";
+import { getMongoDatabase, isMongoTlsHandshakeError, resetMongoClient } from "@/lib/mongodb";
 import { invalidateSessionUserCache, requireRole, requireSession } from "@/lib/session-auth";
 import { isValidFullName } from "@/lib/validation";
 import { UserRole } from "@/types";
@@ -138,6 +138,9 @@ export async function GET(request: NextRequest) {
 
     return jsonResponse(users.map(mapUserDocument));
   } catch (err) {
+    if (isMongoTlsHandshakeError(err)) {
+      resetMongoClient();
+    }
     const devMessage = errorMessageForDev(err);
     return jsonResponse(
       {
@@ -355,6 +358,9 @@ export async function POST(request: NextRequest) {
     return jsonResponse({ message: "User synced", user: syncedUser }, 201);
   } catch (err) {
     console.error("[POST /api/users] MongoDB error:", err instanceof Error ? err.message : err);
+    if (isMongoTlsHandshakeError(err)) {
+      resetMongoClient();
+    }
     const devMessage = errorMessageForDev(err);
     return jsonResponse(
       {
@@ -405,6 +411,9 @@ export async function PUT(request: NextRequest) {
     return jsonResponse({ message: "Profile picture updated", user: updatedUser });
   } catch (err) {
     console.error("[PUT /api/users] MongoDB error:", err instanceof Error ? err.message : err);
+    if (isMongoTlsHandshakeError(err)) {
+      resetMongoClient();
+    }
     const devMessage = errorMessageForDev(err);
     return jsonResponse(
       {
