@@ -10,7 +10,7 @@ import {
   MapPin
 } from "lucide-react";
 import { Card } from "@/components/shared/Card";
-import { Badge } from "@/components/shared/badge";
+import { Badge } from "@/components/shared/Badge";
 import type { JobListing } from "@/types";
 
 const typeAccentClass: Record<JobListing["type"], string> = {
