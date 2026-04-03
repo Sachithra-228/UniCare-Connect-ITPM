@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card } from "@/components/shared/Card";
 import { Button } from "@/components/shared/Button";
-import { Select } from "@/components/shared/select";
+import { Select } from "@/components/shared/Select";
 import { Input } from "@/components/shared/Input";
 import { useLanguage } from "@/context/language-context";
 
