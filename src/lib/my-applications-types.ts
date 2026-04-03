@@ -1,4 +1,4 @@
-export type ApplicationKind = "aid" | "job" | "scholarship";
+export type ApplicationKind = "aid" | "job" | "scholarship" | "ngo";
 
 export type ApplicationStatus = "Pending" | "Under review" | "Approved" | "Rejected";
 

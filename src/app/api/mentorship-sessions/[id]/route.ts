@@ -25,7 +25,7 @@ export async function PATCH(
     const uid = session.session.firebase.uid;
     const currentUserId = (session.session.user as { _id?: string } | null)?._id ?? uid;
     const currentRole = session.session.user?.role ?? "";
-    const isAdmin = currentRole === "admin" || currentRole === "super_admin";
+    const isAdmin = currentRole === "admin" || currentRole === "faculty" || currentRole === "super_admin";
 
     const existing = getDemoSessionById(id);
     if (!existing) {
@@ -77,7 +77,7 @@ export async function PATCH(
     return authResult.error;
   }
   const currentRole = authResult.session.user?.role ?? "";
-  const isAdmin = currentRole === "admin" || currentRole === "super_admin";
+  const isAdmin = currentRole === "admin" || currentRole === "faculty" || currentRole === "super_admin";
 
   const isDemoId = id.length !== 24 || !/^[a-f0-9]{24}$/i.test(id);
   if (isDemoId && process.env.NODE_ENV === "development") {
@@ -216,7 +216,7 @@ export async function PATCH(
       message = isAdmin
         ? `Admin approved mentorship session "${topic}".`
         : isMentor
-        ? `Your mentorship request "${topic}" was approved by the mentor.`
+        ? `Your mentorship request "${topic}" was approved by the mentor. You can now start chatting.`
         : `You approved the mentorship request "${topic}".`;
     } else if (changedStatus === "scheduled") {
       message = isAdmin
@@ -247,13 +247,13 @@ export async function PATCH(
           firebaseUid: target.firebaseUid,
           title,
           message,
-          type: "mentorship",
+          type: changedStatus === "confirmed" ? "chat" : "mentorship",
           sectionId: target.sectionId,
           relatedSessionId: id
         })
       ),
       createNotification(database, {
-        audienceRoles: ["admin", "super_admin"],
+        audienceRoles: ["admin", "faculty", "super_admin"],
         title: "Mentorship activity update",
         message: `Mentorship session "${topic}" has a new ${changedStatus ?? "feedback"} update.`,
         type: "mentorship",
@@ -268,3 +268,4 @@ export async function PATCH(
     _id: (updatedDoc as { _id?: { toString: () => string } })._id?.toString?.() ?? id
   });
 }
+

@@ -50,34 +50,76 @@ type AuthProviderProps = {
   children: ReactNode;
 };
 
-function createFallbackProfile(currentUser: FirebaseAuthUser): UserProfile {
+const VALID_USER_ROLES: UserRole[] = [
+  "student",
+  "faculty",
+  "mentor",
+  "donor",
+  "admin",
+  "super_admin",
+  "employer",
+  "ngo",
+  "parent"
+];
+
+function normalizeUserRole(role?: string | null): UserRole | null {
+  if (!role) return null;
+  const normalized = role.toLowerCase();
+  return VALID_USER_ROLES.includes(normalized as UserRole) ? (normalized as UserRole) : null;
+}
+
+function getRoleHintStorageKey(email: string) {
+  return `unicare:role-hint:${email.toLowerCase()}`;
+}
+
+function saveRoleHint(email: string | null | undefined, role: string | null | undefined) {
+  if (typeof window === "undefined" || !email) return;
+  const normalizedRole = normalizeUserRole(role);
+  if (!normalizedRole) return;
+  try {
+    window.localStorage.setItem(getRoleHintStorageKey(email), normalizedRole);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function loadRoleHint(email: string | null | undefined): UserRole | null {
+  if (typeof window === "undefined" || !email) return null;
+  try {
+    const stored = window.localStorage.getItem(getRoleHintStorageKey(email));
+    return normalizeUserRole(stored);
+  } catch {
+    return null;
+  }
+}
+
+function createFallbackProfile(currentUser: FirebaseAuthUser, roleHint?: UserRole | null): UserProfile {
   const nameFromEmail = currentUser.email?.split("@")[0] ?? "User";
   return {
     _id: currentUser.uid,
     email: currentUser.email ?? "",
     name: currentUser.displayName ?? nameFromEmail,
-    role: "student"
+    role: roleHint ?? "student"
   };
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseAuthUser | null>(null);
-  const [user, setUser] = useState<UserProfile | null>(demoUsers[0] ?? null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const registeringUidRef = useRef<string | null>(null);
+  const syncPromiseRef = useRef<Promise<UserProfile | null> | null>(null);
+  const syncKeyRef = useRef<string | null>(null);
+  const signInRoleHintRef = useRef<UserRole | null>(null);
 
   const setServerSession = async (idToken: string) => {
-    const response = await fetch("/api/auth/session", {
+    return fetch("/api/auth/session", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ idToken })
     });
-
-    if (!response.ok) {
-      throw new Error("SESSION_SET_FAILED");
-    }
   };
 
   const clearServerSession = async () => {
@@ -86,9 +128,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
   };
 
-  const runSignInPreflight = async (email: string) => {
+  const runSignInPreflight = async (email: string): Promise<UserRole | null> => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12_000);
+    const timeoutId = setTimeout(() => controller.abort(), 20_000);
     let response: Response;
     try {
       response = await fetch("/api/auth/preflight", {
@@ -109,7 +151,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      return;
+      try {
+        const data = (await response.json()) as { role?: string | null };
+        return normalizeUserRole(data.role);
+      } catch {
+        return null;
+      }
     }
 
     let errorCode = "SIGNIN_PRECHECK_FAILED";
@@ -133,27 +180,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return null;
     }
 
-    const response = await fetch("/api/users", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        firebaseUid: currentUser.uid,
-        email: currentUser.email.toLowerCase(),
-        name: profile?.name ?? currentUser.displayName ?? currentUser.email.split("@")[0],
-        role: profile?.role,
-        university: profile?.fieldA,
-        contact: profile?.fieldC,
-        roleDetails: profile
-          ? {
-              fieldA: profile.fieldA ?? "",
-              fieldB: profile.fieldB ?? "",
-              fieldC: profile.fieldC ?? ""
-            }
-          : undefined
-      })
+    const payload = JSON.stringify({
+      firebaseUid: currentUser.uid,
+      email: currentUser.email.toLowerCase(),
+      name: profile?.name ?? currentUser.displayName ?? currentUser.email.split("@")[0],
+      role: profile?.role,
+      university: profile?.fieldA,
+      contact: profile?.fieldC,
+      roleDetails: profile
+        ? {
+            fieldA: profile.fieldA ?? "",
+            fieldB: profile.fieldB ?? "",
+            fieldC: profile.fieldC ?? ""
+          }
+        : undefined
     });
+
+    const doSync = async () =>
+      fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload
+      });
+
+    let response = await doSync();
+
+    if (!response.ok && response.status >= 500) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      response = await doSync();
+    }
 
     if (!response.ok) {
       let errorCode = "ACCOUNT_SYNC_FAILED";
@@ -170,6 +225,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const data = (await response.json()) as { user?: UserProfile };
     return data.user ?? null;
+  };
+
+  const syncUserOnce = async (
+    currentUser: FirebaseAuthUser,
+    profile?: RegisterProfileInput
+  ): Promise<UserProfile | null> => {
+    if (!currentUser.email) {
+      return null;
+    }
+
+    const key = `${currentUser.uid}:${currentUser.email.toLowerCase()}:${profile ? "profile" : "basic"}`;
+    if (syncPromiseRef.current && syncKeyRef.current === key) {
+      return syncPromiseRef.current;
+    }
+
+    const nextPromise = syncUserWithDatabase(currentUser, profile);
+    syncKeyRef.current = key;
+    syncPromiseRef.current = nextPromise.finally(() => {
+      syncPromiseRef.current = null;
+      syncKeyRef.current = null;
+    });
+    return syncPromiseRef.current;
   };
 
   const enforceUserAccess = async (profile: UserProfile | null) => {
@@ -190,7 +267,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const auth = getFirebaseAuth();
     if (!auth) {
-      // Demo mode when Firebase is not configured.
+      setUser(demoUsers[0] ?? null);
       setLoading(false);
       return;
     }
@@ -203,20 +280,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
         try {
-          const idToken = await currentUser.getIdToken();
-          await setServerSession(idToken);
-          const syncedUser = await syncUserWithDatabase(currentUser);
-          if (syncedUser) {
-            setUser(syncedUser);
-          } else {
-            setUser(createFallbackProfile(currentUser));
+          let idToken = await currentUser.getIdToken();
+          let sessionResponse = await setServerSession(idToken);
+          if (!sessionResponse.ok) {
+            idToken = await currentUser.getIdToken(true);
+            sessionResponse = await setServerSession(idToken);
           }
-        } catch {
+          if (!sessionResponse.ok) {
+            throw new Error("SESSION_SET_FAILED");
+          }
+          const syncedUser = await syncUserOnce(currentUser);
+          if (syncedUser) {
+            await enforceUserAccess(syncedUser);
+            setUser(syncedUser);
+            saveRoleHint(currentUser.email, syncedUser.role);
+          } else {
+            const hintedRole = signInRoleHintRef.current ?? loadRoleHint(currentUser.email);
+            setUser(createFallbackProfile(currentUser, hintedRole));
+          }
+        } catch (error) {
+          if (error instanceof Error && error.message === "ACCOUNT_BLOCKED") {
+            setUser(null);
+            setLoading(false);
+            return;
+          }
           const matched = demoUsers.find((demoUser) => demoUser.email === currentUser.email);
-          setUser(matched ?? createFallbackProfile(currentUser));
+          const hintedRole = signInRoleHintRef.current ?? loadRoleHint(currentUser.email);
+          const fallbackRole = hintedRole ?? matched?.role ?? null;
+          setUser(matched ?? createFallbackProfile(currentUser, fallbackRole));
         }
+        signInRoleHintRef.current = null;
       } else {
         registeringUidRef.current = null;
+        signInRoleHintRef.current = null;
         try {
           await clearServerSession();
         } catch {
@@ -237,26 +333,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return;
     }
 
-    const credential = await signInWithEmailAndPassword(auth, email, password);
-    const signedInUser = credential.user as FirebaseAuthUser;
-    if (signedInUser.reload) {
-      await signedInUser.reload();
+    const cachedRoleHint = loadRoleHint(email);
+    if (cachedRoleHint) {
+      signInRoleHintRef.current = cachedRoleHint;
+    } else {
+      try {
+        signInRoleHintRef.current = await runSignInPreflight(email);
+        if (signInRoleHintRef.current) {
+          saveRoleHint(email, signInRoleHintRef.current);
+        }
+      } catch (preflightError) {
+        if (preflightError instanceof Error) {
+          const code = preflightError.message;
+          if (code === "USER_NOT_FOUND" || code === "ACCOUNT_DELETED" || code === "ACCOUNT_BLOCKED") {
+            throw preflightError;
+          }
+        }
+        signInRoleHintRef.current = null;
+      }
     }
 
-    if (!signedInUser.emailVerified) {
-      await signOut(auth);
-      throw new Error("EMAIL_NOT_VERIFIED");
-    }
-
-    const idToken = await signedInUser.getIdToken(true);
-    await setServerSession(idToken);
-
+    setLoading(true);
     try {
-      const syncedUser = await syncUserWithDatabase(signedInUser);
-      await enforceUserAccess(syncedUser);
-    } catch {
-      // MongoDB/sync unavailable – user is still signed in via Firebase and session is set.
-      // onIdTokenChanged will set a fallback profile so the user can continue.
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const signedInUser = credential.user as FirebaseAuthUser;
+      if (signedInUser.reload) {
+        await signedInUser.reload();
+      }
+
+      if (!signedInUser.emailVerified) {
+        await signOut(auth);
+        throw new Error("EMAIL_NOT_VERIFIED");
+      }
+    } catch (error) {
+      setLoading(false);
+      throw error;
     }
   };
 
@@ -267,12 +378,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return;
     }
     const provider = new GoogleAuthProvider();
-    const credential = await signInWithPopup(auth, provider);
-    const signedInUser = credential.user as FirebaseAuthUser;
-    const idToken = await signedInUser.getIdToken(true);
-    await setServerSession(idToken);
-    const syncedUser = await syncUserWithDatabase(signedInUser);
-    await enforceUserAccess(syncedUser);
+    setLoading(true);
+    try {
+      const credential = await signInWithPopup(auth, provider);
+      const signedInUser = credential.user as FirebaseAuthUser;
+      signInRoleHintRef.current = loadRoleHint(signedInUser.email);
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
   };
 
   const registerWithEmail = async (
@@ -290,11 +404,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const idToken = await credential.user.getIdToken(true);
-      await setServerSession(idToken);
-      const syncedUser = await syncUserWithDatabase(credential.user, profile);
+      const sessionResponse = await setServerSession(idToken);
+      if (!sessionResponse.ok) {
+        throw new Error("SESSION_SET_FAILED");
+      }
+      const syncedUser = await syncUserOnce(credential.user, profile);
       if (!syncedUser) {
         throw new Error("ACCOUNT_SYNC_FAILED");
       }
+      saveRoleHint(credential.user.email, syncedUser.role);
 
       const verificationResponse = await fetch("/api/auth/verification", {
         method: "POST",
@@ -392,3 +510,5 @@ export function useAuth() {
   }
   return context;
 }
+
+

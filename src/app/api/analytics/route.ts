@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     return authResult.error;
   }
 
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
   if (roleCheck) {
     return roleCheck;
   }
@@ -137,3 +137,4 @@ export async function GET(request: NextRequest) {
     wellness
   });
 }
+

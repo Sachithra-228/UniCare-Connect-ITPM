@@ -1,3 +1,5 @@
+import type { UserRole } from "@/types";
+
 export type DemoDonorMessage = {
   _id: string;
   donorUserId?: string;
@@ -43,6 +45,28 @@ export function listDemoDonorMessages(input: { userId?: string; firebaseUid?: st
     .map((item) => ({ ...item }));
 }
 
+function audienceMatchesRole(audience: string, role: UserRole): boolean {
+  const normalizedAudience = String(audience ?? "").toLowerCase();
+  if (role === "student") {
+    return (
+      normalizedAudience.includes("student") ||
+      normalizedAudience.includes("recipient") ||
+      normalizedAudience.includes("beneficiar")
+    );
+  }
+  if (role === "admin" || role === "faculty" || role === "super_admin") {
+    return normalizedAudience.includes("admin") || normalizedAudience.includes("faculty");
+  }
+  return false;
+}
+
+export function listDemoDonorInboxMessages(role: UserRole) {
+  return demoMessages
+    .filter((item) => audienceMatchesRole(item.audience, role))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    .map((item) => ({ ...item }));
+}
+
 export function addDemoDonorMessage(
   input: Omit<DemoDonorMessage, "_id" | "createdAt">
 ) {
@@ -53,4 +77,25 @@ export function addDemoDonorMessage(
   };
   demoMessages = [created, ...demoMessages];
   return { ...created };
+}
+
+export function updateDemoDonorMessage(
+  id: string,
+  input: Partial<Pick<DemoDonorMessage, "audience" | "messageType" | "subject" | "body">>
+) {
+  const index = demoMessages.findIndex((item) => item._id === id);
+  if (index < 0) return null;
+  const next: DemoDonorMessage = {
+    ...demoMessages[index],
+    ...input
+  };
+  demoMessages[index] = next;
+  return { ...next };
+}
+
+export function deleteDemoDonorMessage(id: string) {
+  const index = demoMessages.findIndex((item) => item._id === id);
+  if (index < 0) return null;
+  const [removed] = demoMessages.splice(index, 1);
+  return { ...removed };
 }

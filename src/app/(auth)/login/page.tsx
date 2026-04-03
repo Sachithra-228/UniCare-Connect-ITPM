@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage, type Language } from "@/context/language-context";
@@ -21,6 +21,7 @@ import { getRoleConfigs, type UserRole } from "@/lib/signup-role-config";
 import { UniversityPicker } from "@/components/auth/university-picker";
 import { RolePicker } from "@/components/auth/role-picker";
 import { DegreePicker } from "@/components/auth/degree-picker";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
 
 type AuthMode = "signin" | "signup";
 
@@ -90,6 +91,7 @@ const AUTH_TEXT: Record<
     tooManyAttempts: string;
     unableCreateAccount: string;
     validEmailPasswordRequired: string;
+    adminSignupDisabled: string;
     selectRoleContinue: string;
     fullNameRequired: string;
     atLeastTwoChars: string;
@@ -136,6 +138,7 @@ const AUTH_TEXT: Record<
     signUpSubtitle: string;
     emailVerifiedSuccess: string;
     signInButton: string;
+    signingIn: string;
     signInWithGoogle: string;
     forgotPassword: string;
     createAccountLink: string;
@@ -171,6 +174,8 @@ const AUTH_TEXT: Record<
     tooManyAttempts: "Too many attempts. Please try again later.",
     unableCreateAccount: "Unable to create account. Please try again.",
     validEmailPasswordRequired: "Please provide a valid email and password.",
+    adminSignupDisabled:
+      "University Admin / Faculty accounts require approval. Please contact support to create this role.",
     selectRoleContinue: "Please select your role to continue.",
     fullNameRequired: "Full name is required.",
     atLeastTwoChars: "Please enter at least 2 characters.",
@@ -218,6 +223,7 @@ const AUTH_TEXT: Record<
     signUpSubtitle: "Complete a simple 4-step setup based on your role.",
     emailVerifiedSuccess: "Email verified successfully. You can now sign in.",
     signInButton: "Sign in",
+    signingIn: "Signing in...",
     signInWithGoogle: "Sign in with Google",
     forgotPassword: "Forgot password?",
     createAccountLink: "Create account",
@@ -298,6 +304,7 @@ const AUTH_TEXT: Record<
     signUpSubtitle: "à¶”à¶¶à¶œà·š à¶·à·–à¶¸à·’à¶šà·à·€ à¶…à¶±à·”à·€ à¶´à·’à¶ºà·€à¶» 4à¶š à·ƒà¶»à¶½ à·ƒà·à¶šà·ƒà·”à¶¸ à·ƒà¶¸à·Šà¶´à·–à¶»à·Šà¶« à¶šà¶»à¶±à·Šà¶±.",
     emailVerifiedSuccess: "à¶Šà¶¸à·šà¶½à·Š à·ƒà·à¶»à·Šà¶®à¶šà·€ à¶­à·„à·€à·”à¶»à·” à·€à·’à¶º. à¶¯à·à¶±à·Š à¶”à¶¶à¶§ à¶´à·’à·€à·’à·ƒà·’à¶º à·„à·à¶š.",
     signInButton: "à¶´à·’à·€à·’à·ƒà·™à¶±à·Šà¶±",
+    signingIn: "Signing in...",
     signInWithGoogle: "Google à¶¸à¶Ÿà·’à¶±à·Š à¶´à·’à·€à·’à·ƒà·™à¶±à·Šà¶±",
     forgotPassword: "à¶¸à·”à¶»à¶´à¶¯à¶º à¶…à¶¸à¶­à¶šà¶¯?",
     createAccountLink: "à¶œà·’à¶«à·”à¶¸ à·ƒà·à¶¯à¶±à·Šà¶±",
@@ -378,6 +385,7 @@ const AUTH_TEXT: Record<
     signUpSubtitle: "à®‰à®™à¯à®•à®³à¯ à®ªà®™à¯à®•à¯ˆ à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆà®¯à®¾à®•à®•à¯ à®•à¯Šà®£à¯à®Ÿ à®Žà®³à®¿à®¯ 4 à®ªà®Ÿà®¿ à®…à®®à¯ˆà®ªà¯à®ªà¯ˆ à®®à¯à®Ÿà®¿à®•à¯à®•à®µà¯à®®à¯.",
     emailVerifiedSuccess: "à®®à®¿à®©à¯à®©à®žà¯à®šà®²à¯ à®µà¯†à®±à¯à®±à®¿à®•à®°à®®à®¾à®• à®šà®°à®¿à®ªà®¾à®°à¯à®•à¯à®•à®ªà¯à®ªà®Ÿà¯à®Ÿà®¤à¯. à®‡à®ªà¯à®ªà¯‹à®¤à¯ à®‰à®³à¯à®¨à¯à®´à¯ˆà®¯à®²à®¾à®®à¯.",
     signInButton: "à®‰à®³à¯à®¨à¯à®´à¯ˆ",
+    signingIn: "Signing in...",
     signInWithGoogle: "Google à®®à¯‚à®²à®®à¯ à®‰à®³à¯à®¨à¯à®´à¯ˆ",
     forgotPassword: "à®•à®Ÿà®µà¯à®šà¯à®šà¯Šà®²à¯ à®®à®±à®¨à¯à®¤à¯à®µà®¿à®Ÿà¯à®Ÿà®¤à®¾?",
     createAccountLink: "à®•à®£à®•à¯à®•à¯ˆ à®‰à®°à¯à®µà®¾à®•à¯à®•à®µà¯à®®à¯",
@@ -424,6 +432,7 @@ AUTH_TEXT.si = {
   signUpSubtitle: "ඔබගේ භූමිකාව අනුව පියවර 4ක සරල සැකසුම සම්පූර්ණ කරන්න.",
   emailVerifiedSuccess: "ඊමේල් සාර්ථකව තහවුරු විය. දැන් ඔබට පිවිසිය හැක.",
   signInButton: "පිවිසෙන්න",
+  signingIn: "Signing in...",
   signInWithGoogle: "Google මඟින් පිවිසෙන්න",
   forgotPassword: "මුරපදය අමතකද?",
   createAccountLink: "ගිණුම සාදන්න",
@@ -469,6 +478,7 @@ AUTH_TEXT.ta = {
   signUpSubtitle: "உங்கள் பங்கை அடிப்படையாகக் கொண்ட எளிய 4 படி அமைப்பை முடிக்கவும்.",
   emailVerifiedSuccess: "மின்னஞ்சல் வெற்றிகரமாக சரிபார்க்கப்பட்டது. இப்போது உள்நுழையலாம்.",
   signInButton: "உள்நுழை",
+  signingIn: "Signing in...",
   signInWithGoogle: "Google மூலம் உள்நுழை",
   forgotPassword: "கடவுச்சொல் மறந்துவிட்டதா?",
   createAccountLink: "கணக்கை உருவாக்கவும்",
@@ -482,7 +492,7 @@ AUTH_TEXT.ta = {
 };
 
 export default function LoginPage() {
-  const { signInWithEmail, signInWithGoogle, registerWithEmail } = useAuth();
+  const { signInWithEmail, signInWithGoogle, registerWithEmail, user, firebaseUser, loading } = useAuth();
   const { language } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -505,10 +515,13 @@ export default function LoginPage() {
     password?: string;
     confirmPassword?: string;
   }>({});
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showSignUpConfirmPassword, setShowSignUpConfirmPassword] = useState(false);
 
   const selectedRoleConfig = signUpData.role ? roleConfigs[signUpData.role] : null;
   const isStudent = signUpData.role === "student";
-  const isUniversityRole = signUpData.role === "student" || signUpData.role === "admin";
+  const isUniversityRole = signUpData.role === "student" || signUpData.role === "faculty";
   const degreePrograms = isStudent
     ? getDegreeProgramsForUniversity(
         signUpData.fieldA === OTHER_UNIVERSITY_VALUE ? "" : signUpData.fieldA
@@ -572,20 +585,33 @@ export default function LoginPage() {
     return t.unableSignIn;
   };
 
-  const getPostSignInPath = async () => {
-    const response = await fetch("/api/auth/session", { cache: "no-store" });
-    if (!response.ok) {
-      return "/dashboard";
+  const [pendingRedirect, setPendingRedirect] = useState(false);
+  const [signInBusy, setSignInBusy] = useState(false);
+
+  useEffect(() => {
+    if (!pendingRedirect || loading) return;
+
+    if (firebaseUser && !user) {
+      return;
     }
 
-    const data = (await response.json()) as {
-      user?: { role?: string; needsProfileCompletion?: boolean };
-    };
-    if (data.user?.needsProfileCompletion) {
-      return "/auth/complete-profile";
+    if (!firebaseUser) {
+      setPendingRedirect(false);
+      setSignInBusy(false);
+      setSignInError(t.accountBlocked);
+      return;
     }
-    return getDashboardPathForRole(data.user?.role);
-  };
+
+    const nextPath = user
+      ? user.needsProfileCompletion
+        ? "/auth/complete-profile"
+        : getDashboardPathForRole(user.role)
+      : "/dashboard";
+
+    setPendingRedirect(false);
+    setSignInBusy(false);
+    router.push(nextPath);
+  }, [pendingRedirect, loading, firebaseUser, user, router, t.accountBlocked]);
 
   const getReadableSignUpError = (error: unknown) => {
     if (error instanceof Error && error.message === "ACCOUNT_SYNC_FAILED") {
@@ -638,6 +664,7 @@ export default function LoginPage() {
   const handleSignInSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSignInError(null);
+    setSignInBusy(true);
 
     const data = new FormData(event.currentTarget);
     const values = {
@@ -648,26 +675,28 @@ export default function LoginPage() {
     const result = loginSchema.safeParse(values);
     if (!result.success) {
       setSignInError(t.validEmailPasswordRequired);
+      setSignInBusy(false);
       return;
     }
 
     try {
       await signInWithEmail(result.data.email, result.data.password);
-      const nextPath = await getPostSignInPath();
-      router.push(nextPath);
+      setPendingRedirect(true);
     } catch (error) {
       setSignInError(getReadableAuthError(error));
+      setSignInBusy(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     setSignInError(null);
+    setSignInBusy(true);
     try {
       await signInWithGoogle();
-      const nextPath = await getPostSignInPath();
-      router.push(nextPath);
+      setPendingRedirect(true);
     } catch (error) {
       setSignInError(getReadableAuthError(error));
+      setSignInBusy(false);
     }
   };
 
@@ -679,6 +708,7 @@ export default function LoginPage() {
     setFieldErrors({});
     if (step === 1) {
       if (!signUpData.role) return t.selectRoleContinue;
+      if (signUpData.role === "admin") return t.adminSignupDisabled;
       return null;
     }
 
@@ -804,7 +834,16 @@ export default function LoginPage() {
 
   const renderSignUpStep = () => {
     if (signUpStep === 1) {
-      const roleOptions = (Object.keys(roleConfigs) as UserRole[]).map((role) => ({
+      const signupRoles: UserRole[] = [
+        "student",
+        "faculty",
+        "mentor",
+        "donor",
+        "employer",
+        "ngo",
+        "parent"
+      ];
+      const roleOptions = signupRoles.map((role) => ({
         value: role,
         label: roleConfigs[role].label
       }));
@@ -870,36 +909,78 @@ export default function LoginPage() {
             <label className="text-sm font-medium text-slate-900" htmlFor="signup-password">
               {t.password} <span className="text-red-500">*</span>
             </label>
-            <Input
-              id="signup-password"
-              type="password"
-              value={signUpData.password}
-              onChange={(event) => {
-                updateSignUpField("password", event.target.value);
-                if (step2Errors.password) setStep2Errors((e) => ({ ...e, password: undefined }));
-              }}
-              placeholder={t.min6Chars}
-              required
-              className={step2Errors.password ? "border-red-400 focus-visible:ring-red-400/30" : ""}
-            />
+            <div className="relative">
+              <Input
+                id="signup-password"
+                type={showSignUpPassword ? "text" : "password"}
+                value={signUpData.password}
+                onChange={(event) => {
+                  updateSignUpField("password", event.target.value);
+                  if (step2Errors.password) setStep2Errors((e) => ({ ...e, password: undefined }));
+                }}
+                placeholder={t.min6Chars}
+                required
+                className={`pr-10 ${step2Errors.password ? "border-red-400 focus-visible:ring-red-400/30" : ""}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSignUpPassword((v) => !v)}
+                aria-label={showSignUpPassword ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 hover:text-slate-700"
+              >
+                {showSignUpPassword ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5.52 0-10.19-3.51-11.83-8.38a10.93 10.93 0 0 1 5.17-6.07" />
+                    <path d="M1 1l22 22" />
+                    <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1.5 12s4.5-7 10.5-7 10.5 7 10.5 7-4.5 7-10.5 7-10.5-7-10.5-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
             {step2Errors.password && <p className="text-xs text-red-500">{step2Errors.password}</p>}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-900" htmlFor="signup-confirm-password">
               {t.confirmPassword} <span className="text-red-500">*</span>
             </label>
-            <Input
-              id="signup-confirm-password"
-              type="password"
-              value={signUpData.confirmPassword}
-              onChange={(event) => {
-                updateSignUpField("confirmPassword", event.target.value);
-                if (step2Errors.confirmPassword) setStep2Errors((e) => ({ ...e, confirmPassword: undefined }));
-              }}
-              placeholder={t.reenterPassword}
-              required
-              className={step2Errors.confirmPassword ? "border-red-400 focus-visible:ring-red-400/30" : ""}
-            />
+            <div className="relative">
+              <Input
+                id="signup-confirm-password"
+                type={showSignUpConfirmPassword ? "text" : "password"}
+                value={signUpData.confirmPassword}
+                onChange={(event) => {
+                  updateSignUpField("confirmPassword", event.target.value);
+                  if (step2Errors.confirmPassword) setStep2Errors((e) => ({ ...e, confirmPassword: undefined }));
+                }}
+                placeholder={t.reenterPassword}
+                required
+                className={`pr-10 ${step2Errors.confirmPassword ? "border-red-400 focus-visible:ring-red-400/30" : ""}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSignUpConfirmPassword((v) => !v)}
+                aria-label={showSignUpConfirmPassword ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 hover:text-slate-700"
+              >
+                {showSignUpConfirmPassword ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5.52 0-10.19-3.51-11.83-8.38a10.93 10.93 0 0 1 5.17-6.07" />
+                    <path d="M1 1l22 22" />
+                    <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1.5 12s4.5-7 10.5-7 10.5 7 10.5 7-4.5 7-10.5 7-10.5-7-10.5-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
             {step2Errors.confirmPassword && (
               <p className="text-xs text-red-500">{step2Errors.confirmPassword}</p>
             )}
@@ -1117,6 +1198,9 @@ export default function LoginPage() {
         </div>
       </aside>
       <section className="relative flex min-h-screen items-center bg-white px-4 py-10 sm:px-8 lg:px-12">
+        <div className="absolute left-4 top-4 flex flex-col items-start gap-2 sm:left-8 sm:top-6 sm:flex-row sm:items-center sm:gap-3 lg:left-12 lg:top-8">
+          <LanguageSwitcher />
+        </div>
         <div className="absolute right-4 top-4 sm:right-8 sm:top-6 lg:right-12 lg:top-8">
           <Image
             src="/logo.png"
@@ -1178,7 +1262,35 @@ export default function LoginPage() {
                   <label className="text-sm font-medium" htmlFor="password">
                     {t.password}
                   </label>
-                  <Input id="password" name="password" type="password" required aria-required="true" />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showSignInPassword ? "text" : "password"}
+                      required
+                      aria-required="true"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignInPassword((v) => !v)}
+                      aria-label={showSignInPassword ? "Hide password" : "Show password"}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 hover:text-slate-700"
+                    >
+                      {showSignInPassword ? (
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-5.52 0-10.19-3.51-11.83-8.38a10.93 10.93 0 0 1 5.17-6.07" />
+                          <path d="M1 1l22 22" />
+                          <path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1.5 12s4.5-7 10.5-7 10.5 7 10.5 7-4.5 7-10.5 7-10.5-7-10.5-7z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 {isVerifiedRedirect ? (
                   <p className="text-sm text-green-600">
@@ -1188,9 +1300,16 @@ export default function LoginPage() {
                 {signUpSuccess ? <p className="text-sm text-green-600">{signUpSuccess}</p> : null}
                 {signInError ? <p className="text-sm text-red-500">{signInError}</p> : null}
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <Button type="submit">{t.signInButton}</Button>
-                  <Button type="button" variant="secondary" onClick={handleGoogleSignIn}>
-                    {t.signInWithGoogle}
+                  <Button type="submit" disabled={signInBusy || pendingRedirect || loading}>
+                    {signInBusy || pendingRedirect || loading ? t.signingIn : t.signInButton}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleGoogleSignIn}
+                    disabled={signInBusy || pendingRedirect || loading}
+                  >
+                    {signInBusy || pendingRedirect || loading ? t.signingIn : t.signInWithGoogle}
                   </Button>
                 </div>
                 <div className="flex items-center justify-between text-sm text-slate-500">

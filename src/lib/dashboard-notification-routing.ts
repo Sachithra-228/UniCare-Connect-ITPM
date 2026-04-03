@@ -24,10 +24,11 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
       "disbursement"
     ],
     career: ["career", "job", "internship", "employer", "interview", "placement", "resume"],
-    mentorship: ["mentor", "mentorship", "mentee", "session", "review", "rating", "feedback"],
+    mentorship: ["mentor", "mentorship", "mentee", "session", "review", "rating", "feedback", "chat", "request", "approved"],
     wellness: ["wellness", "mental", "stress", "counsel", "health", "therapy"],
     "campus-life": ["campus", "club", "event", "announcement", "volunteer", "society"],
     "my-applications": ["application", "applied", "approval", "approved", "rejected", "pending"],
+    communications: ["communication", "message", "donor", "csr", "partner", "announcement"],
     profile: ["profile", "account", "settings"]
   },
   admin: {
@@ -44,8 +45,31 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
     ],
     "career-services": ["career", "job", "internship", "employer", "placement"],
     "mentorship-program": ["mentor", "mentorship", "mentee", "session", "review", "rating", "feedback"],
+    "counselor-support": ["wellness", "counsel", "counselor", "therapy", "booking", "mental", "health"],
+    "peer-support": ["peer support", "peer", "forum", "discussion", "post", "reply"],
     reports: ["report", "analytics", "metric", "summary"],
     announcements: ["announcement", "notice", "alert", "broadcast"],
+    communications: ["communication", "message", "donor", "csr", "partner", "announcement"],
+    profile: ["profile", "account", "settings"]
+  },
+  faculty: {
+    verifications: ["verification", "verify", "eligibility", "document", "enrollment", "validation"],
+    "financial-oversight": [
+      "financial",
+      "aid",
+      "fund",
+      "disbursement",
+      "fee waiver",
+      "equipment",
+      "voucher",
+      "scholarship"
+    ],
+    "career-services": ["career", "job", "internship", "employer", "placement"],
+    "mentorship-program": ["mentor", "mentorship", "mentee", "session", "review", "rating", "feedback"],
+    "counselor-support": ["wellness", "counsel", "counselor", "therapy", "booking", "mental", "health"],
+    reports: ["report", "analytics", "metric", "summary"],
+    announcements: ["announcement", "notice", "alert", "broadcast"],
+    communications: ["communication", "message", "donor", "csr", "partner", "announcement"],
     profile: ["profile", "account", "settings"]
   },
   mentor: {
@@ -98,6 +122,7 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
 const ROLE_DEFAULT_SECTION: Record<DashboardRole, string> = {
   student: "home",
   admin: "overview",
+  faculty: "overview",
   mentor: "mentor-home",
   donor: "partner-home",
   employer: "employer-home",
@@ -114,12 +139,12 @@ function roleTypeHint(role: DashboardRole, type: string): string | undefined {
   if (!normalizedType) return undefined;
   if (normalizedType.includes("mentorship")) {
     if (role === "student") return "mentorship";
-    if (role === "admin") return "mentorship-program";
+    if (role === "admin" || role === "faculty") return "mentorship-program";
     if (role === "mentor") return "sessions";
   }
   if (normalizedType.includes("financial") || normalizedType.includes("aid")) {
     if (role === "student") return "financial-aid";
-    if (role === "admin") return "financial-oversight";
+    if (role === "admin" || role === "faculty") return "financial-oversight";
     if (role === "parent") return "financial-overview";
     if (role === "ngo") return "funding";
     if (role === "donor") return "donations";
@@ -127,10 +152,15 @@ function roleTypeHint(role: DashboardRole, type: string): string | undefined {
   if (normalizedType.includes("career")) {
     if (role === "student") return "career";
     if (role === "mentor") return "career-insights";
-    if (role === "admin") return "career-services";
+    if (role === "admin" || role === "faculty") return "career-services";
     if (role === "employer") return "job-listings";
   }
+  if (normalizedType.includes("wellness") || normalizedType.includes("counsel")) {
+    if (role === "admin" || role === "faculty") return "counselor-support";
+    if (role === "student") return "wellness";
+  }
   if (normalizedType.includes("message") || normalizedType.includes("communication")) {
+    if (role === "student" || role === "admin" || role === "faculty") return "communications";
     if (role === "mentor") return "messages";
     if (role === "donor" || role === "ngo" || role === "parent") return "communications";
   }

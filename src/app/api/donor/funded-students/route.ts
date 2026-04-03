@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import { ObjectId } from "mongodb";
 import { isDemoMode, isMongoConnectionError, jsonResponse } from "@/lib/api";
-import { getDemoDonorFundedStudentsOverview } from "@/lib/donor-funded-students-demo-store";
+import {
+  addDemoDonorFundedUpdate,
+  getDemoDonorFundedStudentsOverview
+} from "@/lib/donor-funded-students-demo-store";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { requireRole, requireSession } from "@/lib/session-auth";
 
@@ -26,6 +29,7 @@ type UserDocument = {
   name?: string;
   email?: string;
   university?: string;
+  role?: string;
   roleDetails?: Record<string, unknown>;
 };
 
@@ -33,6 +37,16 @@ type ApplicationDocument = {
   userId?: string;
   firebaseUid?: string;
   status?: string;
+  updatedAt?: Date | string;
+};
+
+type FundedStudentUpdateDocument = {
+  _id?: { toString: () => string };
+  donorUserId?: string;
+  donorFirebaseUid?: string;
+  title?: string;
+  detail?: string;
+  createdAt?: Date | string;
   updatedAt?: Date | string;
 };
 
@@ -127,6 +141,8 @@ export async function GET(request: NextRequest) {
   if (authResult.error) return authResult.error;
   const roleCheck = requireRole(authResult.session.user?.role, ["donor", "super_admin"]);
   if (roleCheck) return roleCheck;
+  const userId = authResult.session.user?._id;
+  const firebaseUid = authResult.session.firebase.uid;
 
   if (isDemoMode()) {
     return jsonResponse(getDemoDonorFundedStudentsOverview());
@@ -184,7 +200,7 @@ export async function GET(request: NextRequest) {
     if (userObjectIds.length) userClauses.push({ _id: { $in: userObjectIds } });
     if (firebaseUids.length) userClauses.push({ firebaseUid: { $in: firebaseUids } });
 
-    const [users, applications] = await Promise.all([
+    const [users, applications, manualUpdates] = await Promise.all([
       userClauses.length
         ? database
             .collection<UserDocument>("users")
@@ -201,7 +217,18 @@ export async function GET(request: NextRequest) {
               ]
             })
             .toArray()
-        : Promise.resolve([] as ApplicationDocument[])
+        : Promise.resolve([] as ApplicationDocument[]),
+      database
+        .collection<FundedStudentUpdateDocument>("donor_funded_student_updates")
+        .find({
+          $or: [
+            ...(userId ? [{ donorUserId: userId }] : []),
+            ...(firebaseUid ? [{ donorFirebaseUid: firebaseUid }] : [])
+          ]
+        })
+        .sort({ updatedAt: -1, createdAt: -1 })
+        .limit(20)
+        .toArray()
     ]);
 
     const userByIdentity = new Map<string, UserDocument>();
@@ -226,6 +253,11 @@ export async function GET(request: NextRequest) {
     });
 
     const students = identities
+      .filter((item) => {
+        const user = userByIdentity.get(item.userId ?? item.firebaseUid ?? item.id);
+        const role = String(user?.role ?? "").toLowerCase();
+        return role !== "mentor" && role !== "employer";
+      })
       .map((item, index) => {
         const user = userByIdentity.get(item.userId ?? item.firebaseUid ?? item.id);
         const consented = hasDonorConsent(user, item.consentFromAid);
@@ -275,15 +307,28 @@ export async function GET(request: NextRequest) {
       })
       .sort((a, b) => b.totalFundedLkr - a.totalFundedLkr);
 
-    const updates = students
+    const derivedUpdates = students
       .slice(0, 8)
       .map((student, index) => ({
         id: `upd-${student.id}-${index}`,
         title: "Funding progress update",
         detail: `${student.displayName} currently has LKR ${student.totalFundedLkr} in approved support.`,
-        date: student.lastUpdated
+        date: student.lastUpdated,
+        editable: false
       }))
       .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+    const manualDonorUpdates = manualUpdates.map((item) => ({
+      id: item._id?.toString?.() ?? "",
+      title: String(item.title ?? "Donor update"),
+      detail: String(item.detail ?? ""),
+      date: toIso(item.updatedAt ?? item.createdAt),
+      editable: true
+    }));
+
+    const updates = [...manualDonorUpdates, ...derivedUpdates]
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, 20);
 
     const fundedStudents = students.length;
     const consentedProfiles = students.filter((item) => item.canViewIdentity).length;
@@ -308,6 +353,58 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     if (isMongoConnectionError(error)) {
       return jsonResponse(getDemoDonorFundedStudentsOverview());
+    }
+    throw error;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const payload = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  const authResult = await requireSession(request);
+  if (authResult.error) return authResult.error;
+  const roleCheck = requireRole(authResult.session.user?.role, ["donor", "super_admin"]);
+  if (roleCheck) return roleCheck;
+
+  const donorUserId = authResult.session.user?._id;
+  const donorFirebaseUid = authResult.session.firebase.uid;
+  const title = String(payload.title ?? "").trim().slice(0, 140);
+  const detail = String(payload.detail ?? "").trim().slice(0, 600);
+  if (!title || !detail) return jsonResponse({ message: "Title and detail are required." }, 400);
+
+  if (isDemoMode()) {
+    const created = addDemoDonorFundedUpdate({ title, detail });
+    return jsonResponse({ message: "Update added.", update: created }, 201);
+  }
+
+  try {
+    const database = await getMongoDatabase();
+    const now = new Date();
+    const document = {
+      donorUserId,
+      donorFirebaseUid,
+      title,
+      detail,
+      createdAt: now,
+      updatedAt: now
+    };
+    const result = await database.collection("donor_funded_student_updates").insertOne(document);
+    return jsonResponse(
+      {
+        message: "Update added.",
+        update: {
+          id: result.insertedId.toString(),
+          title,
+          detail,
+          date: now.toISOString(),
+          editable: true
+        }
+      },
+      201
+    );
+  } catch (error) {
+    if (isMongoConnectionError(error)) {
+      const created = addDemoDonorFundedUpdate({ title, detail });
+      return jsonResponse({ message: "Update added.", update: created }, 201);
     }
     throw error;
   }

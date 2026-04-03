@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
   const isAllScope = scope === "all";
   if (isAllScope) {
-    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
     if (roleCheck) {
       return roleCheck;
     }
@@ -70,15 +70,31 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const payload = await request.json();
+  const getSessionIdentity = (authResult: Awaited<ReturnType<typeof requireSession>>) => {
+    const session = authResult.session;
+    const isAdmin = ["admin", "faculty", "super_admin"].includes(session.user?.role ?? "");
+    const sessionUserId = session.user?._id;
+    const sessionFirebaseUid = session.firebase.uid;
+    const requestedUserId = isAdmin && typeof payload.userId === "string" ? payload.userId : undefined;
+    const requestedFirebaseUid =
+      isAdmin && typeof payload.firebaseUid === "string" ? payload.firebaseUid : undefined;
+
+    return {
+      userId: requestedUserId ?? sessionUserId,
+      firebaseUid: requestedFirebaseUid ?? sessionFirebaseUid
+    };
+  };
+
   if (isDemoMode()) {
     const authResult = await requireSession(request);
     if (authResult.error) {
       return authResult.error;
     }
+    const identity = getSessionIdentity(authResult);
     const created = createDemoAidRequest({
       ...payload,
-      userId: payload.userId ?? authResult.session.user?._id,
-      firebaseUid: payload.firebaseUid ?? authResult.session.firebase.uid
+      userId: identity.userId,
+      firebaseUid: identity.firebaseUid
     });
     return jsonResponse({ message: "Aid request received (demo mode)", aidRequest: created }, 201);
   }
@@ -87,6 +103,7 @@ export async function POST(request: NextRequest) {
   if (authResult.error) {
     return authResult.error;
   }
+  const identity = getSessionIdentity(authResult);
 
   try {
     const database = await getMongoDatabase();
@@ -95,8 +112,8 @@ export async function POST(request: NextRequest) {
 
     const document = {
       ...payload,
-      userId: payload.userId ?? authResult.session.user?._id,
-      firebaseUid: payload.firebaseUid ?? authResult.session.firebase.uid,
+      userId: identity.userId,
+      firebaseUid: identity.firebaseUid,
       status: payload.status ?? "pending",
       createdAt: now,
       updatedAt: now
@@ -108,8 +125,8 @@ export async function POST(request: NextRequest) {
 
     await Promise.allSettled([
       createNotification(database, {
-        userId: typeof document.userId === "string" ? document.userId : undefined,
-        firebaseUid: typeof document.firebaseUid === "string" ? document.firebaseUid : undefined,
+        userId: typeof identity.userId === "string" ? identity.userId : undefined,
+        firebaseUid: typeof identity.firebaseUid === "string" ? identity.firebaseUid : undefined,
         title: "Aid request submitted",
         message: `Your ${category} has been submitted and is now under review.`,
         type: "financial-aid",
@@ -117,7 +134,7 @@ export async function POST(request: NextRequest) {
         relatedAidRequestId: aidRequestId
       }),
       createNotification(database, {
-        audienceRoles: ["admin", "super_admin"],
+        audienceRoles: ["admin", "faculty", "super_admin"],
         title: "New aid request",
         message: `A student submitted a new ${category}.`,
         type: "financial-aid",
@@ -159,3 +176,4 @@ export async function POST(request: NextRequest) {
     throw error;
   }
 }
+
