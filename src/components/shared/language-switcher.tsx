@@ -6,9 +6,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type LanguageSwitcherProps = {
   className?: string;
+  compactOnMobile?: boolean;
 };
 
-export function LanguageSwitcher({ className = "" }: LanguageSwitcherProps) {
+export function LanguageSwitcher({ className = "", compactOnMobile = false }: LanguageSwitcherProps) {
   const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -53,20 +54,37 @@ export function LanguageSwitcher({ className = "" }: LanguageSwitcherProps) {
     <div ref={wrapperRef} className={`relative inline-block ${className}`} aria-label="Switch language">
       <button
         type="button"
-        className="inline-flex items-center justify-between gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:bg-slate-900/70"
+        className={[
+          "inline-flex items-center justify-between gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:bg-slate-900/70",
+          compactOnMobile ? "px-2.5 sm:px-3" : "",
+        ].join(" ")}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
         <span className="flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+          <span
+            className={[
+              "grid place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary",
+              compactOnMobile ? "h-6 w-6 sm:h-7 sm:w-7" : "h-7 w-7",
+            ].join(" ")}
+          >
             {selected.shortLabel}
           </span>
-          <span className="whitespace-nowrap" lang={selected.lang}>
+          <span
+            className={compactOnMobile ? "hidden whitespace-nowrap sm:inline" : "whitespace-nowrap"}
+            lang={selected.lang}
+          >
             {selected.label}
           </span>
         </span>
-        <ChevronDown className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" aria-hidden="true" />
+        <ChevronDown
+          className={[
+            "text-slate-500 dark:text-slate-400",
+            compactOnMobile ? "h-3 w-3 sm:h-3.5 sm:w-3.5" : "h-3.5 w-3.5",
+          ].join(" ")}
+          aria-hidden="true"
+        />
       </button>
 
       <div
