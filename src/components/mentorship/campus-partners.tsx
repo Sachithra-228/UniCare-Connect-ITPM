@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { Badge } from "@/components/shared/badge";
 import { useLanguage } from "@/context/language-context";
 

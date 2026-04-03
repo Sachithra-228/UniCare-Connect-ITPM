@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card } from "@/components/shared/card";
-import { Button } from "@/components/shared/button";
+import { Card } from "@/components/shared/Card";
+import { Button } from "@/components/shared/Button";
 import type {
   CampusAnnouncementItem,
   CampusClubItem,

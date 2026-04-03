@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import {
   DASHBOARD_ROLE_CONFIG,
   DASHBOARD_ROLE_ORDER,

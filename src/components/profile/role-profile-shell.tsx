@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { ReactNode, useMemo, useState } from "react";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { useAuth } from "@/context/auth-context";
 
 type ProfileTabId = "profile" | "preferences";

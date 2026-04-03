@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { useLanguage } from "@/context/language-context";
 import {
   Bar,

@@ -1,7 +1,7 @@
 ﻿"use client";
 
-import { Card } from "@/components/shared/card";
-import { Button } from "@/components/shared/button";
+import { Card } from "@/components/shared/Card";
+import { Button } from "@/components/shared/Button";
 import { useLanguage } from "@/context/language-context";
 
 const outreach = [
