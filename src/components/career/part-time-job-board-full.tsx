@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -9,7 +9,7 @@ import {
   Globe2,
   MapPin
 } from "lucide-react";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { Badge } from "@/components/shared/badge";
 import type { JobListing } from "@/types";
 

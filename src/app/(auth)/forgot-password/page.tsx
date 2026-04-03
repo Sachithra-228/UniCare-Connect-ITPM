@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
-import { Button } from "@/components/shared/button";
-import { Input } from "@/components/shared/input";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
 import { useLanguage } from "@/context/language-context";
 
 export default function ForgotPasswordPage() {

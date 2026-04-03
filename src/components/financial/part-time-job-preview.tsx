@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { Badge } from "@/components/shared/badge";
 import { demoJobs } from "@/lib/demo-data";
 import { useLanguage } from "@/context/language-context";

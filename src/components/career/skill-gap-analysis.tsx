@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { useLanguage } from "@/context/language-context";
 
 export function SkillGapAnalysis() {

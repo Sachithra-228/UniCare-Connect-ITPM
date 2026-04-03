@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { Badge } from "@/components/shared/badge";
 import type { Scholarship } from "@/types";
 import { useLanguage } from "@/context/language-context";

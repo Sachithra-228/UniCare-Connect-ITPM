@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
-import { Button } from "@/components/shared/button";
+import { Button } from "@/components/shared/Button";
 import { useLanguage } from "@/context/language-context";
 
 type ErrorProps = {

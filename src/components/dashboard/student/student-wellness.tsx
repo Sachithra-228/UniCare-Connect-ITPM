@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { MoodTracker } from "@/components/wellness/mood-tracker";
 import { CounselorBooking } from "@/components/wellness/counselor-booking";
 import { PeerSupport } from "@/components/wellness/peer-support";

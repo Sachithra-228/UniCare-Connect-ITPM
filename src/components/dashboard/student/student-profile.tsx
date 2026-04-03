@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card } from "@/components/shared/card";
-import { Button } from "@/components/shared/button";
-import { Input } from "@/components/shared/input";
+import { Card } from "@/components/shared/Card";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
 import { useAuth } from "@/context/auth-context";
 
 type ProfileTab = "profile" | "settings" | "security";

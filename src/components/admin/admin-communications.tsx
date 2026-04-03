@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 
 type CommunicationMessage = {
   _id: string;

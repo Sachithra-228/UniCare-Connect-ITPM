@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { StatCard } from "@/components/shared/stat-card";
-import { Button } from "@/components/shared/button";
-import { Input } from "@/components/shared/input";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
 import { AdminAnalytics } from "./admin-analytics";
 import { AdminCounselorSupportSection } from "./admin-counselor-support";
 import { AdminPeerSupportModerationSection } from "./admin-peer-support";

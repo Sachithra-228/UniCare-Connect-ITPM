@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Card } from "@/components/shared/card";
-import { Button } from "@/components/shared/button";
+import { Card } from "@/components/shared/Card";
+import { Button } from "@/components/shared/Button";
 
 type PeerPost = {
   _id: string;

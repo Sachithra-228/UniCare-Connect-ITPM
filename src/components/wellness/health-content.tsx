@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { Select } from "@/components/shared/select";
-import { Input } from "@/components/shared/input";
+import { Input } from "@/components/shared/Input";
 
 type WellnessResource = {
   _id: string;
