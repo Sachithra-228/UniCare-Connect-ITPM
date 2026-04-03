@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/shared/Card";
-import { Select } from "@/components/shared/select";
+import { Select } from "@/components/shared/Select";
 import { Input } from "@/components/shared/Input";
 
 type WellnessResource = {
