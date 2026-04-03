@@ -1,4 +1,4 @@
-import type { Db } from "mongodb";
+import type { Collection } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { isDemoMode, jsonResponse } from "@/lib/api";
 import { demoUsers } from "@/lib/demo-data";
@@ -23,7 +23,7 @@ function isMaxTimeError(error: unknown): boolean {
 }
 
 async function logUserLookupExplain(
-  usersCollection: ReturnType<Db["collection"]>,
+  usersCollection: Collection<DbUserDocument>,
   query: Record<string, unknown>,
   hint: string
 ) {
