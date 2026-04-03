@@ -911,7 +911,7 @@ function NgoReportsSection() {
         id: `application-${application._id}`,
         date: application.appliedAt,
         title: "Student application submitted",
-        detail: `${application.studentInitials} requested ${fmtLKR(application.amountRequested)} (${application.status.replaceAll("_", " ")})`,
+        detail: `${application.studentInitials} requested ${fmtLKR(application.amountRequested)} (${String(application.status).replace(/_/g, " ")})`,
       })),
       ...selectedProgramVerificationUpdates.map((notification) => ({
         id: `verification-${notification._id}`,
@@ -976,11 +976,11 @@ function NgoReportsSection() {
 
     const esc = (value: string) =>
       value
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 
     const generatedAt = new Date().toLocaleString("en-LK");
     const selectedProgramChartSeries = [

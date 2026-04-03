@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import type { ObjectId } from "mongodb";
 import { isDemoMode, isMongoConnectionError, jsonResponse } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
 import {
@@ -10,7 +11,7 @@ import {
 } from "@/lib/parent-api-auth";
 
 type ParentResourceDoc = {
-  _id?: unknown;
+  _id?: ObjectId;
   parentUserId?: string;
   parentFirebaseUid?: string;
   userEmail?: string;

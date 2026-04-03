@@ -10,6 +10,7 @@ import type { MentorshipSession } from "@/types";
 
 type EnrichedSession = MentorshipSession & {
   menteeName?: string;
+  studentFirebaseUid?: string;
 };
 
 type MenteeSummary = {

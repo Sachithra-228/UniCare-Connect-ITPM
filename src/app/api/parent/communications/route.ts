@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import type { ObjectId } from "mongodb";
 import { isDemoMode, isMongoConnectionError, jsonResponse } from "@/lib/api";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { createNotification } from "@/lib/notifications";
@@ -12,7 +13,7 @@ import {
 import type { UserRole } from "@/types";
 
 type ParentCommunicationDoc = {
-  _id?: unknown;
+  _id?: ObjectId;
   parentUserId?: string;
   parentFirebaseUid?: string;
   audience?: string;
