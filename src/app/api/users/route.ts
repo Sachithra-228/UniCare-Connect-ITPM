@@ -282,8 +282,7 @@ export async function POST(request: NextRequest) {
       return value;
     };
 
-    const compareFields = { ...setFields };
-    delete compareFields.updatedAt;
+    const { updatedAt: _updatedAt, ...compareFields } = setFields;
     const changedFields: string[] = [];
     if (existingUser) {
       for (const [key, nextValue] of Object.entries(compareFields)) {
