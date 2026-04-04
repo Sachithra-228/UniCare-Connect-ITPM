@@ -13,7 +13,6 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@next/swc-win32-x64-msvc": "^14.2.5",
     "@svg-maps/sri-lanka": "^2.0.0",
     "clsx": "^2.1.1",
     "docx": "^9.5.3",

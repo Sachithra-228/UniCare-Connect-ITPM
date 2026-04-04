@@ -80,16 +80,16 @@ export async function GET(request: NextRequest) {
   }
 
   const currentRole = authResult.session.user?.role;
-  const isAdmin = currentRole === "admin" || currentRole === "super_admin";
+  const isAdmin = currentRole === "admin" || currentRole === "faculty" || currentRole === "super_admin";
   const isEmployer = currentRole === "employer";
 
   if (scope === "all") {
-    const roleCheck = requireRole(currentRole, ["admin", "super_admin"]);
+    const roleCheck = requireRole(currentRole, ["admin", "faculty", "super_admin"]);
     if (roleCheck) return roleCheck;
   }
 
   if (scope === "mine") {
-    const roleCheck = requireRole(currentRole, ["admin", "super_admin", "employer"]);
+    const roleCheck = requireRole(currentRole, ["admin", "faculty", "super_admin", "employer"]);
     if (roleCheck) return roleCheck;
   }
 
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     return authResult.error;
   }
 
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin", "employer"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin", "employer"]);
   if (roleCheck) {
     return roleCheck;
   }
@@ -232,7 +232,10 @@ export async function POST(request: NextRequest) {
           ? `Your job "${title}" is pending admin review.`
           : `Your job "${title}" is now visible to students.`,
       type: "career",
-      sectionId: creatorRole === "admin" || creatorRole === "super_admin" ? "career-services" : "job-listings",
+      sectionId:
+        creatorRole === "admin" || creatorRole === "faculty" || creatorRole === "super_admin"
+          ? "career-services"
+          : "job-listings",
       relatedJobId: jobId
     })
   ];
@@ -240,7 +243,7 @@ export async function POST(request: NextRequest) {
   if (moderationStatus === "Pending") {
     notifications.push(
       createNotification(database, {
-        audienceRoles: ["admin", "super_admin"],
+        audienceRoles: ["admin", "faculty", "super_admin"],
         title: "Job posting needs review",
         message: `A new job "${title}" is waiting for approval.`,
         type: "career",
@@ -270,3 +273,4 @@ export async function POST(request: NextRequest) {
     201
   );
 }
+

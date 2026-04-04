@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card } from "@/components/shared/card";
-import { Badge } from "@/components/shared/badge";
-import { Button } from "@/components/shared/button";
+import { Card } from "@/components/shared/Card";
+import { Badge } from "@/components/shared/Badge";
+import { Button } from "@/components/shared/Button";
 import type {
   ApplicationDocumentEntry,
   ApplicationEntry,
@@ -12,6 +12,7 @@ import type {
   ApplicationStatus,
   MyApplicationsPayload
 } from "@/lib/my-applications-types";
+import { getNgoApplications } from "@/lib/ngo-demo-store";
 
 type MyAppsTab = "overview" | "aid" | "documents" | "feedback";
 
@@ -53,6 +54,7 @@ export function StudentMyApplications() {
   const [aidRequests, setAidRequests] = useState<ApplicationEntry[]>([]);
   const [jobApplications, setJobApplications] = useState<ApplicationEntry[]>([]);
   const [scholarshipApplications, setScholarshipApplications] = useState<ApplicationEntry[]>([]);
+  const [ngoApplications, setNgoApplications] = useState<ApplicationEntry[]>([]);
   const [documents, setDocuments] = useState<ApplicationDocumentEntry[]>([]);
   const [feedback, setFeedback] = useState<ApplicationFeedbackEntry[]>([]);
 
@@ -79,11 +81,24 @@ export function StudentMyApplications() {
         );
         setDocuments(Array.isArray(payload.documents) ? payload.documents : []);
         setFeedback(Array.isArray(payload.feedback) ? payload.feedback : []);
+        
+        // Add NGO applications from the demo store
+        const demoNgoApps = getNgoApplications().filter(a => a.studentId === "student-123" || a.studentId === "std123");
+        setNgoApplications(demoNgoApps.map(a => ({
+          _id: a._id,
+          title: a.programTitle,
+          organization: "NGO Partner",
+          kind: "ngo",
+          status: a.status === "pending_admin" ? "Pending" : a.status === "approved_by_ngo" ? "Approved" : a.status === "rejected" ? "Rejected" : "Under review",
+          submittedAt: a.appliedAt.split("T")[0]
+        } as ApplicationEntry)));
+
       })
       .catch(() => {
         setAidRequests([]);
         setJobApplications([]);
         setScholarshipApplications([]);
+        setNgoApplications([]);
         setDocuments([]);
         setFeedback([]);
         setError("Unable to load applications right now.");
@@ -96,9 +111,9 @@ export function StudentMyApplications() {
   }, [refreshApplications]);
 
   const allApplications = useMemo(() => {
-    const merged = [...aidRequests, ...scholarshipApplications, ...jobApplications];
+    const merged = [...aidRequests, ...scholarshipApplications, ...jobApplications, ...ngoApplications];
     return merged.sort((a, b) => Date.parse(b.submittedAt ?? "") - Date.parse(a.submittedAt ?? ""));
-  }, [aidRequests, scholarshipApplications, jobApplications]);
+  }, [aidRequests, scholarshipApplications, jobApplications, ngoApplications]);
 
   const submitLoggedApplication = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -285,6 +300,11 @@ export function StudentMyApplications() {
                       <p className="text-xs uppercase tracking-wide text-slate-500">Aid requests</p>
                       <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{aidRequests.length}</p>
                       <p className="mt-1 text-xs text-slate-500">From Financial Aid submissions.</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 text-sm dark:border-slate-700 dark:bg-slate-900/40">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">NGO Programs</p>
+                      <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{ngoApplications.length}</p>
+                      <p className="mt-1 text-xs text-slate-500">Tracked NGO support applications.</p>
                     </div>
                   </div>
 

@@ -1,12 +1,15 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { StatCard } from "@/components/shared/stat-card";
-import { Button } from "@/components/shared/button";
-import { Input } from "@/components/shared/input";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
 import { AdminAnalytics } from "./admin-analytics";
+import { AdminCounselorSupportSection } from "./admin-counselor-support";
+import { AdminPeerSupportModerationSection } from "./admin-peer-support";
+import { AdminCommunicationsSection } from "./admin-communications";
 import { useAuth } from "@/context/auth-context";
 import {
   defaultPreferences,
@@ -33,10 +36,18 @@ export function AdminSectionContent({ sectionId }: AdminSectionContentProps) {
         return AdminCareerServicesSection;
       case "mentorship-program":
         return AdminMentorshipProgramSection;
+      case "counselor-support":
+        return AdminCounselorSupportSection;
+      case "peer-support":
+        return AdminPeerSupportModerationSection;
       case "reports":
         return AdminReportsSection;
       case "announcements":
         return AdminAnnouncementsSection;
+      case "partnerships":
+        return AdminPartnershipsSection;
+      case "communications":
+        return AdminCommunicationsSection;
       case "profile":
         return AdminProfileSection;
       default:
@@ -218,10 +229,11 @@ function AdminOverviewSection() {
 function AdminVerificationsSection() {
   type VerificationItem = {
     id: string;
-    kind: "user" | "aid";
+    kind: "user" | "aid" | "ngo";
     type: string;
     role: string;
     status: string;
+    ngoDecision?: string;
     note: string;
     createdAt: string;
   };
@@ -243,9 +255,35 @@ function AdminVerificationsSection() {
       if (!response.ok) {
         setError(payload.message ?? "Unable to load verification queue.");
         setItems([]);
-        return;
+      } else {
+        const fetchedItems = Array.isArray(payload.items) ? payload.items : [];
+        import("@/lib/ngo-demo-store").then(({ getNgoApplications, getNgoBeneficiaries }) => {
+          const beneficiaries = getNgoBeneficiaries();
+          const ngoApps = getNgoApplications().filter(a => a.status === "pending_admin" || a.status === "verified_by_admin" || a.status === "rejected").map(app => {
+            const status = app.status === "pending_admin" ? "Pending" 
+                  : app.status === "verified_by_admin" ? "Approved" 
+                  : "Rejected";
+            
+            let ngoDecision = "";
+            if (app.status === "verified_by_admin") {
+              const b = beneficiaries.find(ben => ben.applicationId === app._id);
+              ngoDecision = b?.isDisbursed ? "Success" : "Pending";
+            }
+
+            return {
+              id: app._id,
+              kind: "ngo" as const,
+              type: "NGO Program Request",
+              role: "Student",
+              status,
+              ngoDecision,
+              note: `${app.programTitle} - ${app.amountRequested ? `Requested LKR ${app.amountRequested}` : "Needs Support"}`,
+              createdAt: app.appliedAt
+            };
+          });
+          setItems([...fetchedItems, ...ngoApps].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        });
       }
-      setItems(Array.isArray(payload.items) ? payload.items : []);
     } catch {
       setError("Unable to load verification queue.");
       setItems([]);
@@ -276,6 +314,14 @@ function AdminVerificationsSection() {
     setUpdatingId(item.id);
     setError(null);
     try {
+      if (item.kind === "ngo") {
+        const { updateNgoApplicationStatus } = await import("@/lib/ngo-demo-store");
+        updateNgoApplicationStatus(item.id, decision === "approve" ? "verified_by_admin" : "rejected");
+        await loadItems();
+        setUpdatingId(null);
+        return;
+      }
+
       const response =
         item.kind === "user"
           ? await fetch("/api/admin/verifications", {
@@ -332,10 +378,11 @@ function AdminVerificationsSection() {
         </p>
       ) : null}
       <Card>
-        <div className="grid grid-cols-5 gap-3 border-b border-slate-200 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:border-slate-800">
+        <div className="grid grid-cols-6 gap-3 border-b border-slate-200 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:border-slate-800">
           <span>Type</span>
           <span>Role</span>
           <span>Status</span>
+          <span>NGO Decision</span>
           <span>Notes</span>
           <span className="text-right">Action</span>
         </div>
@@ -349,10 +396,19 @@ function AdminVerificationsSection() {
               const status = normalizeStatus(item.status);
               const actionDisabled = updatingId === item.id || !canAction(item);
               return (
-                <div key={item.id} className="grid grid-cols-5 gap-3 px-4 py-3">
+                <div key={item.id} className="grid grid-cols-6 gap-3 px-4 py-3">
                   <span className="font-medium">{item.type}</span>
                   <span>{item.role}</span>
                   <span className={`text-xs font-semibold ${statusStyle(item.status)}`}>{status}</span>
+                  <span>
+                    {item.ngoDecision === "Success" ? (
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">✨ Success</span>
+                    ) : item.ngoDecision === "Pending" ? (
+                      <span className="text-xs font-medium text-amber-600 dark:text-amber-400">⏳ Pending</span>
+                    ) : (
+                      <span className="text-xs text-slate-400">N/A</span>
+                    )}
+                  </span>
                   <span className="text-slate-500 dark:text-slate-400">
                     {item.note} {item.createdAt ? `(${formatDate(item.createdAt)})` : ""}
                   </span>
@@ -363,7 +419,7 @@ function AdminVerificationsSection() {
                       onClick={() => applyDecision(item, "approve")}
                       disabled={actionDisabled || status === "Approved"}
                     >
-                      {updatingId === item.id ? "Updating..." : "Approve"}
+                      {updatingId === item.id ? "Updating..." : item.kind === "ngo" ? "Verify" : "Approve"}
                     </button>
                     <button
                       type="button"
@@ -401,10 +457,15 @@ function AdminFinancialOversightSection() {
 
   const [requests, setRequests] = useState<AidQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [oversightError, setOversightError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+  
+  // NGO Funding tracking
+  const [ngoFunding, setNgoFunding] = useState<any[]>([]);
+  const [updatingNgoId, setUpdatingNgoId] = useState<string | null>(null);
+  const [ngoNotifications, setNgoNotifications] = useState<any[]>([]);
 
   const requestId = (request: AidQueueItem, index: number) => request._id || request.id || `request-${index}`;
 
@@ -440,12 +501,12 @@ function AdminFinancialOversightSection() {
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setOversightError(null);
     try {
       const response = await fetch("/api/aid-requests?scope=all");
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        setError((body as { message?: string; error?: string }).message ?? "Unable to load aid requests.");
+        setOversightError((body as { message?: string; error?: string }).message ?? "Unable to load aid requests.");
         setRequests([]);
         return;
       }
@@ -463,8 +524,15 @@ function AdminFinancialOversightSection() {
         });
         return next;
       });
+      
+      // Load NGO Funding & Notifications
+      import("@/lib/ngo-demo-store").then(({ getNgoFundingRecords, getAdminNotifications }) => {
+        setNgoFunding(getNgoFundingRecords());
+        setNgoNotifications(getAdminNotifications());
+      });
+      
     } catch {
-      setError("Unable to load aid requests.");
+      setOversightError("Unable to load aid requests.");
       setRequests([]);
     } finally {
       setLoading(false);
@@ -477,10 +545,10 @@ function AdminFinancialOversightSection() {
 
   const updateRequestStatus = async (id: string, status: "Approved" | "Rejected") => {
     setUpdatingId(id);
-    setError(null);
+    setOversightError(null);
     const note = (reviewNotes[id] ?? "").trim();
     if (status === "Rejected" && !note) {
-      setError("Please add a review note before rejecting this request.");
+      setOversightError("Please add a review note before rejecting this request.");
       setUpdatingId(null);
       return;
     }
@@ -494,13 +562,13 @@ function AdminFinancialOversightSection() {
 
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        setError((body as { message?: string; error?: string }).message ?? "Unable to update request status.");
+        setOversightError((body as { message?: string; error?: string }).message ?? "Unable to update request status.");
         return;
       }
 
       await loadRequests();
     } catch {
-      setError("Unable to update request status.");
+      setOversightError("Unable to update request status.");
     } finally {
       setUpdatingId(null);
     }
@@ -549,7 +617,7 @@ function AdminFinancialOversightSection() {
           ))}
         </div>
 
-        {error ? <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p> : null}
+        {oversightError ? <p className="text-sm text-rose-600 dark:text-rose-400">{oversightError}</p> : null}
 
         {loading ? (
           <p className="text-sm text-slate-500">Loading funding queue...</p>
@@ -626,6 +694,99 @@ function AdminFinancialOversightSection() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </Card>
+
+      <Card className="space-y-4 p-4 mt-6">
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white">NGO Funding Distribution</h3>
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          Verify funds allocated by NGOs before they are disbursed to student accounts.
+        </p>
+        
+        {ngoFunding.length === 0 ? (
+          <p className="text-sm text-slate-500">No NGO funding records available.</p>
+        ) : (
+          <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
+            {ngoFunding.filter(f => f.status === "allocated" || f.status === "pending").map((fund) => (
+              <div key={fund._id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-medium text-slate-900 dark:text-slate-100">{fund.allocatedTo}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Donor: {fund.donorName} ({fund.donorType})
+                  </p>
+                  <p className="text-xs font-semibold text-primary mt-1">
+                    Amount: LKR {fund.amount.toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                    {fund.status}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setUpdatingNgoId(fund._id);
+                      // Faking delay for demo
+                      await new Promise(r => setTimeout(r, 600));
+                      const { updateNgoFundingStatus } = await import("@/lib/ngo-demo-store");
+                      updateNgoFundingStatus(fund._id, "disbursed");
+                      const { getNgoFundingRecords } = await import("@/lib/ngo-demo-store");
+                      setNgoFunding(getNgoFundingRecords());
+                      setUpdatingNgoId(null);
+                    }}
+                    disabled={updatingNgoId === fund._id}
+                    className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  >
+                    {updatingNgoId === fund._id ? "Verifying..." : "Verify Distribution"}
+                  </button>
+                </div>
+              </div>
+            ))}
+            {ngoFunding.filter(f => f.status === "allocated" || f.status === "pending").length === 0 && (
+              <p className="text-sm text-slate-500 pt-2 pb-1">All current NGO distributions have been verified and disbursed.</p>
+            )}
+          </div>
+        )}
+      </Card>
+
+      <Card className="space-y-4 p-4 mt-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold text-emerald-700 dark:text-emerald-400">NGO Donation Alerts</h3>
+          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 uppercase">Live</span>
+        </div>
+        <p className="text-sm text-slate-600 dark:text-slate-300 italic">
+          Confirmed disbursements from NGO partners. Funds are ready for student account transfer.
+        </p>
+
+        {ngoNotifications.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center dark:border-slate-800">
+            <p className="text-sm text-slate-400">No recent donation confirmations from NGOs.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {ngoNotifications.map((notif) => (
+              <div key={notif._id} className="rounded-xl border border-emerald-100 bg-emerald-50/30 p-4 dark:border-emerald-800/30 dark:bg-emerald-900/10 transition hover:bg-emerald-50/50">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <p className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Successful Donation</p>
+                    </div>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                      NGO <span className="font-bold text-primary">{notif.ngoName}</span> has fulfilled request for <span className="font-bold underline">{notif.beneficiaryInitials}</span>.
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Program: {notif.programTitle} • University: {notif.university}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-black text-emerald-600">LKR {notif.amount.toLocaleString()}</p>
+                    <p className="text-[10px] text-slate-400">{new Date(notif.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </Card>
@@ -3175,5 +3336,60 @@ function AdminProfileSection() {
   );
 }
 
+function AdminPartnershipsSection() {
+  const [partnerships, setPartnerships] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    import("@/lib/ngo-demo-store").then(({ getNgoPartnerships }) => {
+      setPartnerships(getNgoPartnerships().filter(p => p.partnerType === "admin" || p.status === "active"));
+      setLoading(false);
+    });
+  }, []);
 
+  return (
+    <div className="space-y-6">
+      <Card className="border-primary/20 bg-primary/5 p-4 dark:border-primary/10 dark:bg-primary/10">
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          Partner organizations collaborate with University Admins to co-manage scholarships, verify eligibility, 
+          and track resource distribution. View active joint initiatives below.
+        </p>
+      </Card>
+      
+      {loading ? (
+        <p className="text-sm text-slate-500">Loading active partnerships...</p>
+      ) : partnerships.length === 0 ? (
+        <p className="text-sm text-slate-500">No active partnerships found.</p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {partnerships.map((partner) => (
+            <Card key={partner._id} className="p-5 flex flex-col items-start hover:shadow-md transition-shadow">
+              <span className="mb-2 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                {new Date(partner.since).getFullYear()} Partnership
+              </span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-1">{partner.partnerName}</h3>
+              <p className="text-sm text-primary font-medium mb-3">{partner.focusArea}</p>
+              
+              <div className="w-full mt-auto space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Your Role</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">{partner.role}</p>
+                </div>
+                {partner.jointInitiatives && partner.jointInitiatives.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Joint Initiatives</p>
+                    <ul className="list-disc pl-4 text-sm text-slate-600 dark:text-slate-400">
+                      {partner.jointInitiatives.map((ji: string, i: number) => (
+                        <li key={i}>{ji}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

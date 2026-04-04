@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   if (authResult.error) return authResult.error;
 
   const scope = request.nextUrl.searchParams.get("scope");
-  const isAdmin = ["admin", "super_admin"].includes(authResult.session.user?.role ?? "");
+  const isAdmin = ["admin", "faculty", "super_admin"].includes(authResult.session.user?.role ?? "");
   const userId = authResult.session.user?._id;
   const firebaseUid = authResult.session.firebase.uid;
 
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (scope === "all" && !isAdmin) {
-    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin"]);
+    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
     if (roleCheck) return roleCheck;
   }
 
@@ -165,13 +165,14 @@ export async function POST(request: NextRequest) {
       sectionId: "wellness"
     }),
     createNotification(database, {
-      audienceRoles: ["admin", "super_admin"],
+      audienceRoles: ["admin", "faculty", "super_admin"],
       title: "New counselor booking request",
       message: `${studentName} requested a wellness counselor booking.`,
       type: "wellness",
-      sectionId: "reports"
+      sectionId: "counselor-support"
     })
   ]);
 
   return jsonResponse({ message: "Booking request submitted", booking: { ...document, _id: bookingId } }, 201);
 }
+

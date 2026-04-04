@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
     return authResult.error;
   }
 
-  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "super_admin", "mentor"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin", "mentor"]);
   if (roleCheck) {
     return roleCheck;
   }
@@ -208,3 +208,4 @@ export async function POST(request: NextRequest) {
     throw error;
   }
 }
+

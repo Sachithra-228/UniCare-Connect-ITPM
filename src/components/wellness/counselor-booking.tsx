@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Card } from "@/components/shared/card";
-import { Badge } from "@/components/shared/badge";
-import { Button } from "@/components/shared/button";
-import { Input } from "@/components/shared/input";
-import { Select } from "@/components/shared/select";
+import { Card } from "@/components/shared/Card";
+import { Badge } from "@/components/shared/Badge";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
+import { Select } from "@/components/shared/Select";
 import { TextArea } from "@/components/shared/text-area";
 
 type Counselor = {
@@ -59,6 +59,21 @@ export function CounselorBooking() {
 
   useEffect(() => {
     refreshData();
+  }, [refreshData]);
+
+  useEffect(() => {
+    const canPoll = () => document.visibilityState === "visible" && document.hasFocus();
+    const poll = () => {
+      if (canPoll()) refreshData();
+    };
+    const intervalId = window.setInterval(poll, 30000);
+    window.addEventListener("focus", poll);
+    document.addEventListener("visibilitychange", poll);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", poll);
+      document.removeEventListener("visibilitychange", poll);
+    };
   }, [refreshData]);
 
   const selectedCounselor = useMemo(

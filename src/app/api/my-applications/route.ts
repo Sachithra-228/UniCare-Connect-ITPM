@@ -266,7 +266,7 @@ export async function POST(request: NextRequest) {
       sectionId: "my-applications"
     }),
     createNotification(database, {
-      audienceRoles: ["admin", "super_admin"],
+      audienceRoles: ["admin", "faculty", "super_admin"],
       title: "Student application update",
       message: `${userName} logged a ${kind} application: ${title}.`,
       type: "application",
@@ -290,3 +290,4 @@ export async function POST(request: NextRequest) {
     201
   );
 }
+

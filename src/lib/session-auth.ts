@@ -1,3 +1,4 @@
+import type { Collection } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { isDemoMode, jsonResponse } from "@/lib/api";
 import { demoUsers } from "@/lib/demo-data";
@@ -9,6 +10,41 @@ export const SESSION_COOKIE_NAME = "session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24; // 24 hours - cookie expires after 1 day
 const USER_CACHE_TTL_MS = 30 * 1000;
 const USER_CACHE_MAX_ENTRIES = 500;
+const shouldLogTiming = process.env.DEBUG_AUTH_TIMING === "true";
+const inflightUserLookups = new Map<string, Promise<UserProfile | null>>();
+const SESSION_USER_LOOKUP_MAX_TIME_MS = Number(process.env.SESSION_USER_LOOKUP_MAX_TIME_MS ?? "5000");
+const shouldLogExplain = process.env.DEBUG_AUTH_EXPLAIN === "true" && process.env.NODE_ENV !== "production";
+
+function isMaxTimeError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const code = (error as { code?: number }).code;
+  const message = String((error as { message?: string }).message ?? "");
+  return code === 50 || message.toLowerCase().includes("maxtimems");
+}
+
+async function logUserLookupExplain(
+  usersCollection: Collection<DbUserDocument>,
+  query: Record<string, unknown>,
+  hint: string
+) {
+  if (!shouldLogExplain) return;
+  try {
+    const explain = await usersCollection
+      .find(query)
+      .hint(hint)
+      .maxTimeMS(SESSION_USER_LOOKUP_MAX_TIME_MS)
+      .explain("executionStats");
+    const stats = (explain as { executionStats?: { totalDocsExamined?: number; totalKeysExamined?: number } })
+      .executionStats;
+    console.info(
+      `[auth] explain ${hint} docsExamined=${stats?.totalDocsExamined ?? "?"} keysExamined=${
+        stats?.totalKeysExamined ?? "?"
+      }`
+    );
+  } catch (error) {
+    console.warn("[auth] explain failed:", error instanceof Error ? error.message : error);
+  }
+}
 
 type DbUserDocument = {
   _id: { toString: () => string };
@@ -138,6 +174,7 @@ export function clearSessionCookie(response: NextResponse) {
 }
 
 export async function getSessionFromRequest(request: NextRequest) {
+  const sessionStart = shouldLogTiming ? Date.now() : 0;
   if (isDemoMode()) {
     return {
       idToken: "demo-session",
@@ -156,7 +193,11 @@ export async function getSessionFromRequest(request: NextRequest) {
     return null;
   }
 
+  const verifyStart = shouldLogTiming ? Date.now() : 0;
   const firebase = await verifyFirebaseIdToken(idToken);
+  if (shouldLogTiming) {
+    console.info(`[auth] session verify in ${Date.now() - verifyStart}ms`);
+  }
 
   if (!process.env.MONGODB_URI) {
     return { idToken, firebase, user: null };
@@ -164,24 +205,98 @@ export async function getSessionFromRequest(request: NextRequest) {
 
   const cachedUser = getCachedSessionUser(firebase);
   if (cachedUser) {
+    if (shouldLogTiming) {
+      console.info(`[auth] session user cache hit in ${Date.now() - sessionStart}ms`);
+    }
     return { idToken, firebase, user: cachedUser.user };
   }
 
   try {
-    const database = await getMongoDatabase();
-    const usersCollection = database.collection<DbUserDocument>("users");
-    const userDocument =
-      (await usersCollection.findOne({ firebaseUid: firebase.uid })) ??
-      (firebase.email ? await usersCollection.findOne({ email: firebase.email }) : null);
+    const lookupKey = buildSessionCacheKey(firebase);
+    const inflight = inflightUserLookups.get(lookupKey);
+    if (inflight) {
+      if (shouldLogTiming) {
+        console.info(`[auth] session user inflight await`);
+      }
+      const user = await inflight;
+      if (shouldLogTiming) {
+        console.info(`[auth] session total in ${Date.now() - sessionStart}ms`);
+      }
+      return { idToken, firebase, user };
+    }
 
-    const user = userDocument ? mapUserDocument(userDocument) : null;
-    setCachedSessionUser(firebase, user);
+    const lookupPromise = (async () => {
+      const dbStart = shouldLogTiming ? Date.now() : 0;
+      const database = await getMongoDatabase();
+      const usersCollection = database.collection<DbUserDocument>("users");
 
-    return {
-      idToken,
-      firebase,
-      user
-    };
+      const uidQueryStart = shouldLogTiming ? Date.now() : 0;
+      let userByUid: DbUserDocument | null = null;
+      try {
+        userByUid = await usersCollection.findOne(
+          { firebaseUid: firebase.uid },
+          { hint: "users_firebaseUid", maxTimeMS: SESSION_USER_LOOKUP_MAX_TIME_MS }
+        );
+      } catch (error) {
+        if (isMaxTimeError(error)) {
+          console.warn(
+            `[auth] session uid lookup exceeded ${SESSION_USER_LOOKUP_MAX_TIME_MS}ms; skipping user lookup`
+          );
+          setCachedSessionUser(firebase, null);
+          return null;
+        }
+        throw error;
+      } finally {
+        if (shouldLogTiming) {
+          console.info(`[auth] session uid lookup in ${Date.now() - uidQueryStart}ms`);
+        }
+        await logUserLookupExplain(usersCollection, { firebaseUid: firebase.uid }, "users_firebaseUid");
+      }
+
+      let userDocument = userByUid;
+      const normalizedEmail = firebase.email ? firebase.email.toLowerCase() : null;
+      if (!userDocument && normalizedEmail) {
+        const emailQueryStart = shouldLogTiming ? Date.now() : 0;
+        try {
+          userDocument = await usersCollection.findOne(
+            { email: normalizedEmail },
+            { hint: "users_email", maxTimeMS: SESSION_USER_LOOKUP_MAX_TIME_MS }
+          );
+        } catch (error) {
+          if (isMaxTimeError(error)) {
+            console.warn(
+              `[auth] session email lookup exceeded ${SESSION_USER_LOOKUP_MAX_TIME_MS}ms; skipping user lookup`
+            );
+            setCachedSessionUser(firebase, null);
+            return null;
+          }
+          throw error;
+        } finally {
+          if (shouldLogTiming) {
+            console.info(`[auth] session email lookup in ${Date.now() - emailQueryStart}ms`);
+          }
+          await logUserLookupExplain(usersCollection, { email: normalizedEmail }, "users_email");
+        }
+      }
+
+      if (shouldLogTiming) {
+        console.info(`[auth] session db lookup in ${Date.now() - dbStart}ms`);
+      }
+
+      const user = userDocument ? mapUserDocument(userDocument) : null;
+      setCachedSessionUser(firebase, user);
+      return user;
+    })();
+
+    inflightUserLookups.set(lookupKey, lookupPromise);
+    const user = await lookupPromise.finally(() => {
+      inflightUserLookups.delete(lookupKey);
+    });
+
+    if (shouldLogTiming) {
+      console.info(`[auth] session total in ${Date.now() - sessionStart}ms`);
+    }
+    return { idToken, firebase, user };
   } catch {
     return {
       idToken,

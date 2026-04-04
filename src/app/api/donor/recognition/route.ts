@@ -1,6 +1,9 @@
 import { NextRequest } from "next/server";
 import { isDemoMode, isMongoConnectionError, jsonResponse } from "@/lib/api";
-import { getDemoDonorRecognitionOverview } from "@/lib/donor-recognition-demo-store";
+import {
+  addDemoDonorRecognitionStory,
+  getDemoDonorRecognitionOverview
+} from "@/lib/donor-recognition-demo-store";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { requireRole, requireSession } from "@/lib/session-auth";
 
@@ -29,6 +32,10 @@ function toIso(value: Date | string | undefined) {
     return value;
   }
   return new Date().toISOString();
+}
+
+function normalizeText(value: unknown, max = 180) {
+  return String(value ?? "").trim().slice(0, max);
 }
 
 export async function GET(request: NextRequest) {
@@ -85,6 +92,62 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     if (isMongoConnectionError(error)) {
       return jsonResponse(getDemoDonorRecognitionOverview());
+    }
+    throw error;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const payload = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  const authResult = await requireSession(request);
+  if (authResult.error) return authResult.error;
+  const roleCheck = requireRole(authResult.session.user?.role, ["donor", "super_admin"]);
+  if (roleCheck) return roleCheck;
+
+  const donorUserId = authResult.session.user?._id;
+  const donorFirebaseUid = authResult.session.firebase.uid;
+  const title = normalizeText(payload.title, 140);
+  const summary = normalizeText(payload.summary, 600);
+  const category = normalizeText(payload.category, 80) || "Student support";
+  if (!title || !summary) {
+    return jsonResponse({ message: "Title and summary are required." }, 400);
+  }
+
+  if (isDemoMode()) {
+    const created = addDemoDonorRecognitionStory({ title, summary, category });
+    return jsonResponse({ message: "Recognition story added.", story: created }, 201);
+  }
+
+  try {
+    const database = await getMongoDatabase();
+    const now = new Date();
+    const doc = {
+      donorUserId,
+      donorFirebaseUid,
+      title,
+      summary,
+      category,
+      createdAt: now,
+      updatedAt: now
+    };
+    const result = await database.collection("donor_recognition_stories").insertOne(doc);
+    return jsonResponse(
+      {
+        message: "Recognition story added.",
+        story: {
+          id: result.insertedId.toString(),
+          title,
+          summary,
+          category,
+          date: now.toISOString()
+        }
+      },
+      201
+    );
+  } catch (error) {
+    if (isMongoConnectionError(error)) {
+      const created = addDemoDonorRecognitionStory({ title, summary, category });
+      return jsonResponse({ message: "Recognition story added.", story: created }, 201);
     }
     throw error;
   }

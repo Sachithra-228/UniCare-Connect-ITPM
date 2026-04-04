@@ -1,11 +1,11 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card } from "@/components/shared/card";
-import { Input } from "@/components/shared/input";
-import { Select } from "@/components/shared/select";
-import { Badge } from "@/components/shared/badge";
-import { Button } from "@/components/shared/button";
+import { Card } from "@/components/shared/Card";
+import { Input } from "@/components/shared/Input";
+import { Select } from "@/components/shared/Select";
+import { Badge } from "@/components/shared/Badge";
+import { Button } from "@/components/shared/Button";
 import type { JobListing } from "@/types";
 import { useLanguage } from "@/context/language-context";
 

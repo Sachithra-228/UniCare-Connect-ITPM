@@ -2,7 +2,7 @@
 
 import { SectionHeading } from "@/components/shared/section-heading";
 import { StatCard } from "@/components/shared/stat-card";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { AdminAnalytics } from "@/components/admin/admin-analytics";
 import { useLanguage, type Language } from "@/context/language-context";
 

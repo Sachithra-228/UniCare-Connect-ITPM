@@ -2,6 +2,7 @@ import { UserRole } from "@/types";
 
 export type DashboardRole =
   | "student"
+  | "faculty"
   | "admin"
   | "mentor"
   | "donor"
@@ -26,6 +27,7 @@ export type DashboardRoleConfig = {
 
 export const DASHBOARD_ROLE_ORDER: DashboardRole[] = [
   "student",
+  "faculty",
   "admin",
   "mentor",
   "donor",
@@ -86,10 +88,11 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         title: "Mentorship",
         items: [
           "Browse available mentors (alumni/industry)",
-          "Send mentorship requests",
-          "View current mentors and session history",
-          "Schedule sessions with mentors",
-          "Rate and review mentorship experience"
+          "Request mentorship from mentors",
+          "Track request status",
+          "Chat with approved mentors",
+          "View mentorship session updates",
+          "Share feedback after completed sessions"
         ]
       },
       {
@@ -101,9 +104,7 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Log daily mood/stress/sleep",
           "View wellness trends over time",
           "Book counseling sessions",
-          "Join wellness challenges (steps/meditation)",
-          "Access peer support forums",
-          "Browse health resources library"
+          "Access peer support forums"
         ]
       },
       {
@@ -129,6 +130,17 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "View status (pending/approved/rejected)",
           "Upload missing documents",
           "Receive feedback on rejections"
+        ]
+      },
+      {
+        id: "communications",
+        menuLabel: "Communications",
+        icon: "💬",
+        title: "Communications",
+        items: [
+          "View donor and partner updates",
+          "See scholarship communication history",
+          "Track official support announcements"
         ]
       },
       {
@@ -209,6 +221,29 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         ]
       },
       {
+        id: "counselor-support",
+        menuLabel: "Counselor Support",
+        icon: "❤️",
+        title: "Counselor Support",
+        items: [
+          "Add available counselors",
+          "Review student counseling requests",
+          "Accept/reject bookings",
+          "Track confirmed/completed sessions"
+        ]
+      },
+      {
+        id: "peer-support",
+        menuLabel: "Peer Support",
+        icon: "💬",
+        title: "Peer Support",
+        items: [
+          "View student peer support posts",
+          "Review replies",
+          "Moderate inappropriate content"
+        ]
+      },
+      {
         id: "reports",
         menuLabel: "Reports",
         icon: "📊",
@@ -232,12 +267,154 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         ]
       },
       {
+        id: "partnerships",
+        menuLabel: "Partnerships",
+        icon: "🤝",
+        title: "Partnerships",
+        items: [
+          "Joint initiatives with NGOs",
+          "Collaboration tracking",
+          "External program administration"
+        ]
+      },
+      {
+        id: "communications",
+        menuLabel: "Communications",
+        icon: "💬",
+        title: "Communications",
+        items: [
+          "Receive donor and CSR updates",
+          "Review communication history by audience",
+          "Track important partner announcements"
+        ]
+      },
+      {
         id: "profile",
         menuLabel: "Profile",
         icon: "👤",
         title: "Profile",
         items: [
           "Admin settings",
+          "Department management"
+        ]
+      }
+    ]
+  },
+  faculty: {
+    label: "University Staff / Faculty",
+    workspaceLabel: "Faculty Dashboard",
+    description: "Oversee support operations, approvals, and institutional impact.",
+    sections: [
+      {
+        id: "overview",
+        menuLabel: "Overview",
+        icon: "🏠",
+        title: "Overview",
+        items: [
+          "Student stats (total, active)",
+          "Pending verifications badge",
+          "Recent activity feed"
+        ]
+      },
+      {
+        id: "verifications",
+        menuLabel: "Verifications",
+        icon: "✅",
+        title: "Verifications",
+        items: [
+          "Student enrollment verifications",
+          "Financial aid applications",
+          "Scholarship eligibility checks",
+          "Document validation queue"
+        ]
+      },
+      {
+        id: "financial-oversight",
+        menuLabel: "Financial Oversight",
+        icon: "💰",
+        title: "Financial Oversight",
+        items: [
+          "Emergency fund requests",
+          "Fee waiver applications",
+          "Equipment requests from students",
+          "Disbursement tracking"
+        ]
+      },
+      {
+        id: "career-services",
+        menuLabel: "Career Services",
+        icon: "💼",
+        title: "Career Services",
+        items: [
+          "Job postings from employers",
+          "Internship opportunities",
+          "Placement statistics"
+        ]
+      },
+      {
+        id: "mentorship-program",
+        menuLabel: "Mentorship Program",
+        icon: "👥",
+        title: "Mentorship Program",
+        items: [
+          "Mentor approval queue",
+          "Active mentorship pairs",
+          "Session reports"
+        ]
+      },
+      {
+        id: "counselor-support",
+        menuLabel: "Counselor Support",
+        icon: "❤️",
+        title: "Counselor Support",
+        items: [
+          "Add available counselors",
+          "Review student counseling requests",
+          "Accept/reject bookings",
+          "Track confirmed/completed sessions"
+        ]
+      },
+      {
+        id: "reports",
+        menuLabel: "Reports",
+        icon: "📊",
+        title: "Reports",
+        items: [
+          "Student support metrics",
+          "Financial aid distribution",
+          "Mental health trends (anonymized)",
+          "Export data"
+        ]
+      },
+      {
+        id: "announcements",
+        menuLabel: "Announcements",
+        icon: "📢",
+        title: "Announcements",
+        items: [
+          "Post campus-wide notices",
+          "Event promotions",
+          "Emergency alerts"
+        ]
+      },
+      {
+        id: "communications",
+        menuLabel: "Communications",
+        icon: "💬",
+        title: "Communications",
+        items: [
+          "Receive donor and CSR updates",
+          "Review communication history by audience",
+          "Track important partner announcements"
+        ]
+      },
+      {
+        id: "profile",
+        menuLabel: "Profile",
+        icon: "👤",
+        title: "Profile",
+        items: [
+          "Faculty settings",
           "Department management"
         ]
       }
@@ -543,84 +720,84 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
       {
         id: "organization-home",
         menuLabel: "Organization Home",
-        icon: "🏠",
+        icon: "home",
         title: "Organization Home",
         items: [
-          "Active programs",
-          "Beneficiary stats",
-          "Funding overview"
+          "Portfolio overview",
+          "Core KPI metrics",
+          "Recent impact stories"
         ]
       },
       {
         id: "programs",
         menuLabel: "Programs",
-        icon: "🎯",
+        icon: "programs",
         title: "Programs",
         items: [
-          "Current initiatives",
-          "Application forms",
-          "Beneficiary management"
+          "Manage NGO support programs",
+          "Create programs and eligibility rules",
+          "Track application readiness"
         ]
       },
       {
         id: "funding",
         menuLabel: "Funding",
-        icon: "💰",
+        icon: "funding",
         title: "Funding",
         items: [
-          "Grant allocations",
-          "Emergency relief funds",
-          "Disbursement tracking"
+          "Budget vs disbursed tracking",
+          "Donor contribution table",
+          "Allocation monitoring"
         ]
       },
       {
         id: "beneficiaries",
         menuLabel: "Beneficiaries",
-        icon: "👥",
+        icon: "beneficiaries",
         title: "Beneficiaries",
         items: [
-          "Student profiles",
-          "Application reviews",
-          "Impact stories"
+          "Verified applicant list",
+          "Student support progress",
+          "Program-specific filtering"
         ]
       },
       {
         id: "reports",
         menuLabel: "Reports",
-        icon: "📊",
+        icon: "reports",
         title: "Reports",
         items: [
-          "Program impact metrics",
-          "Financial reports",
-          "Donor reporting"
+          "Generate impact reports",
+          "Review KPI charts",
+          "Export report PDF"
         ]
       },
       {
         id: "partnerships",
         menuLabel: "Partnerships",
-        icon: "🤝",
+        icon: "partnerships",
         title: "Partnerships",
         items: [
-          "University collaborations",
-          "Corporate partners",
-          "Joint initiatives"
+          "University admin collaborations",
+          "Corporate donor partners",
+          "Joint initiatives tracking"
         ]
       },
       {
         id: "communications",
         menuLabel: "Communications",
-        icon: "📢",
+        icon: "communications",
         title: "Communications",
         items: [
-          "Newsletter to students",
-          "Awareness campaigns",
-          "Event promotions"
+          "Program updates to beneficiaries",
+          "Impact newsletters to donors",
+          "Message templates and history"
         ]
       },
       {
         id: "profile",
         menuLabel: "Profile",
-        icon: "👤",
+        icon: "profile",
         title: "Profile",
         items: [
           "Organization details",
@@ -731,6 +908,7 @@ const AUTH_ROLE_TO_DASHBOARD_ROLE: Record<UserRole, DashboardRole> = {
   mentor: "mentor",
   donor: "donor",
   admin: "admin",
+  faculty: "faculty",
   super_admin: "admin",
   employer: "employer",
   ngo: "ngo",

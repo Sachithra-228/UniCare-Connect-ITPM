@@ -1,17 +1,15 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { MoodTracker } from "@/components/wellness/mood-tracker";
 import { CounselorBooking } from "@/components/wellness/counselor-booking";
-import { WellnessChallenges } from "@/components/wellness/wellness-challenges";
 import { PeerSupport } from "@/components/wellness/peer-support";
-import { HealthContent } from "@/components/wellness/health-content";
 
 type HealthLog = { _id: string; date: string; mood?: string; stressLevel?: number; sleepHours?: number };
 
-type WellnessTab = "checkins" | "counselor" | "challenges" | "peers" | "resources";
+type WellnessTab = "checkins" | "counselor" | "peers";
 
 export function StudentWellness() {
   const [logs, setLogs] = useState<HealthLog[]>([]);
@@ -46,19 +44,9 @@ export function StudentWellness() {
       description: "Find support options and booking info."
     },
     {
-      id: "challenges",
-      label: "Wellness challenges",
-      description: "Short, fun challenges to build healthy habits."
-    },
-    {
       id: "peers",
       label: "Peer support",
       description: "Safe space to connect with other students."
-    },
-    {
-      id: "resources",
-      label: "Resources",
-      description: "Curated mental health & wellness content."
     }
   ];
 
@@ -158,19 +146,6 @@ export function StudentWellness() {
           </motion.div>
         )}
 
-        {activeTab === "challenges" && (
-          <motion.div
-            key="challenges"
-            variants={tabContentVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.18, ease: "easeOut" }}
-          >
-            <WellnessChallenges />
-          </motion.div>
-        )}
-
         {activeTab === "peers" && (
           <motion.div
             key="peers"
@@ -181,19 +156,6 @@ export function StudentWellness() {
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
             <PeerSupport />
-          </motion.div>
-        )}
-
-        {activeTab === "resources" && (
-          <motion.div
-            key="resources"
-            variants={tabContentVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.18, ease: "easeOut" }}
-          >
-            <HealthContent />
           </motion.div>
         )}
       </AnimatePresence>

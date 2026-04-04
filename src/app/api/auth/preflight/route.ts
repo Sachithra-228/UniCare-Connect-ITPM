@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { errorMessageForDev, isDemoMode, jsonResponse } from "@/lib/api";
-import { getMongoDatabase } from "@/lib/mongodb";
+import { getMongoDatabase, isMongoTlsHandshakeError, resetMongoClient } from "@/lib/mongodb";
 
 type PreflightPayload = {
   email?: string;
@@ -64,6 +64,9 @@ export async function POST(request: NextRequest) {
         role: user.role ?? null
       });
     } catch (err) {
+      if (isMongoTlsHandshakeError(err)) {
+        resetMongoClient();
+      }
       const devMessage = errorMessageForDev(err);
       return jsonResponse(
         {
