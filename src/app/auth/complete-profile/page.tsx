@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage, type Language } from "@/context/language-context";
-import { Button } from "@/components/shared/button";
-import { Input } from "@/components/shared/input";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
 import { getDashboardPathForRole } from "@/lib/auth-redirect";
 import { optionalUrlSchema, sriLankaPhoneSchema } from "@/lib/validation";
 import {

@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Card } from "@/components/shared/card";
+import { Card } from "@/components/shared/Card";
 import { StatCard } from "@/components/shared/stat-card";
-import { Button } from "@/components/shared/button";
-import { Input } from "@/components/shared/input";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
 import { useAuth } from "@/context/auth-context";
 import {
   defaultPreferences,
@@ -95,6 +95,7 @@ type DonorFundedStudentsOverview = {
     title: string;
     detail: string;
     date: string;
+    editable?: boolean;
   }>;
 };
 
@@ -145,6 +146,7 @@ type DonorCommunication = {
   subject?: string;
   body?: string;
   createdAt?: string;
+  updatedAt?: string;
 };
 
 type DonorProfile = {
@@ -484,6 +486,7 @@ function DonorMyScholarshipsSection() {
   const [tags, setTags] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const activeCount = scholarships.filter(
@@ -552,6 +555,27 @@ function DonorMyScholarshipsSection() {
       setActionError("Unable to update scholarship.");
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const deleteScholarship = async (scholarshipId: string) => {
+    if (!window.confirm("Delete this scholarship?")) return;
+    setDeletingId(scholarshipId);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/donor/scholarships/${scholarshipId}`, {
+        method: "DELETE"
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setActionError(payload.message ?? "Unable to delete scholarship.");
+        return;
+      }
+      await reload();
+    } catch {
+      setActionError("Unable to delete scholarship.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -709,23 +733,32 @@ function DonorMyScholarshipsSection() {
                   {String(s.status ?? "active").toLowerCase() === "closed" ? "Closed" : "Active"}
                 </span>
                 {s._id ? (
-                  String(s.status ?? "").toLowerCase() === "closed" ? (
+                  <>
+                    {String(s.status ?? "").toLowerCase() === "closed" ? (
+                      <button
+                        onClick={() => updateStatus(s._id as string, "active")}
+                        disabled={updatingId === s._id}
+                        className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        Reopen
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => updateStatus(s._id as string, "closed")}
+                        disabled={updatingId === s._id}
+                        className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        Close
+                      </button>
+                    )}
                     <button
-                      onClick={() => updateStatus(s._id as string, "active")}
-                      disabled={updatingId === s._id}
-                      className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                      onClick={() => deleteScholarship(s._id as string)}
+                      disabled={deletingId === s._id}
+                      className="rounded-full border border-rose-300 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/20"
                     >
-                      Reopen
+                      {deletingId === s._id ? "Deleting..." : "Delete"}
                     </button>
-                  ) : (
-                    <button
-                      onClick={() => updateStatus(s._id as string, "closed")}
-                      disabled={updatingId === s._id}
-                      className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      Close
-                    </button>
-                  )
+                  </>
                 ) : null}
               </div>
             </div>
@@ -745,6 +778,12 @@ function DonorFundedStudentsSection() {
   const [overview, setOverview] = useState<DonorFundedStudentsOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updateTitle, setUpdateTitle] = useState("");
+  const [updateDetail, setUpdateDetail] = useState("");
+  const [savingUpdate, setSavingUpdate] = useState(false);
+  const [editingUpdateId, setEditingUpdateId] = useState<string | null>(null);
+  const [updatingUpdate, setUpdatingUpdate] = useState(false);
+  const [deletingUpdateId, setDeletingUpdateId] = useState<string | null>(null);
 
   const loadFundedStudents = useCallback(async () => {
     setLoading(true);
@@ -775,6 +814,90 @@ function DonorFundedStudentsSection() {
   const summary = overview?.summary;
   const students = overview?.students ?? [];
   const updates = overview?.updates ?? [];
+
+  const createUpdate = async () => {
+    if (!updateTitle.trim() || !updateDetail.trim()) {
+      setError("Update title and detail are required.");
+      return;
+    }
+    setSavingUpdate(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/donor/funded-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: updateTitle.trim(),
+          detail: updateDetail.trim()
+        })
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setError(payload.message ?? "Unable to add update.");
+        return;
+      }
+      setUpdateTitle("");
+      setUpdateDetail("");
+      await loadFundedStudents();
+    } catch {
+      setError("Unable to add update.");
+    } finally {
+      setSavingUpdate(false);
+    }
+  };
+
+  const saveEditedUpdate = async (id: string) => {
+    if (!updateTitle.trim() || !updateDetail.trim()) {
+      setError("Update title and detail are required.");
+      return;
+    }
+    setUpdatingUpdate(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/donor/funded-students/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: updateTitle.trim(),
+          detail: updateDetail.trim()
+        })
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setError(payload.message ?? "Unable to update item.");
+        return;
+      }
+      setEditingUpdateId(null);
+      setUpdateTitle("");
+      setUpdateDetail("");
+      await loadFundedStudents();
+    } catch {
+      setError("Unable to update item.");
+    } finally {
+      setUpdatingUpdate(false);
+    }
+  };
+
+  const deleteUpdate = async (id: string) => {
+    if (!window.confirm("Delete this update?")) return;
+    setDeletingUpdateId(id);
+    setError(null);
+    try {
+      const response = await fetch(`/api/donor/funded-students/${id}`, {
+        method: "DELETE"
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setError(payload.message ?? "Unable to delete item.");
+        return;
+      }
+      await loadFundedStudents();
+    } catch {
+      setError("Unable to delete item.");
+    } finally {
+      setDeletingUpdateId(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -861,6 +984,44 @@ function DonorFundedStudentsSection() {
       </Card>
 
       <Card className="space-y-3 p-4">
+        <h3 className="text-sm font-semibold">{editingUpdateId ? "Edit update" : "Add update"}</h3>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Input
+            value={updateTitle}
+            onChange={(event) => setUpdateTitle(event.target.value)}
+            placeholder="Update title"
+          />
+          <Input
+            value={updateDetail}
+            onChange={(event) => setUpdateDetail(event.target.value)}
+            placeholder="Update detail"
+          />
+        </div>
+        <div className="flex justify-end gap-2">
+          {editingUpdateId ? (
+            <>
+              <Button
+                onClick={() => {
+                  setEditingUpdateId(null);
+                  setUpdateTitle("");
+                  setUpdateDetail("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={() => saveEditedUpdate(editingUpdateId)} disabled={updatingUpdate}>
+                {updatingUpdate ? "Saving..." : "Save changes"}
+              </Button>
+            </>
+          ) : (
+            <Button variant="primary" onClick={createUpdate} disabled={savingUpdate}>
+              {savingUpdate ? "Adding..." : "Add update"}
+            </Button>
+          )}
+        </div>
+      </Card>
+
+      <Card className="space-y-3 p-4">
         <h3 className="text-sm font-semibold">Recent updates</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading updates...</p>
@@ -872,7 +1033,32 @@ function DonorFundedStudentsSection() {
               <div key={update.id} className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800">
                 <p className="font-medium">{update.title}</p>
                 <p className="text-xs text-slate-500">{update.detail}</p>
-                <p className="text-xs text-slate-400">{new Date(update.date).toLocaleDateString()}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-slate-400">{new Date(update.date).toLocaleDateString()}</p>
+                  {update.editable ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingUpdateId(update.id);
+                          setUpdateTitle(update.title);
+                          setUpdateDetail(update.detail);
+                        }}
+                        className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteUpdate(update.id)}
+                        disabled={deletingUpdateId === update.id}
+                        className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                      >
+                        {deletingUpdateId === update.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>
@@ -883,6 +1069,17 @@ function DonorFundedStudentsSection() {
 }
 function DonorDonationsSection() {
   const { contributions, loading, error, reload } = useDonorContributions();
+  const [editingContributionId, setEditingContributionId] = useState<string | null>(null);
+  const [editingContribution, setEditingContribution] = useState({
+    contributionType: "general",
+    program: "",
+    category: "",
+    amountLkr: "",
+    note: ""
+  });
+  const [savingContribution, setSavingContribution] = useState(false);
+  const [deletingContributionId, setDeletingContributionId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const totals = contributions.reduce(
     (acc, item) => {
@@ -920,6 +1117,66 @@ function DonorDonationsSection() {
     URL.revokeObjectURL(url);
   };
 
+  const startEdit = (item: DonorContribution) => {
+    setEditingContributionId(item._id ?? null);
+    setEditingContribution({
+      contributionType: String(item.contributionType ?? "general"),
+      program: String(item.program ?? ""),
+      category: String(item.category ?? ""),
+      amountLkr: String(item.amountLkr ?? ""),
+      note: String(item.note ?? "")
+    });
+    setActionError(null);
+  };
+
+  const saveContribution = async () => {
+    if (!editingContributionId) return;
+    setSavingContribution(true);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/donor/contributions/${editingContributionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingContribution)
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setActionError(payload.message ?? "Unable to save contribution.");
+        return;
+      }
+      setEditingContributionId(null);
+      await reload();
+    } catch {
+      setActionError("Unable to save contribution.");
+    } finally {
+      setSavingContribution(false);
+    }
+  };
+
+  const deleteContribution = async (id: string) => {
+    if (!window.confirm("Delete this contribution?")) return;
+    setDeletingContributionId(id);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/donor/contributions/${id}`, {
+        method: "DELETE"
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setActionError(payload.message ?? "Unable to delete contribution.");
+        return;
+      }
+      if (editingContributionId === id) {
+        setEditingContributionId(null);
+      }
+      await reload();
+    } catch {
+      setActionError("Unable to delete contribution.");
+    } finally {
+      setDeletingContributionId(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600 dark:text-slate-300">
@@ -931,12 +1188,64 @@ function DonorDonationsSection() {
           {error}
         </p>
       ) : null}
+      {actionError ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
+          {actionError}
+        </p>
+      ) : null}
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard label="Total contributed" value={`LKR ${totals.total}`} description="All-time donations" />
         <StatCard label="Emergency fund" value={`LKR ${totals.emergency}`} description="Crisis response" />
         <StatCard label="Equipment" value={`LKR ${totals.equipment}`} description="Devices & materials" />
         <StatCard label="Scholarships" value={`LKR ${totals.scholarship}`} description="Tuition & grants" />
       </div>
+
+      {editingContributionId ? (
+        <Card className="space-y-3 p-4">
+          <h3 className="text-sm font-semibold">Edit contribution</h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            <select
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              value={editingContribution.contributionType}
+              onChange={(event) =>
+                setEditingContribution((prev) => ({ ...prev, contributionType: event.target.value }))
+              }
+            >
+              <option value="emergency_fund">Emergency fund</option>
+              <option value="equipment">Equipment</option>
+              <option value="scholarship">Scholarship</option>
+              <option value="ngo_program">NGO Program</option>
+              <option value="general">General</option>
+            </select>
+            <Input
+              value={editingContribution.amountLkr}
+              onChange={(event) => setEditingContribution((prev) => ({ ...prev, amountLkr: event.target.value }))}
+              placeholder="Amount (LKR)"
+            />
+            <Input
+              value={editingContribution.program}
+              onChange={(event) => setEditingContribution((prev) => ({ ...prev, program: event.target.value }))}
+              placeholder="Program"
+            />
+            <Input
+              value={editingContribution.category}
+              onChange={(event) => setEditingContribution((prev) => ({ ...prev, category: event.target.value }))}
+              placeholder="Category"
+            />
+          </div>
+          <Input
+            value={editingContribution.note}
+            onChange={(event) => setEditingContribution((prev) => ({ ...prev, note: event.target.value }))}
+            placeholder="Note"
+          />
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setEditingContributionId(null)}>Cancel</Button>
+            <Button variant="primary" onClick={saveContribution} disabled={savingContribution}>
+              {savingContribution ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </Card>
+      ) : null}
 
       <Card className="space-y-3 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -982,6 +1291,25 @@ function DonorDonationsSection() {
                 <div className="text-right">
                   <p className="text-sm font-semibold">LKR {item.amountLkr ?? 0}</p>
                   {item.note ? <p className="text-xs text-slate-500">{item.note}</p> : null}
+                  {item._id ? (
+                    <div className="mt-2 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(item)}
+                        className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteContribution(item._id as string)}
+                        disabled={deletingContributionId === item._id}
+                        className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                      >
+                        {deletingContributionId === item._id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))}
@@ -1203,6 +1531,12 @@ function DonorRecognitionSection() {
   const [overview, setOverview] = useState<DonorRecognitionOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [storyTitle, setStoryTitle] = useState("");
+  const [storySummary, setStorySummary] = useState("");
+  const [storyCategory, setStoryCategory] = useState("Student support");
+  const [storySaving, setStorySaving] = useState(false);
+  const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
+  const [deletingStoryId, setDeletingStoryId] = useState<string | null>(null);
 
   const loadRecognition = useCallback(async () => {
     setLoading(true);
@@ -1232,6 +1566,101 @@ function DonorRecognitionSection() {
 
   const metrics = overview?.metrics;
   const stories = overview?.stories ?? [];
+
+  const createStory = async () => {
+    if (!storyTitle.trim() || !storySummary.trim()) {
+      setError("Story title and summary are required.");
+      return;
+    }
+    setStorySaving(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/donor/recognition", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: storyTitle.trim(),
+          summary: storySummary.trim(),
+          category: storyCategory.trim()
+        })
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setError(payload.message ?? "Unable to add story.");
+        return;
+      }
+      setStoryTitle("");
+      setStorySummary("");
+      setStoryCategory("Student support");
+      await loadRecognition();
+    } catch {
+      setError("Unable to add story.");
+    } finally {
+      setStorySaving(false);
+    }
+  };
+
+  const saveStory = async () => {
+    if (!editingStoryId) return;
+    if (!storyTitle.trim() || !storySummary.trim()) {
+      setError("Story title and summary are required.");
+      return;
+    }
+    setStorySaving(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/donor/recognition/${editingStoryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: storyTitle.trim(),
+          summary: storySummary.trim(),
+          category: storyCategory.trim()
+        })
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setError(payload.message ?? "Unable to update story.");
+        return;
+      }
+      setEditingStoryId(null);
+      setStoryTitle("");
+      setStorySummary("");
+      setStoryCategory("Student support");
+      await loadRecognition();
+    } catch {
+      setError("Unable to update story.");
+    } finally {
+      setStorySaving(false);
+    }
+  };
+
+  const deleteStory = async (id: string) => {
+    if (!window.confirm("Delete this story?")) return;
+    setDeletingStoryId(id);
+    setError(null);
+    try {
+      const response = await fetch(`/api/donor/recognition/${id}`, {
+        method: "DELETE"
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setError(payload.message ?? "Unable to delete story.");
+        return;
+      }
+      if (editingStoryId === id) {
+        setEditingStoryId(null);
+        setStoryTitle("");
+        setStorySummary("");
+        setStoryCategory("Student support");
+      }
+      await loadRecognition();
+    } catch {
+      setError("Unable to delete story.");
+    } finally {
+      setDeletingStoryId(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -1268,6 +1697,43 @@ function DonorRecognitionSection() {
       </div>
 
       <Card className="space-y-3 p-4">
+        <h3 className="text-sm font-semibold">{editingStoryId ? "Edit story" : "Add story"}</h3>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Input value={storyTitle} onChange={(event) => setStoryTitle(event.target.value)} placeholder="Story title" />
+          <Input value={storyCategory} onChange={(event) => setStoryCategory(event.target.value)} placeholder="Category" />
+        </div>
+        <textarea
+          className="min-h-[90px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+          value={storySummary}
+          onChange={(event) => setStorySummary(event.target.value)}
+          placeholder="Story summary"
+        />
+        <div className="flex justify-end gap-2">
+          {editingStoryId ? (
+            <>
+              <Button
+                onClick={() => {
+                  setEditingStoryId(null);
+                  setStoryTitle("");
+                  setStorySummary("");
+                  setStoryCategory("Student support");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={saveStory} disabled={storySaving}>
+                {storySaving ? "Saving..." : "Save story"}
+              </Button>
+            </>
+          ) : (
+            <Button variant="primary" onClick={createStory} disabled={storySaving}>
+              {storySaving ? "Adding..." : "Add story"}
+            </Button>
+          )}
+        </div>
+      </Card>
+
+      <Card className="space-y-3 p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Featured stories</h3>
           <button
@@ -1297,9 +1763,31 @@ function DonorRecognitionSection() {
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-slate-500">{story.summary}</p>
-                <p className="mt-1 text-xs text-slate-400">
-                  {new Date(story.date).toLocaleDateString()}
-                </p>
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <p className="text-xs text-slate-400">{new Date(story.date).toLocaleDateString()}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingStoryId(story.id);
+                        setStoryTitle(story.title);
+                        setStorySummary(story.summary);
+                        setStoryCategory(story.category);
+                      }}
+                      className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteStory(story.id)}
+                      disabled={deletingStoryId === story.id}
+                      className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                    >
+                      {deletingStoryId === story.id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -1309,13 +1797,16 @@ function DonorRecognitionSection() {
   );
 }
 function DonorCommunicationsSection() {
-  const [audience, setAudience] = useState("Scholarship recipients");
+  const [audience, setAudience] = useState("students");
   const [messageType, setMessageType] = useState("General update");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [messages, setMessages] = useState<DonorCommunication[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -1379,6 +1870,88 @@ function DonorCommunicationsSection() {
     }
   };
 
+  const startEdit = (message: DonorCommunication) => {
+    setEditingId(message._id ?? null);
+    const normalizedAudience = String(message.audience ?? "").toLowerCase();
+    if (normalizedAudience.includes("students + university admin")) {
+      setAudience("students_admin_faculty");
+    } else if (normalizedAudience.includes("admin")) {
+      setAudience("admin_faculty");
+    } else {
+      setAudience("students");
+    }
+    setMessageType(message.messageType ?? "General update");
+    setSubject(message.subject ?? "");
+    setBody(message.body ?? "");
+    setError(null);
+    setSuccess(null);
+  };
+
+  const updateMessage = async () => {
+    if (!editingId) return;
+    if (!subject.trim() || !body.trim()) {
+      setError("Subject and message are required.");
+      return;
+    }
+    setUpdating(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await fetch(`/api/donor/communications/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audience,
+          messageType,
+          subject: subject.trim(),
+          body: body.trim()
+        })
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setError(payload.message ?? "Unable to update message.");
+        return;
+      }
+      setSuccess("Message updated.");
+      setEditingId(null);
+      setSubject("");
+      setBody("");
+      await loadMessages();
+    } catch {
+      setError("Unable to update message.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const deleteMessage = async (id: string) => {
+    if (!window.confirm("Delete this message?")) return;
+    setDeletingId(id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await fetch(`/api/donor/communications/${id}`, {
+        method: "DELETE"
+      });
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) {
+        setError(payload.message ?? "Unable to delete message.");
+        return;
+      }
+      if (editingId === id) {
+        setEditingId(null);
+        setSubject("");
+        setBody("");
+      }
+      setSuccess("Message deleted.");
+      await loadMessages();
+    } catch {
+      setError("Unable to delete message.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600 dark:text-slate-300">
@@ -1404,9 +1977,9 @@ function DonorCommunicationsSection() {
               value={audience}
               onChange={(event) => setAudience(event.target.value)}
             >
-              <option>Scholarship recipients</option>
-              <option>University admin (scholarship office)</option>
-              <option>Specific cohort / batch</option>
+              <option value="students">Students</option>
+              <option value="admin_faculty">University Admin / Faculty</option>
+              <option value="students_admin_faculty">Students + University Admin / Faculty</option>
             </select>
           </div>
           <div className="space-y-2">
@@ -1445,13 +2018,28 @@ function DonorCommunicationsSection() {
             <p>Students can reply but cannot edit your original messages.</p>
             <p>You cannot message non-recipients from this workspace.</p>
           </div>
-          <button
-            onClick={sendMessage}
-            disabled={sending}
-            className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {sending ? "Sending..." : "Send"}
-          </button>
+          <div className="flex items-center gap-2">
+            {editingId ? (
+              <Button
+                onClick={() => {
+                  setEditingId(null);
+                  setAudience("students");
+                  setMessageType("General update");
+                  setSubject("");
+                  setBody("");
+                }}
+              >
+                Cancel
+              </Button>
+            ) : null}
+            <button
+              onClick={editingId ? updateMessage : sendMessage}
+              disabled={sending || updating}
+              className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {editingId ? (updating ? "Saving..." : "Update") : sending ? "Sending..." : "Send"}
+            </button>
+          </div>
         </div>
       </Card>
 
@@ -1484,9 +2072,30 @@ function DonorCommunicationsSection() {
                 </div>
                 <p className="text-xs text-slate-500">{item.messageType ?? "General update"}</p>
                 <p className="mt-1 text-xs text-slate-500">{item.body}</p>
-                <p className="mt-1 text-xs text-slate-400">
-                  {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
-                </p>
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <p className="text-xs text-slate-400">
+                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
+                  </p>
+                  {item._id ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(item)}
+                        className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteMessage(item._id as string)}
+                        disabled={deletingId === item._id}
+                        className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                      >
+                        {deletingId === item._id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>

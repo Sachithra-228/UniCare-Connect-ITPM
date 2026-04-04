@@ -7,6 +7,7 @@ import { StudentMentorship } from "./student-mentorship";
 import { StudentWellness } from "./student-wellness";
 import { StudentCampusLife } from "./student-campus-life";
 import { StudentMyApplications } from "./student-my-applications";
+import { StudentCommunications } from "./student-communications";
 import { StudentProfile } from "./student-profile";
 
 const STUDENT_SECTIONS: Record<
@@ -20,6 +21,7 @@ const STUDENT_SECTIONS: Record<
   wellness: StudentWellness,
   "campus-life": StudentCampusLife,
   "my-applications": StudentMyApplications,
+  communications: StudentCommunications,
   profile: StudentProfile
 };
 

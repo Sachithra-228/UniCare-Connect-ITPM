@@ -1,8 +1,8 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { Card } from "@/components/shared/card";
-import { Badge } from "@/components/shared/badge";
+import { Card } from "@/components/shared/Card";
+import { Badge } from "@/components/shared/Badge";
 import { useLanguage } from "@/context/language-context";
 
 type AidRequest = {

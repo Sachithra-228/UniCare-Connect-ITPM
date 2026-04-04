@@ -8,7 +8,7 @@ import { getMongoDatabase } from "@/lib/mongodb";
 import { createNotification } from "@/lib/notifications";
 import { requireRole, requireSession } from "@/lib/session-auth";
 
-type ContributionType = "emergency_fund" | "equipment" | "scholarship" | "general";
+type ContributionType = "emergency_fund" | "equipment" | "scholarship" | "general" | "ngo_program";
 
 type ContributionDocument = {
   _id?: { toString: () => string };
@@ -26,7 +26,7 @@ type ContributionDocument = {
   updatedAt?: Date | string;
 };
 
-const VALID_TYPES: ContributionType[] = ["emergency_fund", "equipment", "scholarship", "general"];
+const VALID_TYPES: ContributionType[] = ["emergency_fund", "equipment", "scholarship", "general", "ngo_program"];
 
 function toType(value: unknown): ContributionType {
   const normalized = String(value ?? "").trim().toLowerCase();
@@ -42,6 +42,7 @@ function toCategory(type: ContributionType, category?: string) {
   if (type === "emergency_fund") return "Emergency aid";
   if (type === "equipment") return "Equipment support";
   if (type === "scholarship") return "Scholarship support";
+  if (type === "ngo_program") return "NGO program support";
   return "General student support";
 }
 

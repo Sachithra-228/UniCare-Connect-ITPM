@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage, type Language } from "@/context/language-context";
-import { Button } from "@/components/shared/button";
-import { Input } from "@/components/shared/input";
+import { Button } from "@/components/shared/Button";
+import { Input } from "@/components/shared/Input";
 import { getDashboardPathForRole } from "@/lib/auth-redirect";
 import { loginSchema, registerSchema, optionalUrlSchema, sriLankaPhoneSchema } from "@/lib/validation";
 import { UserRole as AppUserRole } from "@/types";
@@ -21,6 +21,7 @@ import { getRoleConfigs, type UserRole } from "@/lib/signup-role-config";
 import { UniversityPicker } from "@/components/auth/university-picker";
 import { RolePicker } from "@/components/auth/role-picker";
 import { DegreePicker } from "@/components/auth/degree-picker";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
 
 type AuthMode = "signin" | "signup";
 
@@ -257,6 +258,7 @@ const AUTH_TEXT: Record<
     tooManyAttempts: "à¶‹à¶­à·Šà·ƒà·à·„à¶ºà¶±à·Š à·€à·à¶©à·’à¶ºà·’. à¶´à·ƒà·”à·€ à¶±à·à·€à¶­ à¶‹à¶­à·Šà·ƒà·à·„ à¶šà¶»à¶±à·Šà¶±.",
     unableCreateAccount: "à¶œà·’à¶«à·”à¶¸ à·ƒà·‘à¶¯à·“à¶¸à¶§ à¶±à·œà·„à·à¶šà·’ à·€à·’à¶º. à¶±à·à·€à¶­ à¶‹à¶­à·Šà·ƒà·à·„ à¶šà¶»à¶±à·Šà¶±.",
     validEmailPasswordRequired: "à¶šà¶»à·”à¶«à·à¶šà¶» à·€à¶½à¶‚à¶œà·” à¶Šà¶¸à·šà¶½à·Š à·ƒà·„ à¶¸à·”à¶»à¶´à¶¯à¶ºà¶šà·Š à¶½à¶¶à· à¶¯à·™à¶±à·Šà¶±.",
+    adminSignupDisabled: "Admin account signup is disabled. Please contact support.",
     selectRoleContinue: "à¶‰à¶¯à·’à¶»à·’à¶ºà¶§ à¶ºà·à¶¸à¶§ à¶”à¶¶à¶œà·š à¶·à·–à¶¸à·’à¶šà·à·€ à¶­à·à¶»à¶±à·Šà¶±.",
     fullNameRequired: "à·ƒà¶¸à·Šà¶´à·–à¶»à·Šà¶« à¶±à¶¸ à¶…à¶±à·’à·€à·à¶»à·Šà¶ºà¶ºà·’.",
     atLeastTwoChars: "à¶…à·€à¶¸ à·€à·à¶ºà·™à¶±à·Š à¶…à¶šà·Šà·‚à¶» 2à¶šà·Š à¶‡à¶­à·”à·…à¶­à·Š à¶šà¶»à¶±à·Šà¶±.",
@@ -338,6 +340,7 @@ const AUTH_TEXT: Record<
     tooManyAttempts: "à®®à®¿à®• à®…à®¤à®¿à®• à®®à¯à®¯à®±à¯à®šà®¿à®•à®³à¯. à®ªà®¿à®©à¯à®©à®°à¯ à®®à¯€à®£à¯à®Ÿà¯à®®à¯ à®®à¯à®¯à®±à¯à®šà®¿à®•à¯à®•à®µà¯à®®à¯.",
     unableCreateAccount: "à®•à®£à®•à¯à®•à¯ˆ à®‰à®°à¯à®µà®¾à®•à¯à®• à®®à¯à®Ÿà®¿à®¯à®µà®¿à®²à¯à®²à¯ˆ. à®®à¯€à®£à¯à®Ÿà¯à®®à¯ à®®à¯à®¯à®±à¯à®šà®¿à®•à¯à®•à®µà¯à®®à¯.",
     validEmailPasswordRequired: "à®šà®°à®¿à®¯à®¾à®© à®®à®¿à®©à¯à®©à®žà¯à®šà®²à¯ à®®à®±à¯à®±à¯à®®à¯ à®•à®Ÿà®µà¯à®šà¯à®šà¯Šà®²à¯à®²à¯ˆ à®µà®´à®™à¯à®•à®µà¯à®®à¯.",
+    adminSignupDisabled: "Admin account signup is disabled. Please contact support.",
     selectRoleContinue: "à®¤à¯Šà®Ÿà®° à®‰à®™à¯à®•à®³à¯ à®ªà®™à¯à®•à¯ˆ à®¤à¯‡à®°à¯à®¨à¯à®¤à¯†à®Ÿà¯à®•à¯à®•à®µà¯à®®à¯.",
     fullNameRequired: "à®®à¯à®´à¯à®ªà¯à®ªà¯†à®¯à®°à¯ à®…à®µà®šà®¿à®¯à®®à¯.",
     atLeastTwoChars: "à®•à¯à®±à¯ˆà®¨à¯à®¤à®¤à¯ 2 à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ˆ à®‰à®³à¯à®³à®¿à®Ÿà®µà¯à®®à¯.",
@@ -589,6 +592,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!pendingRedirect || loading) return;
+
+    if (firebaseUser && !user) {
+      return;
+    }
 
     if (!firebaseUser) {
       setPendingRedirect(false);
@@ -1193,6 +1200,9 @@ export default function LoginPage() {
         </div>
       </aside>
       <section className="relative flex min-h-screen items-center bg-white px-4 py-10 sm:px-8 lg:px-12">
+        <div className="absolute left-4 top-4 flex flex-col items-start gap-2 sm:left-8 sm:top-6 sm:flex-row sm:items-center sm:gap-3 lg:left-12 lg:top-8">
+          <LanguageSwitcher />
+        </div>
         <div className="absolute right-4 top-4 sm:right-8 sm:top-6 lg:right-12 lg:top-8">
           <Image
             src="/logo.png"

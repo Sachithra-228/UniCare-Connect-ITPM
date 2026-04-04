@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import { ObjectId } from "mongodb";
 import { isDemoMode, jsonResponse } from "@/lib/api";
-import { updateDemoDonorScholarship } from "@/lib/donor-scholarships-demo-store";
+import {
+  deleteDemoDonorScholarship,
+  updateDemoDonorScholarship
+} from "@/lib/donor-scholarships-demo-store";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { createNotification } from "@/lib/notifications";
 import { requireRole, requireSession } from "@/lib/session-auth";
@@ -121,4 +124,56 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updatedAt: now.toISOString()
     }
   });
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { id } = await params;
+  if (!id) return jsonResponse({ message: "Scholarship id is required." }, 400);
+
+  const authResult = await requireSession(request);
+  if (authResult.error) return authResult.error;
+  const roleCheck = requireRole(authResult.session.user?.role, ["donor", "super_admin"]);
+  if (roleCheck) return roleCheck;
+
+  const userId = authResult.session.user?._id;
+  const firebaseUid = authResult.session.firebase.uid;
+  const identities = [...(userId ? [userId] : []), ...(firebaseUid ? [firebaseUid] : [])];
+
+  if (isDemoMode()) {
+    const removed = deleteDemoDonorScholarship(id);
+    if (!removed) return jsonResponse({ message: "Scholarship not found." }, 404);
+    return jsonResponse({ message: "Scholarship deleted.", scholarship: removed });
+  }
+
+  const objectId = toObjectId(id);
+  if (!objectId) return jsonResponse({ message: "Invalid scholarship id." }, 400);
+
+  const database = await getMongoDatabase();
+  const scholarshipsCollection = database.collection<ScholarshipDocument>("scholarships");
+  const existing = await scholarshipsCollection.findOne({ _id: objectId });
+  if (!existing) return jsonResponse({ message: "Scholarship not found." }, 404);
+  if (!canEdit(existing, identities)) return jsonResponse({ message: "Forbidden" }, 403);
+
+  const title = String(existing.title ?? "Scholarship");
+  await scholarshipsCollection.deleteOne({ _id: objectId });
+
+  await Promise.allSettled([
+    createNotification(database, {
+      userId,
+      firebaseUid,
+      title: "Scholarship deleted",
+      message: `"${title}" has been removed.`,
+      type: "financial-aid",
+      sectionId: "my-scholarships"
+    }),
+    createNotification(database, {
+      audienceRoles: ["student"],
+      title: "Scholarship removed",
+      message: `"${title}" is no longer available.`,
+      type: "financial-aid",
+      sectionId: "financial-aid"
+    })
+  ]);
+
+  return jsonResponse({ message: "Scholarship deleted." });
 }

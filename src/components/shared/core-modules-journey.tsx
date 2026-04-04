@@ -72,11 +72,13 @@ export function CoreModulesJourney() {
   }));
 
   const sectionRef = useRef<HTMLElement | null>(null);
-  const dragStateRef = useRef<{ pointerId: number | null; startX: number; startShift: number }>({
-    pointerId: null,
-    startX: 0,
-    startShift: 0
-  });
+  const dragStateRef = useRef<{ pointerId: number | null; startX: number; startShift: number }>(
+    {
+      pointerId: null,
+      startX: 0,
+      startShift: 0
+    }
+  );
   const [activeIndex, setActiveIndex] = useState(0);
   const [entered, setEntered] = useState(false);
   const [dragShift, setDragShift] = useState<number | null>(null);
@@ -170,7 +172,7 @@ export function CoreModulesJourney() {
             <div className="relative min-h-[360px] overflow-hidden p-1">
               <div className="p-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">
-                  {isFinal ? text.stepDone : `${text.currentModule} • ${current.step}`}
+                  {isFinal ? text.stepDone : `${text.currentModule} - ${current.step}`}
                 </p>
                 <h3 className="mt-1 text-xl font-semibold">
                   {isFinal ? text.finalTitle : current.module}

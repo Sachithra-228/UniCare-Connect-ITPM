@@ -285,6 +285,14 @@ export function addDemoPeerReply(input: Omit<DemoPeerReply, "_id">) {
   return reply;
 }
 
+export function deleteDemoPeerPost(id: string) {
+  const before = peerPosts.length;
+  peerPosts = peerPosts.filter((item) => item._id !== id);
+  if (peerPosts.length === before) return false;
+  peerReplies = peerReplies.filter((item) => item.postId !== id);
+  return true;
+}
+
 export function getDemoWellnessResources() {
   return resources.filter((item) => item.isActive !== false);
 }

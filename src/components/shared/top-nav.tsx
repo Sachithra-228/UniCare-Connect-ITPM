@@ -71,7 +71,7 @@ export function TopNav() {
       <div className="mx-auto w-full max-w-6xl px-4 py-4">
         <div
           className={clsx(
-            "flex items-center justify-between rounded-full px-5 py-3 transition-all duration-300",
+            "flex items-center justify-between rounded-full px-3 py-2.5 transition-all duration-300 sm:px-5 sm:py-3",
             isScrolled
               ? "translate-y-2 border border-white/15 bg-white/65 shadow-lg backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/65"
               : "translate-y-0 border border-slate-200 bg-white/90 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/80"
@@ -83,7 +83,7 @@ export function TopNav() {
               alt="UniCare Connect"
               width={500}
               height={500}
-              className="h-8 w-20 object-cover object-center"
+              className="h-8 w-16 object-contain object-center sm:w-20"
               priority
             />
           </Link>
@@ -156,9 +156,9 @@ export function TopNav() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher />
-            <ThemeToggle />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageSwitcher compactOnMobile />
+            <ThemeToggle className="p-1.5 sm:p-2" />
             {isAuthenticated ? (
               <>
                 <Link
@@ -177,7 +177,7 @@ export function TopNav() {
             ) : (
               <Link
                 href="/login"
-                className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-white"
+                className="whitespace-nowrap rounded-full bg-primary px-3 py-2 text-sm font-medium text-white sm:px-4 sm:py-1.5"
               >
                 {text.signIn}
               </Link>

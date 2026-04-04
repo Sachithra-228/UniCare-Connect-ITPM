@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
       title: "New counselor booking request",
       message: `${studentName} requested a wellness counselor booking.`,
       type: "wellness",
-      sectionId: "reports"
+      sectionId: "counselor-support"
     })
   ]);
 

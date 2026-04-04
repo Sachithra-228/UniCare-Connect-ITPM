@@ -1,11 +1,6 @@
-"use client";
+﻿"use client";
 
-import { SectionHeading } from "@/components/shared/section-heading";
-import { MoodTracker } from "@/components/wellness/mood-tracker";
-import { CounselorBooking } from "@/components/wellness/counselor-booking";
-import { WellnessChallenges } from "@/components/wellness/wellness-challenges";
-import { PeerSupport } from "@/components/wellness/peer-support";
-import { HealthContent } from "@/components/wellness/health-content";
+import { ModuleHero } from "@/components/shared/module-hero";
 import { useLanguage } from "@/context/language-context";
 
 export default function WellnessPage() {
@@ -13,34 +8,60 @@ export default function WellnessPage() {
   const text =
     language === "si"
       ? {
-          eyebrow: "සෞඛ්‍ය සහ සුවතා මොඩියුලය",
-          title: "ඔබගේ මානසික සහ ශාරීරික සුවතාවට සහාය දෙන්න",
-          subtitle: "මනෝභාවය සටහන් කරන්න, උපදේශකයන් බුක් කරන්න, සහ සුවතා අභියෝගවලට එක්වන්න."
+          eyebrow: "à·ƒà·žà¶›à·Šâ€à¶º à·ƒà·„ à·ƒà·”à·€à¶­à· à¶¸à·œà¶©à·’à¶ºà·”à¶½à¶º",
+          title: "à¶”à¶¶à¶œà·š à¶¸à·à¶±à·ƒà·’à¶š à·ƒà·„ à·à·à¶»à·“à¶»à·’à¶š à·ƒà·”à·€à¶­à·à·€à¶§ à·ƒà·„à·à¶º à¶¯à·™à¶±à·Šà¶±",
+          subtitle: "à¶¸à¶±à·à¶·à·à·€à¶º à·ƒà¶§à·„à¶±à·Š à¶šà¶»à¶±à·Šà¶±, à¶‹à¶´à¶¯à·šà·à¶šà¶ºà¶±à·Š à¶¶à·”à¶šà·Š à¶šà¶»à¶±à·Šà¶±, à·ƒà·„ à·ƒà·”à·€à¶­à· à¶…à¶·à·’à¶ºà·à¶œà·€à¶½à¶§ à¶‘à¶šà·Šà·€à¶±à·Šà¶±.",
+          highlights: ["Mood check-ins", "Counselor booking", "Wellness challenges"],
+          stats: [
+            { label: "Check-ins today", value: "24" },
+            { label: "Counselor slots", value: "5" },
+            { label: "Active challenges", value: "2" }
+          ],
+          primaryAction: "Log a check-in",
+          secondaryAction: "Book a counselor"
         }
       : language === "ta"
         ? {
-            eyebrow: "ஆரோக்கியம் மற்றும் நலன் தொகுதி",
-            title: "உங்கள் மன மற்றும் உடல் நலனை ஆதரிக்கவும்",
-            subtitle: "மூட் பதிவு செய்யவும், ஆலோசகர் நேரம் பதிவு செய்யவும், நலன் சவால்களில் சேரவும்."
+            eyebrow: "à®†à®°à¯‹à®•à¯à®•à®¿à®¯à®®à¯ à®®à®±à¯à®±à¯à®®à¯ à®¨à®²à®©à¯ à®¤à¯Šà®•à¯à®¤à®¿",
+            title: "à®‰à®™à¯à®•à®³à¯ à®®à®© à®®à®±à¯à®±à¯à®®à¯ à®‰à®Ÿà®²à¯ à®¨à®²à®©à¯ˆ à®†à®¤à®°à®¿à®•à¯à®•à®µà¯à®®à¯",
+            subtitle: "à®®à¯‚à®Ÿà¯ à®ªà®¤à®¿à®µà¯ à®šà¯†à®¯à¯à®¯à®µà¯à®®à¯, à®†à®²à¯‹à®šà®•à®°à¯ à®¨à¯‡à®°à®®à¯ à®ªà®¤à®¿à®µà¯ à®šà¯†à®¯à¯à®¯à®µà¯à®®à¯, à®¨à®²à®©à¯ à®šà®µà®¾à®²à¯à®•à®³à®¿à®²à¯ à®šà¯‡à®°à®µà¯à®®à¯.",
+            highlights: ["Mood check-ins", "Counselor booking", "Wellness challenges"],
+            stats: [
+              { label: "Check-ins today", value: "24" },
+              { label: "Counselor slots", value: "5" },
+              { label: "Active challenges", value: "2" }
+            ],
+            primaryAction: "Log a check-in",
+            secondaryAction: "Book a counselor"
           }
         : {
             eyebrow: "Health & wellness module",
             title: "Support your mental and physical wellbeing",
-            subtitle: "Track mood, book counselors, and join wellness challenges."
+            subtitle: "Track mood, book counselors, and join wellness challenges.",
+            highlights: ["Mood check-ins", "Counselor booking", "Wellness challenges"],
+            stats: [
+              { label: "Check-ins today", value: "24" },
+              { label: "Counselor slots", value: "5" },
+              { label: "Active challenges", value: "2" }
+            ],
+            primaryAction: "Log a check-in",
+            secondaryAction: "Book a counselor"
           };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-10">
-      <SectionHeading eyebrow={text.eyebrow} title={text.title} subtitle={text.subtitle} />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <MoodTracker />
-        <CounselorBooking />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <WellnessChallenges />
-        <PeerSupport />
-      </div>
-      <HealthContent />
+    <div className="mx-auto w-full max-w-6xl px-4 py-10">
+      <ModuleHero
+        eyebrow={text.eyebrow}
+        title={text.title}
+        subtitle={text.subtitle}
+        accent="from-rose-400/45 via-rose-400/15 to-transparent"
+        highlights={text.highlights}
+        stats={text.stats}
+        actions={[
+          { label: text.primaryAction, href: "/wellness" },
+          { label: text.secondaryAction, href: "/wellness", variant: "ghost" }
+        ]}
+      />
     </div>
   );
 }
