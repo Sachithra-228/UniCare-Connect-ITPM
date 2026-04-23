@@ -324,6 +324,28 @@ function DonorPartnerHomeSection() {
   const summary = overview?.summary;
   const recentDonations = overview?.recentDonations ?? [];
   const thankYouMessages = overview?.thankYouMessages ?? [];
+  const summaryCards = [
+    {
+      label: "Active scholarships",
+      value: loading ? "..." : String(summary?.activeScholarships ?? 0),
+      description: "Currently accepting applications"
+    },
+    {
+      label: "Scholarships created",
+      value: loading ? "..." : String(summary?.totalScholarships ?? 0),
+      description: "Across all donor programs"
+    },
+    {
+      label: "Emergency aid cases",
+      value: loading ? "..." : String(summary?.emergencyAidCases ?? 0),
+      description: "Approved support cases"
+    },
+    {
+      label: "Total contributed",
+      value: loading ? "..." : `LKR ${summary?.totalContributedLkr ?? 0}`,
+      description: loading ? "Loading..." : `${summary?.upcomingDeadlines ?? 0} upcoming deadlines`
+    }
+  ];
 
   return (
     <div className="space-y-8">
@@ -333,37 +355,72 @@ function DonorPartnerHomeSection() {
         </p>
       ) : null}
 
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-sky-700 via-blue-700 to-cyan-600 p-0 text-white shadow-xl">
+        <div className="relative p-6 sm:p-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_26%)]" />
+          <div className="relative space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-2xl space-y-2">
+                <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-50">
+                  Partner home
+                </span>
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    Manage donor impact with a clearer, more action-friendly dashboard
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-sky-50/90">
+                    Review scholarship activity, log contributions faster, and keep recent donor engagement updates in one polished workspace.
+                  </p>
+                </div>
+              </div>
+              <div className="grid min-w-[220px] gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Recent donations</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : recentDonations.length}</p>
+                  <p className="text-xs text-sky-50/80">Tracked contributions</p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Thank you notes</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : thankYouMessages.length}</p>
+                  <p className="text-xs text-sky-50/80">Recent student appreciation</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard
-          label="Active scholarships"
-          value={loading ? "..." : String(summary?.activeScholarships ?? 0)}
-          description="Currently accepting applications"
-        />
-        <StatCard
-          label="Total scholarships created"
-          value={loading ? "..." : String(summary?.totalScholarships ?? 0)}
-          description="Across all programs"
-        />
-        <StatCard
-          label="Emergency aid cases"
-          value={loading ? "..." : String(summary?.emergencyAidCases ?? 0)}
-          description="Approved emergency support cases"
-        />
-        <StatCard
-          label="Total contributed (LKR)"
-          value={loading ? "..." : String(summary?.totalContributedLkr ?? 0)}
-          description={loading ? "Loading..." : `Upcoming deadlines: ${summary?.upcomingDeadlines ?? 0}`}
-        />
+        {summaryCards.map((item) => (
+          <StatCard
+            key={item.label}
+            label={item.label}
+            value={item.value}
+            description={item.description}
+          />
+        ))}
       </div>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-lg font-semibold">Log new contribution</h3>
-        <form className="space-y-3" onSubmit={logContribution}>
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Contribution type</label>
+      <Card className="space-y-5 border-slate-100 bg-gradient-to-br from-white via-sky-50 to-cyan-50 p-5 shadow-md dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Log new contribution</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Record a new donation with clear fields so your partner activity stays organized and easy to review.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-sky-100 bg-white/80 px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300">
+            <p className="font-semibold text-slate-900 dark:text-white">Quick action</p>
+            <p>Add a contribution in a few steps</p>
+          </div>
+        </div>
+        <form className="space-y-4" onSubmit={logContribution}>
+          <div className="grid gap-4 md:grid-cols-3">
+            <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span>Contribution type</span>
               <select
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-950"
                 value={contributionType}
                 onChange={(event) =>
                   setContributionType(
@@ -377,67 +434,98 @@ function DonorPartnerHomeSection() {
                 <option value="ngo_program">NGO Program</option>
                 <option value="general">General</option>
               </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Program / campaign</label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span>Program / campaign</span>
+              <Input
                 value={program}
                 onChange={(event) => setProgram(event.target.value)}
                 placeholder="Campaign name"
                 required
+                className="min-h-11 border-slate-200 bg-white/90 dark:bg-slate-950"
               />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Amount (LKR)</label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span>Amount (LKR)</span>
+              <Input
                 value={amountLkr}
                 onChange={(event) => setAmountLkr(event.target.value)}
                 placeholder="50000"
                 required
+                className="min-h-11 border-slate-200 bg-white/90 dark:bg-slate-950"
               />
-            </div>
+            </label>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Note (optional)</label>
+          <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+            <span>Note (optional)</span>
             <textarea
-              className="min-h-[84px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white/90 px-3 py-3 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-950"
               value={note}
               onChange={(event) => setNote(event.target.value)}
               placeholder="Any note for internal tracking..."
             />
-          </div>
-          <div className="flex justify-end">
-            <button
+          </label>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              className="min-w-[120px]"
+              onClick={() => {
+                setContributionType("emergency_fund");
+                setProgram("Emergency Support Fund");
+                setAmountLkr("");
+                setNote("");
+                setError(null);
+              }}
+            >
+              Clear
+            </Button>
+            <Button
               type="submit"
               disabled={loggingContribution}
-              className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+              className="min-w-[180px] bg-primary text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loggingContribution ? "Logging..." : "Log contribution"}
-            </button>
+            </Button>
           </div>
         </form>
       </Card>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-lg font-semibold">Recent donations</h3>
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recent donations</h3>
+            <p className="text-sm text-slate-500">A quick view of your latest recorded donor contributions.</p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            {loading ? "..." : `${recentDonations.length} items`}
+          </span>
+        </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading recent donations...</p>
         ) : !recentDonations.length ? (
-          <p className="text-sm text-slate-500">No donations logged yet.</p>
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">
+            No donations logged yet.
+          </p>
         ) : (
-          <div className="space-y-3 text-sm">
+          <div className="grid gap-3 md:grid-cols-2">
             {recentDonations.map((item) => (
               <div
                 key={item.id}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+                className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900"
               >
-                <p className="font-medium">{item.program}</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {item.category} | LKR {item.amountLkr}
-                </p>
-                <p className="text-xs text-slate-500">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white">{item.program}</p>
+                    <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                      {item.category}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary dark:bg-primary/20 dark:text-blue-200">
+                    LKR {item.amountLkr}
+                  </span>
+                </div>
+                <p className="mt-3 text-xs text-slate-500">
                   {new Date(item.date).toLocaleDateString()}
                   {item.receiptNumber ? ` | Receipt: ${item.receiptNumber}` : ""}
                 </p>
@@ -447,25 +535,33 @@ function DonorPartnerHomeSection() {
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-lg font-semibold">Recent thank you messages</h3>
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recent thank you messages</h3>
+            <p className="text-sm text-slate-500">Student appreciation and support feedback shared with donors.</p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            {loading ? "..." : `${thankYouMessages.length} messages`}
+          </span>
+        </div>
         <div className="space-y-3 text-sm">
           {thankYouMessages.map((t) => (
             <div
               key={t.id}
-              className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+              className="rounded-3xl border border-slate-200 bg-gradient-to-r from-sky-50 to-white p-4 shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900"
             >
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                 {t.program}
               </p>
-              <p className="mt-1 text-slate-800 dark:text-slate-100">{t.message}</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-2 text-slate-800 dark:text-slate-100">{t.message}</p>
+              <p className="mt-3 text-xs text-slate-500">
                 From: {t.from} | {new Date(t.date).toLocaleDateString()}
               </p>
             </div>
           ))}
           {!thankYouMessages.length && (
-            <p className="text-sm text-slate-500">
+            <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">
               No messages yet. As students receive aid, anonymized thank you notes will appear here.
             </p>
           )}
@@ -493,6 +589,15 @@ function DonorMyScholarshipsSection() {
     (item) => String(item.status ?? "").toLowerCase() !== "closed"
   ).length;
   const closedCount = scholarships.length - activeCount;
+  const clearScholarshipForm = () => {
+    setTitle("");
+    setAmount("");
+    setDeadline("");
+    setEligibilityCriteria("");
+    setApplicationLink("");
+    setTags("");
+    setActionError(null);
+  };
 
   const createScholarship = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -580,7 +685,61 @@ function DonorMyScholarshipsSection() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-sky-700 via-blue-700 to-cyan-600 p-0 text-white shadow-xl">
+        <div className="relative p-6 sm:p-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_26%)]" />
+          <div className="relative space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-2xl space-y-2">
+                <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-50">
+                  My scholarships
+                </span>
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    Create and manage scholarship programs with a clearer donor workflow
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-sky-50/90">
+                    Publish new opportunities, monitor active and closed listings, and keep every scholarship update in one easy-to-use blue-themed dashboard.
+                  </p>
+                </div>
+              </div>
+              <div className="grid min-w-[220px] gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Total listings</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : scholarships.length}</p>
+                  <p className="text-xs text-sky-50/80">Programs you manage</p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Open for students</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : activeCount}</p>
+                  <p className="text-xs text-sky-50/80">Visible scholarship opportunities</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard
+          label="Total scholarships"
+          value={loading ? "..." : String(scholarships.length)}
+          description="Programs you created"
+        />
+        <StatCard
+          label="Active"
+          value={loading ? "..." : String(activeCount)}
+          description="Visible to students"
+        />
+        <StatCard
+          label="Closed"
+          value={loading ? "..." : String(closedCount)}
+          description="Not accepting new applications"
+        />
+      </div>
+
       <p className="text-sm text-slate-600 dark:text-slate-300">
         Manage the scholarships you sponsor. Students apply here, and university admins verify
         eligibility before final selection.
@@ -595,176 +754,191 @@ function DonorMyScholarshipsSection() {
           {actionError}
         </p>
       ) : null}
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard
-          label="Total scholarships"
-          value={String(scholarships.length)}
-          description="Programs you created"
-        />
-        <StatCard
-          label="Active"
-          value={String(activeCount)}
-          description="Visible to students"
-        />
-        <StatCard
-          label="Closed"
-          value={String(closedCount)}
-          description="Not accepting new applications"
-        />
-      </div>
-      <Card className="space-y-3 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold">Scholarship listings</h3>
-          <button
-            onClick={() => setShowCreateForm((prev) => !prev)}
-            className="rounded-full bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary/90"
+      <Card className="space-y-5 border-slate-100 bg-gradient-to-br from-white via-sky-50 to-cyan-50 p-5 shadow-md dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Scholarship listings</h3>
+            <p className="text-sm text-slate-500">
+              Create new scholarship opportunities and manage the current status of each listing.
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={() => {
+              setShowCreateForm((prev) => !prev);
+              if (showCreateForm) clearScholarshipForm();
+            }}
+            className="min-w-[170px] bg-primary text-white shadow-sm hover:bg-blue-700"
           >
             {showCreateForm ? "Cancel" : "Create scholarship"}
-          </button>
+          </Button>
         </div>
         {showCreateForm ? (
           <form
-            className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+            className="space-y-4 rounded-3xl border border-sky-100 bg-white/90 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950"
             onSubmit={createScholarship}
           >
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Scholarship title
-                </label>
-                <input
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                <span>Scholarship title</span>
+                <Input
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="STEM Equity Scholarship"
                   required
+                  className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Amount
-                </label>
-                <input
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              </label>
+              <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                <span>Amount</span>
+                <Input
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
                   placeholder="LKR 100000"
                   required
+                  className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Application deadline
-                </label>
-                <input
+              </label>
+              <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                <span>Application deadline</span>
+                <Input
                   type="date"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
                   value={deadline}
                   onChange={(event) => setDeadline(event.target.value)}
                   required
+                  className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Tags (comma separated)
-                </label>
-                <input
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              </label>
+              <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                <span>Tags (comma separated)</span>
+                <Input
                   value={tags}
                   onChange={(event) => setTags(event.target.value)}
                   placeholder="need-based, undergraduate"
+                  className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
                 />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Eligibility criteria
               </label>
+            </div>
+            <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span>Eligibility criteria</span>
               <textarea
-                className="min-h-[80px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
                 value={eligibilityCriteria}
                 onChange={(event) => setEligibilityCriteria(event.target.value)}
                 placeholder="Who can apply for this scholarship"
               />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                Application link (optional)
-              </label>
-              <input
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span>Application link (optional)</span>
+              <Input
                 value={applicationLink}
                 onChange={(event) => setApplicationLink(event.target.value)}
                 placeholder="https://..."
+                className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
               />
-            </div>
-            <div className="flex justify-end">
-              <button
+            </label>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="min-w-[120px]"
+                onClick={clearScholarshipForm}
+              >
+                Clear
+              </Button>
+              <Button
                 type="submit"
                 disabled={submitting}
-                className="rounded-full bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+                className="min-w-[190px] bg-primary text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {submitting ? "Publishing..." : "Publish scholarship"}
-              </button>
+              </Button>
             </div>
           </form>
         ) : null}
-        <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
+        <div className="space-y-3 text-sm">
           {loading ? (
             <p className="py-3 text-sm text-slate-500">Loading scholarships...</p>
           ) : null}
           {scholarships.map((s) => (
             <div
               key={s._id ?? s.title}
-              className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
+              className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900"
             >
-              <div>
-                <p className="font-medium">{s.title ?? "Scholarship"}</p>
-                <p className="text-xs text-slate-500">
-                  Amount: {s.amount ?? "N/A"}
-                  {s.deadline ? ` | Deadline: ${s.deadline}` : ""}
-                </p>
-                {s.tags?.length ? (
-                  <p className="text-xs text-slate-500">Tags: {s.tags.join(", ")}</p>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                  {String(s.status ?? "active").toLowerCase() === "closed" ? "Closed" : "Active"}
-                </span>
-                {s._id ? (
-                  <>
-                    {String(s.status ?? "").toLowerCase() === "closed" ? (
-                      <button
-                        onClick={() => updateStatus(s._id as string, "active")}
-                        disabled={updatingId === s._id}
-                        className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-3xl">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-slate-900 dark:text-white">{s.title ?? "Scholarship"}</p>
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary dark:bg-primary/20 dark:text-blue-200">
+                      {String(s.status ?? "active").toLowerCase() === "closed" ? "Closed" : "Active"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                    Amount: {s.amount ?? "N/A"}
+                    {s.deadline ? ` | Deadline: ${s.deadline}` : ""}
+                  </p>
+                  {s.eligibilityCriteria ? (
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                      {s.eligibilityCriteria}
+                    </p>
+                  ) : null}
+                  {s.tags?.length ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {s.tags.map((tag) => (
+                        <span
+                          key={`${s._id ?? s.title}-${tag}`}
+                          className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  {s.applicationLink ? (
+                    <p className="mt-3 text-xs text-slate-500">Application link: {s.applicationLink}</p>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  {s._id ? (
+                    <>
+                      {String(s.status ?? "").toLowerCase() === "closed" ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => updateStatus(s._id as string, "active")}
+                          disabled={updatingId === s._id}
+                          className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                        >
+                          {updatingId === s._id ? "Updating..." : "Reopen"}
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => updateStatus(s._id as string, "closed")}
+                          disabled={updatingId === s._id}
+                          className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                        >
+                          {updatingId === s._id ? "Updating..." : "Close"}
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => deleteScholarship(s._id as string)}
+                        disabled={deletingId === s._id}
+                        className="rounded-full border border-rose-200 px-4 py-2 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/20"
                       >
-                        Reopen
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => updateStatus(s._id as string, "closed")}
-                        disabled={updatingId === s._id}
-                        className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        Close
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteScholarship(s._id as string)}
-                      disabled={deletingId === s._id}
-                      className="rounded-full border border-rose-300 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/20"
-                    >
-                      {deletingId === s._id ? "Deleting..." : "Delete"}
-                    </button>
-                  </>
-                ) : null}
+                        {deletingId === s._id ? "Deleting..." : "Delete"}
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
               </div>
             </div>
           ))}
           {!loading && !scholarships.length && (
-            <p className="py-3 text-sm text-slate-500">
+            <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">
               No scholarships found yet. Use &quot;Create scholarship&quot; to add your first
               program.
             </p>
@@ -814,6 +988,12 @@ function DonorFundedStudentsSection() {
   const summary = overview?.summary;
   const students = overview?.students ?? [];
   const updates = overview?.updates ?? [];
+  const clearUpdateForm = () => {
+    setEditingUpdateId(null);
+    setUpdateTitle("");
+    setUpdateDetail("");
+    setError(null);
+  };
 
   const createUpdate = async () => {
     if (!updateTitle.trim() || !updateDetail.trim()) {
@@ -900,7 +1080,86 @@ function DonorFundedStudentsSection() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-sky-700 via-blue-700 to-cyan-600 p-0 text-white shadow-xl">
+        <div className="relative p-6 sm:p-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_26%)]" />
+          <div className="relative space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-2xl space-y-2">
+                <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-50">
+                  Funded students
+                </span>
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    Track funded student progress in a clearer donor view
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-sky-50/90">
+                    Review support coverage, student progress signals, and recent donor-facing updates from one easy-to-scan dashboard section.
+                  </p>
+                </div>
+              </div>
+              <div className="grid min-w-[220px] gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Students tracked</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : students.length}</p>
+                  <p className="text-xs text-sky-50/80">Supported student profiles</p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Recent updates</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : updates.length}</p>
+                  <p className="text-xs text-sky-50/80">Shared donor progress notes</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          {
+            label: "Funded students",
+            value: loading ? "..." : String(summary?.fundedStudents ?? 0),
+            description: "Students with approved support",
+            accent: "from-sky-500 to-blue-600"
+          },
+          {
+            label: "Consented profiles",
+            value: loading ? "..." : String(summary?.consentedProfiles ?? 0),
+            description: "Identity shared with consent",
+            accent: "from-cyan-500 to-sky-600"
+          },
+          {
+            label: "Total funded (LKR)",
+            value: loading ? "..." : String(summary?.totalFundedLkr ?? 0),
+            description: "Approved support total",
+            accent: "from-blue-600 to-indigo-600"
+          },
+          {
+            label: "Average progress",
+            value: loading ? "..." : `${summary?.avgProgressScore ?? 0}%`,
+            description: "Aggregate progress signal",
+            accent: "from-sky-600 to-cyan-600"
+          }
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-md transition-transform hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-900"
+          >
+            <div className={`h-2 w-full bg-gradient-to-r ${item.accent}`} />
+            <div className="space-y-2 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                {item.label}
+              </p>
+              <p className="text-3xl font-semibold text-slate-900 dark:text-white">{item.value}</p>
+              <p className="text-sm text-slate-500">{item.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <p className="text-sm text-slate-600 dark:text-slate-300">
         View funded students and progress updates. Identity details are shown only when explicit
         consent is available.
@@ -910,71 +1169,73 @@ function DonorFundedStudentsSection() {
           {error}
         </p>
       ) : null}
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard
-          label="Funded students"
-          value={loading ? "..." : String(summary?.fundedStudents ?? 0)}
-          description="Students with approved support"
-        />
-        <StatCard
-          label="Consented profiles"
-          value={loading ? "..." : String(summary?.consentedProfiles ?? 0)}
-          description="Identity shared with consent"
-        />
-        <StatCard
-          label="Total funded (LKR)"
-          value={loading ? "..." : String(summary?.totalFundedLkr ?? 0)}
-          description="Approved support total"
-        />
-        <StatCard
-          label="Average progress"
-          value={loading ? "..." : `${summary?.avgProgressScore ?? 0}%`}
-          description="Aggregate progress signal"
-        />
-      </div>
-
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Current scholars</h3>
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Current scholars</h3>
+            <p className="text-sm text-slate-500">Monitor progress, support types, and recent milestones for funded students.</p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            {loading ? "..." : `${students.length} profiles`}
+          </span>
+        </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading funded students...</p>
         ) : !students.length ? (
-          <p className="text-sm text-slate-500">
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">
             No funded student records yet. Once approved aid cases exist, they will appear here.
           </p>
         ) : (
-          <div className="space-y-3 text-sm">
+          <div className="grid gap-4 xl:grid-cols-2">
             {students.map((student) => (
               <div
                 key={student.id}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+                className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-5 shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="font-semibold">{student.displayName}</p>
+                    <p className="font-semibold text-slate-900 dark:text-white">{student.displayName}</p>
                     <p className="text-xs text-slate-500">
                       {student.university || "University details hidden"}
                       {student.program ? ` | ${student.program}` : ""}
                       {student.year ? ` | ${student.year}` : ""}
                     </p>
                   </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary dark:bg-primary/20 dark:text-blue-200">
                     {student.latestStatus}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-slate-500">
-                  Support: {student.supportCategories.join(", ")} | LKR {student.totalFundedLkr}
-                </p>
-                <div className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: `${Math.min(100, Math.max(0, student.progressScore))}%` }}
-                  />
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    Support: {student.supportCategories.join(", ")}
+                  </p>
+                  <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-900/30 dark:text-sky-200">
+                    LKR {student.totalFundedLkr}
+                  </span>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
+                <div className="mt-5 overflow-hidden rounded-2xl border border-sky-100 bg-sky-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/70">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Progress overview
+                    </p>
+                    <p className="text-sm font-semibold text-primary dark:text-blue-200">
+                      {student.progressScore}%
+                    </p>
+                  </div>
+                  <div className="mt-3 h-4 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-sky-500 via-blue-600 to-cyan-500 shadow-[0_0_18px_rgba(37,99,235,0.35)]"
+                      style={{ width: `${Math.min(100, Math.max(0, student.progressScore))}%` }}
+                    />
+                  </div>
+                </div>
+                <p className="mt-3 text-sm font-medium text-slate-600 dark:text-slate-300">
                   Progress: {student.progressLabel} ({student.progressScore}%)
                 </p>
-                <p className="mt-1 text-xs text-slate-500">{student.recentMilestone}</p>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-2 rounded-2xl border border-slate-200 bg-white/80 px-3 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300">
+                  {student.recentMilestone}
+                </p>
+                <p className="mt-3 text-xs text-slate-400">
                   Last update: {new Date(student.lastUpdated).toLocaleDateString()}
                 </p>
               </div>
@@ -983,79 +1244,122 @@ function DonorFundedStudentsSection() {
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">{editingUpdateId ? "Edit update" : "Add update"}</h3>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Input
-            value={updateTitle}
-            onChange={(event) => setUpdateTitle(event.target.value)}
-            placeholder="Update title"
-          />
-          <Input
-            value={updateDetail}
-            onChange={(event) => setUpdateDetail(event.target.value)}
-            placeholder="Update detail"
-          />
+      <Card className="space-y-5 border-slate-100 bg-gradient-to-br from-white via-sky-50 to-cyan-50 p-5 shadow-md dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+              {editingUpdateId ? "Edit update" : "Add update"}
+            </h3>
+            <p className="text-sm text-slate-500">
+              Share donor-facing progress notes so the funded student journey stays transparent and easy to follow.
+            </p>
+          </div>
+          <span className="rounded-2xl border border-sky-100 bg-white/80 px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300">
+            {editingUpdateId ? "Editing selected update" : "Create a new update"}
+          </span>
         </div>
-        <div className="flex justify-end gap-2">
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+            <span>Update title</span>
+            <Input
+              value={updateTitle}
+              onChange={(event) => setUpdateTitle(event.target.value)}
+              placeholder="Update title"
+              className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
+            />
+          </label>
+          <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+            <span>Update detail</span>
+            <Input
+              value={updateDetail}
+              onChange={(event) => setUpdateDetail(event.target.value)}
+              placeholder="Update detail"
+              className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
+            />
+          </label>
+        </div>
+        <div className="flex flex-wrap justify-end gap-2">
           {editingUpdateId ? (
             <>
               <Button
-                onClick={() => {
-                  setEditingUpdateId(null);
-                  setUpdateTitle("");
-                  setUpdateDetail("");
-                }}
+                variant="secondary"
+                className="min-w-[120px]"
+                onClick={clearUpdateForm}
               >
                 Cancel
               </Button>
-              <Button variant="primary" onClick={() => saveEditedUpdate(editingUpdateId)} disabled={updatingUpdate}>
+              <Button
+                variant="primary"
+                className="min-w-[170px] bg-primary text-white shadow-sm hover:bg-blue-700"
+                onClick={() => saveEditedUpdate(editingUpdateId)}
+                disabled={updatingUpdate}
+              >
                 {updatingUpdate ? "Saving..." : "Save changes"}
               </Button>
             </>
           ) : (
-            <Button variant="primary" onClick={createUpdate} disabled={savingUpdate}>
+            <Button
+              variant="primary"
+              className="min-w-[170px] bg-primary text-white shadow-sm hover:bg-blue-700"
+              onClick={createUpdate}
+              disabled={savingUpdate}
+            >
               {savingUpdate ? "Adding..." : "Add update"}
             </Button>
           )}
         </div>
       </Card>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Recent updates</h3>
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recent updates</h3>
+            <p className="text-sm text-slate-500">Keep donor communication records organized and easy to manage.</p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            {loading ? "..." : `${updates.length} updates`}
+          </span>
+        </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading updates...</p>
         ) : !updates.length ? (
-          <p className="text-sm text-slate-500">No updates available yet.</p>
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">
+            No updates available yet.
+          </p>
         ) : (
-          <div className="space-y-2 text-sm">
+          <div className="space-y-3 text-sm">
             {updates.map((update) => (
-              <div key={update.id} className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800">
-                <p className="font-medium">{update.title}</p>
-                <p className="text-xs text-slate-500">{update.detail}</p>
+              <div
+                key={update.id}
+                className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900"
+              >
+                <p className="font-semibold text-slate-900 dark:text-white">{update.title}</p>
+                <p className="mt-2 text-sm text-slate-500">{update.detail}</p>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-slate-400">{new Date(update.date).toLocaleDateString()}</p>
+                  <p className="mt-3 text-xs text-slate-400">{new Date(update.date).toLocaleDateString()}</p>
                   {update.editable ? (
                     <div className="flex items-center gap-2">
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
                         onClick={() => {
                           setEditingUpdateId(update.id);
                           setUpdateTitle(update.title);
                           setUpdateDetail(update.detail);
                         }}
-                        className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        className="border-sky-200 bg-sky-50 px-4 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:hover:bg-sky-900/40"
                       >
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() => deleteUpdate(update.id)}
                         disabled={deletingUpdateId === update.id}
-                        className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                        className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100 hover:text-rose-700 disabled:opacity-60 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300 dark:hover:bg-rose-900/30"
                       >
                         {deletingUpdateId === update.id ? "Deleting..." : "Delete"}
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
                 </div>
@@ -1080,6 +1384,17 @@ function DonorDonationsSection() {
   const [savingContribution, setSavingContribution] = useState(false);
   const [deletingContributionId, setDeletingContributionId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const clearEditingContribution = () => {
+    setEditingContributionId(null);
+    setEditingContribution({
+      contributionType: "general",
+      program: "",
+      category: "",
+      amountLkr: "",
+      note: ""
+    });
+    setActionError(null);
+  };
 
   const totals = contributions.reduce(
     (acc, item) => {
@@ -1144,7 +1459,7 @@ function DonorDonationsSection() {
         setActionError(payload.message ?? "Unable to save contribution.");
         return;
       }
-      setEditingContributionId(null);
+      clearEditingContribution();
       await reload();
     } catch {
       setActionError("Unable to save contribution.");
@@ -1167,7 +1482,7 @@ function DonorDonationsSection() {
         return;
       }
       if (editingContributionId === id) {
-        setEditingContributionId(null);
+        clearEditingContribution();
       }
       await reload();
     } catch {
@@ -1178,7 +1493,86 @@ function DonorDonationsSection() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-sky-700 via-blue-700 to-cyan-600 p-0 text-white shadow-xl">
+        <div className="relative p-6 sm:p-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_26%)]" />
+          <div className="relative space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-2xl space-y-2">
+                <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-50">
+                  Donations
+                </span>
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    Review donation activity in a cleaner and more actionable dashboard view
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-sky-50/90">
+                    Track emergency fund, equipment, and scholarship contributions with clearer records, stronger actions, and export-ready history.
+                  </p>
+                </div>
+              </div>
+              <div className="grid min-w-[220px] gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Donation entries</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : contributions.length}</p>
+                  <p className="text-xs text-sky-50/80">Recorded contribution rows</p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">All-time total</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : `LKR ${totals.total}`}</p>
+                  <p className="text-xs text-sky-50/80">Across all donation types</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          {
+            label: "Total contributed",
+            value: `LKR ${totals.total}`,
+            description: "All-time donations",
+            accent: "from-sky-500 to-blue-600"
+          },
+          {
+            label: "Emergency fund",
+            value: `LKR ${totals.emergency}`,
+            description: "Crisis response",
+            accent: "from-cyan-500 to-sky-600"
+          },
+          {
+            label: "Equipment",
+            value: `LKR ${totals.equipment}`,
+            description: "Devices & materials",
+            accent: "from-blue-600 to-indigo-600"
+          },
+          {
+            label: "Scholarships",
+            value: `LKR ${totals.scholarship}`,
+            description: "Tuition & grants",
+            accent: "from-sky-600 to-cyan-600"
+          }
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-md transition-transform hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-900"
+          >
+            <div className={`h-2 w-full bg-gradient-to-r ${item.accent}`} />
+            <div className="space-y-2 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                {item.label}
+              </p>
+              <p className="text-3xl font-semibold text-slate-900 dark:text-white">{item.value}</p>
+              <p className="text-sm text-slate-500">{item.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <p className="text-sm text-slate-600 dark:text-slate-300">
         Track your emergency fund, scholarship, and equipment contributions in one place. Receipts
         are generated automatically for logged donations.
@@ -1193,19 +1587,20 @@ function DonorDonationsSection() {
           {actionError}
         </p>
       ) : null}
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Total contributed" value={`LKR ${totals.total}`} description="All-time donations" />
-        <StatCard label="Emergency fund" value={`LKR ${totals.emergency}`} description="Crisis response" />
-        <StatCard label="Equipment" value={`LKR ${totals.equipment}`} description="Devices & materials" />
-        <StatCard label="Scholarships" value={`LKR ${totals.scholarship}`} description="Tuition & grants" />
-      </div>
-
       {editingContributionId ? (
-        <Card className="space-y-3 p-4">
-          <h3 className="text-sm font-semibold">Edit contribution</h3>
-          <div className="grid gap-3 md:grid-cols-2">
+        <Card className="space-y-5 border-slate-100 bg-gradient-to-br from-white via-sky-50 to-cyan-50 p-5 shadow-md dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Edit contribution</h3>
+              <p className="text-sm text-slate-500">Update donation details with clearer fields and actions.</p>
+            </div>
+            <span className="rounded-2xl border border-sky-100 bg-white/80 px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300">
+              Editing selected record
+            </span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
             <select
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
               value={editingContribution.contributionType}
               onChange={(event) =>
                 setEditingContribution((prev) => ({ ...prev, contributionType: event.target.value }))
@@ -1221,95 +1616,127 @@ function DonorDonationsSection() {
               value={editingContribution.amountLkr}
               onChange={(event) => setEditingContribution((prev) => ({ ...prev, amountLkr: event.target.value }))}
               placeholder="Amount (LKR)"
+              className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
             />
             <Input
               value={editingContribution.program}
               onChange={(event) => setEditingContribution((prev) => ({ ...prev, program: event.target.value }))}
               placeholder="Program"
+              className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
             />
             <Input
               value={editingContribution.category}
               onChange={(event) => setEditingContribution((prev) => ({ ...prev, category: event.target.value }))}
               placeholder="Category"
+              className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
             />
           </div>
           <Input
             value={editingContribution.note}
             onChange={(event) => setEditingContribution((prev) => ({ ...prev, note: event.target.value }))}
             placeholder="Note"
+            className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
           />
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setEditingContributionId(null)}>Cancel</Button>
-            <Button variant="primary" onClick={saveContribution} disabled={savingContribution}>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="secondary" className="min-w-[120px]" onClick={clearEditingContribution}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              className="min-w-[150px] bg-primary text-white shadow-sm hover:bg-blue-700"
+              onClick={saveContribution}
+              disabled={savingContribution}
+            >
               {savingContribution ? "Saving..." : "Save"}
             </Button>
           </div>
         </Card>
       ) : null}
 
-      <Card className="space-y-3 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold">Donation history</h3>
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Donation history</h3>
+            <p className="text-sm text-slate-500">Review receipts, program records, and contribution details in one place.</p>
+          </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              type="button"
+              variant="secondary"
+              className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
               onClick={() => reload()}
-              className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Refresh
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
               onClick={exportCsv}
               disabled={!contributions.length}
-              className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="bg-primary text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Download receipts CSV
-            </button>
+            </Button>
           </div>
         </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading donations...</p>
         ) : !contributions.length ? (
-          <p className="text-sm text-slate-500">
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">
             No donations logged yet. Use the Partner Home form to record new contributions.
           </p>
         ) : (
-          <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
+          <div className="space-y-3 text-sm">
             {contributions.map((item) => (
               <div
                 key={item._id ?? item.receiptNumber ?? item.program}
-                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900"
               >
-                <div>
-                  <p className="font-medium">{item.program ?? "Donation"}</p>
-                  <p className="text-xs text-slate-500">
-                    {item.category ?? "General support"} | Receipt: {item.receiptNumber ?? "Pending"}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold">LKR {item.amountLkr ?? 0}</p>
-                  {item.note ? <p className="text-xs text-slate-500">{item.note}</p> : null}
-                  {item._id ? (
-                    <div className="mt-2 flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(item)}
-                        className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteContribution(item._id as string)}
-                        disabled={deletingContributionId === item._id}
-                        className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
-                      >
-                        {deletingContributionId === item._id ? "Deleting..." : "Delete"}
-                      </button>
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="max-w-3xl">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-slate-900 dark:text-white">{item.program ?? "Donation"}</p>
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary dark:bg-primary/20 dark:text-blue-200">
+                        {item.category ?? "General support"}
+                      </span>
                     </div>
-                  ) : null}
+                    <p className="mt-2 text-xs text-slate-500">
+                      Receipt: {item.receiptNumber ?? "Pending"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
+                    </p>
+                    {item.note ? (
+                      <p className="mt-3 rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300">
+                        {item.note}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col items-start gap-3 lg:items-end">
+                    <span className="rounded-full bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700 dark:bg-sky-900/30 dark:text-sky-200">
+                      LKR {item.amountLkr ?? 0}
+                    </span>
+                    {item._id ? (
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => startEdit(item)}
+                          className="border-sky-200 bg-sky-50 px-4 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:hover:bg-sky-900/40"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => deleteContribution(item._id as string)}
+                          disabled={deletingContributionId === item._id}
+                          className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100 hover:text-rose-700 disabled:opacity-60 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300 dark:hover:bg-rose-900/30"
+                        >
+                          {deletingContributionId === item._id ? "Deleting..." : "Delete"}
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             ))}
@@ -1382,7 +1809,88 @@ function DonorImpactReportsSection() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-sky-700 via-blue-700 to-cyan-600 p-0 text-white shadow-xl">
+        <div className="relative p-6 sm:p-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_26%)]" />
+          <div className="relative space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-2xl space-y-2">
+                <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-50">
+                  Impact reports
+                </span>
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    Present donor impact with a clearer and more professional reporting view
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-sky-50/90">
+                    Review contribution impact, funding distribution, and NGO partner outcomes in a cleaner dashboard layout built for fast scanning.
+                  </p>
+                </div>
+              </div>
+              <div className="grid min-w-[220px] gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Window</p>
+                  <p className="mt-1 text-2xl font-semibold">{rangeDays} days</p>
+                  <p className="text-xs text-sky-50/80">Current reporting range</p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">NGO reports</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : ngoReports.length}</p>
+                  <p className="text-xs text-sky-50/80">Partner reports available</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {loading ? null : report
+          ? [
+              {
+                label: "Total contributed",
+                value: `LKR ${report.summary.totalContributedLkr}`,
+                description: "Donations recorded",
+                accent: "from-sky-500 to-blue-600"
+              },
+              {
+                label: "Approved aid",
+                value: `LKR ${report.summary.aidApprovedLkr}`,
+                description: "Aid disbursed",
+                accent: "from-cyan-500 to-sky-600"
+              },
+              {
+                label: "Funded students",
+                value: String(report.summary.fundedStudents),
+                description: "Unique recipients",
+                accent: "from-blue-600 to-indigo-600"
+              },
+              {
+                label: "Avg support/student",
+                value: `LKR ${report.summary.avgSupportPerStudent}`,
+                description: "Average approved aid",
+                accent: "from-sky-600 to-cyan-600"
+              }
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-md transition-transform hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-900"
+              >
+                <div className={`h-2 w-full bg-gradient-to-r ${item.accent}`} />
+                <div className="space-y-2 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    {item.label}
+                  </p>
+                  <p className="text-3xl font-semibold text-slate-900 dark:text-white">{item.value}</p>
+                  <p className="text-sm text-slate-500">{item.description}</p>
+                </div>
+              </div>
+            ))
+          : null}
+      </div>
+
       <p className="text-sm text-slate-600 dark:text-slate-300">
         Impact reports aggregate scholarship, aid, and donation data for CSR reporting. Results are
         anonymized and grouped at program level.
@@ -1393,15 +1901,15 @@ function DonorImpactReportsSection() {
         </p>
       ) : null}
 
-      <Card className="space-y-3 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold">Impact summary</h3>
-            <p className="text-xs text-slate-500">Rolling {rangeDays}-day window</p>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Impact summary</h3>
+            <p className="text-sm text-slate-500">Rolling {rangeDays}-day window</p>
           </div>
           <div className="flex items-center gap-2">
             <select
-              className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="rounded-full border border-slate-300 bg-white px-3 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
               value={rangeDays}
               onChange={(event) => setRangeDays(Number(event.target.value))}
             >
@@ -1409,113 +1917,106 @@ function DonorImpactReportsSection() {
               <option value={90}>Last 90 days</option>
               <option value={180}>Last 180 days</option>
             </select>
-            <button
+            <Button
+              type="button"
               onClick={exportCsv}
               disabled={!report}
-              className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="bg-primary text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Export CSV
-            </button>
+            </Button>
           </div>
         </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading impact report...</p>
         ) : report ? (
-          <div className="grid gap-4 md:grid-cols-4">
-            <StatCard
-              label="Total contributed"
-              value={`LKR ${report.summary.totalContributedLkr}`}
-              description="Donations recorded"
-            />
-            <StatCard
-              label="Approved aid"
-              value={`LKR ${report.summary.aidApprovedLkr}`}
-              description="Aid disbursed"
-            />
-            <StatCard
-              label="Funded students"
-              value={String(report.summary.fundedStudents)}
-              description="Unique recipients"
-            />
-            <StatCard
-              label="Avg support/student"
-              value={`LKR ${report.summary.avgSupportPerStudent}`}
-              description="Average approved aid"
-            />
-          </div>
+          <p className="text-sm text-slate-500">Summary metrics are shown in the header above.</p>
         ) : null}
       </Card>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Funding distribution</h3>
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Funding distribution</h3>
+          <p className="text-sm text-slate-500">See how funding is distributed across donor-supported categories.</p>
+        </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading distribution...</p>
         ) : !report?.distribution?.length ? (
-          <p className="text-sm text-slate-500">No distribution data available yet.</p>
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">No distribution data available yet.</p>
         ) : (
-          <div className="space-y-2 text-sm">
+          <div className="space-y-3 text-sm">
             {report.distribution.map((item) => (
               <div
                 key={item.label}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900"
               >
                 <div>
-                  <p className="font-medium">{item.label}</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">{item.label}</p>
                   <p className="text-xs text-slate-500">{item.count} allocations</p>
                 </div>
-                <span className="text-sm font-semibold">LKR {item.amountLkr}</span>
+                <span className="rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary dark:bg-primary/20 dark:text-blue-200">
+                  LKR {item.amountLkr}
+                </span>
               </div>
             ))}
           </div>
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Highlights</h3>
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Highlights</h3>
+          <p className="text-sm text-slate-500">Important donor impact points presented in a cleaner summary view.</p>
+        </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading highlights...</p>
         ) : !report?.highlights?.length ? (
-          <p className="text-sm text-slate-500">No highlights yet.</p>
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">No highlights yet.</p>
         ) : (
-          <div className="space-y-2 text-sm">
+          <div className="space-y-3 text-sm">
             {report.highlights.map((item) => (
               <div
                 key={item.id}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800"
+                className="rounded-3xl border border-slate-200 bg-gradient-to-r from-sky-50 to-white p-4 text-sm shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900"
               >
-                <p className="font-medium">{item.title}</p>
-                <p className="text-xs text-slate-500">{item.detail}</p>
+                <p className="font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                <p className="mt-2 text-sm text-slate-500">{item.detail}</p>
               </div>
             ))}
           </div>
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">NGO Impact Reports</h3>
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">NGO Impact Reports</h3>
+          <p className="text-sm text-slate-500">Partner NGO outcomes and program-level utilization reports.</p>
+        </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading NGO reports...</p>
         ) : !ngoReports.length ? (
-          <p className="text-sm text-slate-500">No NGO partner reports available yet.</p>
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">No NGO partner reports available yet.</p>
         ) : (
           <div className="space-y-3 text-sm">
             {ngoReports.map((report) => (
-              <div key={report._id} className="rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-800">
-                <div className="flex justify-between items-start mb-1">
+              <div key={report._id} className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 text-sm shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900">
+                <div className="mb-2 flex items-start justify-between gap-3">
                   <p className="font-semibold text-slate-900 dark:text-white">{report.title}</p>
-                  <span className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 rounded-full py-0.5">
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800">
                     {new Date(report.generatedAt).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium mb-1">
+                <p className="mb-2 text-xs font-medium text-slate-700 dark:text-slate-300">
                   {report.organizationName} - Program: {report.programName}
                 </p>
-                <div className="flex gap-4 mt-2 mb-2 text-xs text-slate-500">
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">Total Funds: LKR {report.totalFundsUtilized.toLocaleString()}</span>
+                <div className="mb-3 flex flex-wrap gap-3 text-xs text-slate-500">
+                  <span className="rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary dark:bg-primary/20 dark:text-blue-200">
+                    Total Funds: LKR {report.totalFundsUtilized.toLocaleString()}
+                  </span>
                   <span>Beneficiaries: {report.beneficiariesSupported}</span>
                 </div>
                 {report.keyOutcomes?.length > 0 && (
-                  <ul className="list-disc pl-5 text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
+                  <ul className="list-disc space-y-1 pl-5 text-xs text-slate-600 dark:text-slate-400">
                     {report.keyOutcomes.map((outcome: string, idx: number) => <li key={idx}>{outcome}</li>)}
                   </ul>
                 )}
@@ -1566,6 +2067,13 @@ function DonorRecognitionSection() {
 
   const metrics = overview?.metrics;
   const stories = overview?.stories ?? [];
+  const clearStoryForm = () => {
+    setEditingStoryId(null);
+    setStoryTitle("");
+    setStorySummary("");
+    setStoryCategory("Student support");
+    setError(null);
+  };
 
   const createStory = async () => {
     if (!storyTitle.trim() || !storySummary.trim()) {
@@ -1589,9 +2097,7 @@ function DonorRecognitionSection() {
         setError(payload.message ?? "Unable to add story.");
         return;
       }
-      setStoryTitle("");
-      setStorySummary("");
-      setStoryCategory("Student support");
+      clearStoryForm();
       await loadRecognition();
     } catch {
       setError("Unable to add story.");
@@ -1623,10 +2129,7 @@ function DonorRecognitionSection() {
         setError(payload.message ?? "Unable to update story.");
         return;
       }
-      setEditingStoryId(null);
-      setStoryTitle("");
-      setStorySummary("");
-      setStoryCategory("Student support");
+      clearStoryForm();
       await loadRecognition();
     } catch {
       setError("Unable to update story.");
@@ -1649,10 +2152,7 @@ function DonorRecognitionSection() {
         return;
       }
       if (editingStoryId === id) {
-        setEditingStoryId(null);
-        setStoryTitle("");
-        setStorySummary("");
-        setStoryCategory("Student support");
+        clearStoryForm();
       }
       await loadRecognition();
     } catch {
@@ -1663,7 +2163,43 @@ function DonorRecognitionSection() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-sky-700 via-blue-700 to-cyan-600 p-0 text-white shadow-xl">
+        <div className="relative p-6 sm:p-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_26%)]" />
+          <div className="relative space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-2xl space-y-2">
+                <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-50">
+                  Recognition
+                </span>
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    Present donor recognition stories in a cleaner and more professional way
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-sky-50/90">
+                    Highlight anonymized student appreciation, donor impact stories, and recognition outcomes in a polished dashboard experience.
+                  </p>
+                </div>
+              </div>
+              <div className="grid min-w-[220px] gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Stories</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : stories.length}</p>
+                  <p className="text-xs text-sky-50/80">Recognition entries available</p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Engagement</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : `${metrics?.engagementRate ?? 0}%`}</p>
+                  <p className="text-xs text-sky-50/80">Recipient engagement rate</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </Card>
+
       <p className="text-sm text-slate-600 dark:text-slate-300">
         Recognition highlights anonymized student stories and thank you messages. Individual
         identities are only shared if everyone has opted in.
@@ -1673,80 +2209,134 @@ function DonorRecognitionSection() {
           {error}
         </p>
       ) : null}
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard
-          label="Featured stories"
-          value={loading ? "..." : String(metrics?.featuredStories ?? 0)}
-          description="Published highlights"
-        />
-        <StatCard
-          label="Student testimonials"
-          value={loading ? "..." : String(metrics?.studentTestimonials ?? 0)}
-          description="Thank-you notes received"
-        />
-        <StatCard
-          label="Anonymized highlights"
-          value={loading ? "..." : String(metrics?.anonymizedHighlights ?? 0)}
-          description="Stories without identity"
-        />
-        <StatCard
-          label="Engagement rate"
-          value={loading ? "..." : `${metrics?.engagementRate ?? 0}%`}
-          description="Recipient engagement"
-        />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          {
+            label: "Featured stories",
+            value: loading ? "..." : String(metrics?.featuredStories ?? 0),
+            description: "Published highlights",
+            accent: "from-sky-500 to-blue-600"
+          },
+          {
+            label: "Student testimonials",
+            value: loading ? "..." : String(metrics?.studentTestimonials ?? 0),
+            description: "Thank-you notes received",
+            accent: "from-cyan-500 to-sky-600"
+          },
+          {
+            label: "Anonymized highlights",
+            value: loading ? "..." : String(metrics?.anonymizedHighlights ?? 0),
+            description: "Stories without identity",
+            accent: "from-blue-600 to-indigo-600"
+          },
+          {
+            label: "Engagement rate",
+            value: loading ? "..." : `${metrics?.engagementRate ?? 0}%`,
+            description: "Recipient engagement",
+            accent: "from-sky-600 to-cyan-600"
+          }
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-md transition-transform hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-900"
+          >
+            <div className={`h-2 w-full bg-gradient-to-r ${item.accent}`} />
+            <div className="space-y-2 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                {item.label}
+              </p>
+              <p className="text-3xl font-semibold text-slate-900 dark:text-white">{item.value}</p>
+              <p className="text-sm text-slate-500">{item.description}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">{editingStoryId ? "Edit story" : "Add story"}</h3>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Input value={storyTitle} onChange={(event) => setStoryTitle(event.target.value)} placeholder="Story title" />
-          <Input value={storyCategory} onChange={(event) => setStoryCategory(event.target.value)} placeholder="Category" />
+      <Card className="space-y-5 border-slate-100 bg-gradient-to-br from-white via-sky-50 to-cyan-50 p-5 shadow-md dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+              {editingStoryId ? "Edit story" : "Add story"}
+            </h3>
+            <p className="text-sm text-slate-500">
+              Capture donor recognition stories in a clearer format for professional presentation.
+            </p>
+          </div>
+          <span className="rounded-2xl border border-sky-100 bg-white/80 px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300">
+            {editingStoryId ? "Editing selected story" : "Create a new story"}
+          </span>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Input
+            value={storyTitle}
+            onChange={(event) => setStoryTitle(event.target.value)}
+            placeholder="Story title"
+            className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
+          />
+          <Input
+            value={storyCategory}
+            onChange={(event) => setStoryCategory(event.target.value)}
+            placeholder="Category"
+            className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
+          />
         </div>
         <textarea
-          className="min-h-[90px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+          className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
           value={storySummary}
           onChange={(event) => setStorySummary(event.target.value)}
           placeholder="Story summary"
         />
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           {editingStoryId ? (
             <>
               <Button
-                onClick={() => {
-                  setEditingStoryId(null);
-                  setStoryTitle("");
-                  setStorySummary("");
-                  setStoryCategory("Student support");
-                }}
+                variant="secondary"
+                className="min-w-[120px]"
+                onClick={clearStoryForm}
               >
                 Cancel
               </Button>
-              <Button variant="primary" onClick={saveStory} disabled={storySaving}>
+              <Button
+                variant="primary"
+                className="min-w-[150px] bg-primary text-white shadow-sm hover:bg-blue-700"
+                onClick={saveStory}
+                disabled={storySaving}
+              >
                 {storySaving ? "Saving..." : "Save story"}
               </Button>
             </>
           ) : (
-            <Button variant="primary" onClick={createStory} disabled={storySaving}>
+            <Button
+              variant="primary"
+              className="min-w-[150px] bg-primary text-white shadow-sm hover:bg-blue-700"
+              onClick={createStory}
+              disabled={storySaving}
+            >
               {storySaving ? "Adding..." : "Add story"}
             </Button>
           )}
         </div>
       </Card>
 
-      <Card className="space-y-3 p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Featured stories</h3>
-          <button
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Featured stories</h3>
+            <p className="text-sm text-slate-500">Recognition highlights and appreciation stories shared with donors.</p>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             onClick={() => loadRecognition()}
-            className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             Refresh
-          </button>
+          </Button>
         </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading stories...</p>
         ) : !stories.length ? (
-          <p className="text-sm text-slate-500">
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">
             No recognition stories yet. As recipients share consented stories, they will appear here.
           </p>
         ) : (
@@ -1754,38 +2344,40 @@ function DonorRecognitionSection() {
             {stories.map((story) => (
               <div
                 key={story.id}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+                className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-semibold">{story.title}</p>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  <p className="font-semibold text-slate-900 dark:text-white">{story.title}</p>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary dark:bg-primary/20 dark:text-blue-200">
                     {story.category}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">{story.summary}</p>
-                <div className="mt-1 flex items-center justify-between gap-2">
+                <p className="mt-2 text-sm text-slate-500">{story.summary}</p>
+                <div className="mt-3 flex items-center justify-between gap-2">
                   <p className="text-xs text-slate-400">{new Date(story.date).toLocaleDateString()}</p>
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="secondary"
                       onClick={() => {
                         setEditingStoryId(story.id);
                         setStoryTitle(story.title);
                         setStorySummary(story.summary);
                         setStoryCategory(story.category);
                       }}
-                      className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                      className="border-sky-200 bg-sky-50 px-4 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:hover:bg-sky-900/40"
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={() => deleteStory(story.id)}
                       disabled={deletingStoryId === story.id}
-                      className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                      className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100 hover:text-rose-700 disabled:opacity-60 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300 dark:hover:bg-rose-900/30"
                     >
                       {deletingStoryId === story.id ? "Deleting..." : "Delete"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -1809,6 +2401,15 @@ function DonorCommunicationsSection() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const clearMessageForm = () => {
+    setEditingId(null);
+    setAudience("students");
+    setMessageType("General update");
+    setSubject("");
+    setBody("");
+    setError(null);
+    setSuccess(null);
+  };
 
   const loadMessages = useCallback(async () => {
     setLoading(true);
@@ -1913,9 +2514,8 @@ function DonorCommunicationsSection() {
         return;
       }
       setSuccess("Message updated.");
-      setEditingId(null);
-      setSubject("");
-      setBody("");
+      clearMessageForm();
+      setSuccess("Message updated.");
       await loadMessages();
     } catch {
       setError("Unable to update message.");
@@ -1939,9 +2539,7 @@ function DonorCommunicationsSection() {
         return;
       }
       if (editingId === id) {
-        setEditingId(null);
-        setSubject("");
-        setBody("");
+        clearMessageForm();
       }
       setSuccess("Message deleted.");
       await loadMessages();
@@ -1953,7 +2551,48 @@ function DonorCommunicationsSection() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-sky-700 via-blue-700 to-cyan-600 p-0 text-white shadow-xl">
+        <div className="relative p-6 sm:p-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_26%)]" />
+          <div className="relative space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-2xl space-y-2">
+                <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-50">
+                  Communications
+                </span>
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    Communicate with recipients and university teams in a clearer professional workspace
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-sky-50/90">
+                    Send updates, requests, and invitations through a cleaner donor communications view designed for easy message management.
+                  </p>
+                </div>
+              </div>
+              <div className="grid min-w-[220px] gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Messages</p>
+                  <p className="mt-1 text-2xl font-semibold">{loading ? "..." : messages.length}</p>
+                  <p className="text-xs text-sky-50/80">Communication records</p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.16em] text-sky-50/75">Audience</p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {audience === "students"
+                      ? "Students"
+                      : audience === "admin_faculty"
+                        ? "University Admin / Faculty"
+                        : "Students + Admin"}
+                  </p>
+                  <p className="text-xs text-sky-50/80">Current message target</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       <p className="text-sm text-slate-600 dark:text-slate-300">
         Use this space to communicate with scholarship recipients and university admins. Students
         cannot modify your messages.
@@ -1968,12 +2607,26 @@ function DonorCommunicationsSection() {
           {success}
         </p>
       ) : null}
-      <Card className="space-y-4 p-4">
+
+      <Card className="space-y-5 border-slate-100 bg-gradient-to-br from-white via-sky-50 to-cyan-50 p-5 shadow-md dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+              {editingId ? "Edit message" : "Compose message"}
+            </h3>
+            <p className="text-sm text-slate-500">
+              Send donor updates with clear targeting and a more readable composition flow.
+            </p>
+          </div>
+          <span className="rounded-2xl border border-sky-100 bg-white/80 px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300">
+            {editingId ? "Editing selected message" : "Create a new message"}
+          </span>
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Audience</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Audience</label>
             <select
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
               value={audience}
               onChange={(event) => setAudience(event.target.value)}
             >
@@ -1983,9 +2636,9 @@ function DonorCommunicationsSection() {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Communication type</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Communication type</label>
             <select
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
               value={messageType}
               onChange={(event) => setMessageType(event.target.value)}
             >
@@ -1996,24 +2649,24 @@ function DonorCommunicationsSection() {
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Subject</label>
-          <input
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Subject</label>
+          <Input
             value={subject}
             onChange={(event) => setSubject(event.target.value)}
             placeholder="Message subject"
+            className="min-h-11 border-slate-200 bg-white dark:bg-slate-900"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Message</label>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Message</label>
           <textarea
-            className="min-h-[120px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+            className="min-h-[140px] w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
             value={body}
             onChange={(event) => setBody(event.target.value)}
             placeholder="Write a message to your recipients or the university team..."
           />
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1 text-xs text-slate-500">
             <p>Students can reply but cannot edit your original messages.</p>
             <p>You cannot message non-recipients from this workspace.</p>
@@ -2021,78 +2674,82 @@ function DonorCommunicationsSection() {
           <div className="flex items-center gap-2">
             {editingId ? (
               <Button
-                onClick={() => {
-                  setEditingId(null);
-                  setAudience("students");
-                  setMessageType("General update");
-                  setSubject("");
-                  setBody("");
-                }}
+                variant="secondary"
+                className="min-w-[120px]"
+                onClick={clearMessageForm}
               >
                 Cancel
               </Button>
             ) : null}
-            <button
+            <Button
+              type="button"
               onClick={editingId ? updateMessage : sendMessage}
               disabled={sending || updating}
-              className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+              className="min-w-[150px] bg-primary text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {editingId ? (updating ? "Saving..." : "Update") : sending ? "Sending..." : "Send"}
-            </button>
+            </Button>
           </div>
         </div>
       </Card>
 
-      <Card className="space-y-3 p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Recent messages</h3>
-          <button
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recent messages</h3>
+            <p className="text-sm text-slate-500">Review sent donor communications and manage existing messages.</p>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             onClick={() => loadMessages()}
-            className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             Refresh
-          </button>
+          </Button>
         </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading messages...</p>
         ) : !messages.length ? (
-          <p className="text-sm text-slate-500">No messages sent yet.</p>
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">No messages sent yet.</p>
         ) : (
-          <div className="space-y-2 text-sm">
+          <div className="space-y-3 text-sm">
             {messages.map((item) => (
               <div
                 key={item._id ?? item.subject}
-                className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800"
+                className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:border-slate-800 dark:from-slate-800/60 dark:to-slate-900"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium">{item.subject ?? "Message"}</p>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  <p className="font-semibold text-slate-900 dark:text-white">{item.subject ?? "Message"}</p>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary dark:bg-primary/20 dark:text-blue-200">
                     {item.audience ?? "Recipients"}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500">{item.messageType ?? "General update"}</p>
-                <p className="mt-1 text-xs text-slate-500">{item.body}</p>
-                <div className="mt-1 flex items-center justify-between gap-2">
+                <p className="mt-2 text-xs font-medium uppercase tracking-[0.12em] text-slate-500">{item.messageType ?? "General update"}</p>
+                <p className="mt-2 text-sm text-slate-500">{item.body}</p>
+                <div className="mt-3 flex items-center justify-between gap-2">
                   <p className="text-xs text-slate-400">
                     {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
                   </p>
                   {item._id ? (
                     <div className="flex items-center gap-2">
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
                         onClick={() => startEdit(item)}
-                        className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        className="border-sky-200 bg-sky-50 px-4 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:hover:bg-sky-900/40"
                       >
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() => deleteMessage(item._id as string)}
                         disabled={deletingId === item._id}
-                        className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                        className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100 hover:text-rose-700 disabled:opacity-60 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300 dark:hover:bg-rose-900/30"
                       >
                         {deletingId === item._id ? "Deleting..." : "Delete"}
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
                 </div>
