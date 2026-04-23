@@ -202,25 +202,43 @@ function SectionNotice({ text }: { text: string }) {
 
 export function ParentLiveHomeSection() {
   const { data, loading, error } = useParentDashboard();
+  const unreadAlerts = data?.stats.unreadAlerts ?? 0;
+  const pendingAid = data?.stats.pendingAidRequests ?? 0;
+  const pendingApplications = data?.stats.pendingApplications ?? 0;
+  const upcomingDeadlines = data?.stats.upcomingDeadlines ?? 0;
+  const hasPriorityItems = unreadAlerts + pendingAid + pendingApplications > 0;
 
   return (
     <div className="space-y-6">
-      <Card className="space-y-2 border-primary/20 bg-gradient-to-r from-primary/10 via-white to-blue-50 p-5 dark:from-primary/20 dark:via-slate-900 dark:to-slate-900">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Parent Dashboard</p>
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Live overview</h2>
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          You can monitor student progress and support updates using live data only.
-        </p>
-        {data?.linkedStudent ? (
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Linked student: <span className="font-semibold text-slate-700 dark:text-slate-200">{data.linkedStudent.name}</span>
-            {data.linkedStudent.email ? ` (${data.linkedStudent.email})` : ""}
-          </p>
-        ) : (
-          <p className="text-xs text-amber-700 dark:text-amber-300">
-            No student linked yet. Go to &quot;My Student&quot; to connect.
-          </p>
-        )}
+      <Card className="overflow-hidden border-sky-100 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-0 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+        <div className="space-y-4 p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-300">
+                Parent Dashboard
+              </p>
+              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Parent Home</h2>
+              <p className="max-w-2xl text-sm text-slate-600 dark:text-slate-300">
+                Keep a confident view of your child&apos;s progress with live updates on alerts,
+                support requests, and upcoming deadlines.
+              </p>
+            </div>
+            <span className="rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-semibold text-sky-700 dark:border-sky-400/30 dark:bg-sky-500/10 dark:text-sky-200">
+              Live data
+            </span>
+          </div>
+
+          {data?.linkedStudent ? (
+            <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/80 p-3 text-sm text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+              <span className="font-semibold">Linked student:</span> {data.linkedStudent.name}
+              {data.linkedStudent.email ? ` (${data.linkedStudent.email})` : ""}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200">
+              No student linked yet. Go to &quot;My Student&quot; and connect your child profile.
+            </div>
+          )}
+        </div>
       </Card>
 
       {error ? (
@@ -230,29 +248,93 @@ export function ParentLiveHomeSection() {
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Unread alerts" value={String(data?.stats.unreadAlerts ?? 0)} description="Needs parent attention" />
-        <StatCard label="Aid requests" value={String(data?.stats.aidRequests ?? 0)} description={`${data?.stats.pendingAidRequests ?? 0} pending`} />
-        <StatCard label="Applications" value={String(data?.stats.applications ?? 0)} description={`${data?.stats.pendingApplications ?? 0} pending`} />
-        <StatCard label="Upcoming deadlines" value={String(data?.stats.upcomingDeadlines ?? 0)} description="Jobs, scholarships, aid" />
+        <StatCard
+          label="Unread alerts"
+          value={String(unreadAlerts)}
+          description="Needs parent attention"
+        />
+        <StatCard
+          label="Aid requests"
+          value={String(data?.stats.aidRequests ?? 0)}
+          description={`${pendingAid} pending`}
+        />
+        <StatCard
+          label="Applications"
+          value={String(data?.stats.applications ?? 0)}
+          description={`${pendingApplications} pending`}
+        />
+        <StatCard
+          label="Upcoming deadlines"
+          value={String(upcomingDeadlines)}
+          description="Jobs, scholarships, aid"
+        />
       </div>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent activity</h3>
-        {loading && !data ? <p className="text-sm text-slate-500">Loading activity...</p> : null}
-        <div className="space-y-2">
-          {(data?.notifications ?? []).slice(0, 8).map((item) => (
-            <div key={item._id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{item.title}</p>
-                {item.read ? null : <span className="text-[11px] font-semibold text-primary">new</span>}
+      <div className="grid gap-4 lg:grid-cols-[1.4fr,1fr]">
+        <Card className="space-y-3 border-slate-100 p-4 shadow-sm dark:border-slate-800">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent activity</h3>
+            <span className="text-xs text-slate-500">Last 8 updates</span>
+          </div>
+          {loading && !data ? <p className="text-sm text-slate-500">Loading activity...</p> : null}
+          <div className="space-y-2">
+            {(data?.notifications ?? []).slice(0, 8).map((item) => (
+              <div
+                key={item._id}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3 transition hover:bg-white dark:border-slate-800 dark:bg-slate-950"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{item.title}</p>
+                  {item.read ? null : (
+                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700 dark:border-sky-400/30 dark:bg-sky-500/10 dark:text-sky-200">
+                      New
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{item.message}</p>
+                <p className="mt-1 text-[11px] text-slate-400">{formatDate(item.createdAt || item.date)}</p>
               </div>
-              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{item.message}</p>
-              <p className="mt-1 text-[11px] text-slate-400">{formatDate(item.createdAt || item.date)}</p>
+            ))}
+            {!loading && !(data?.notifications?.length ?? 0) ? (
+              <p className="text-sm text-slate-500">No live notifications yet.</p>
+            ) : null}
+          </div>
+        </Card>
+
+        <Card className="space-y-3 border-slate-100 p-4 shadow-sm dark:border-slate-800">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Priority snapshot</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-800">
+              <span className="text-slate-600 dark:text-slate-300">Unread alerts</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{unreadAlerts}</span>
             </div>
-          ))}
-          {!loading && !(data?.notifications?.length ?? 0) ? <p className="text-sm text-slate-500">No live notifications yet.</p> : null}
-        </div>
-      </Card>
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-800">
+              <span className="text-slate-600 dark:text-slate-300">Pending aid requests</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{pendingAid}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-800">
+              <span className="text-slate-600 dark:text-slate-300">Pending applications</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{pendingApplications}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-800">
+              <span className="text-slate-600 dark:text-slate-300">Upcoming deadlines</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{upcomingDeadlines}</span>
+            </div>
+          </div>
+
+          <div
+            className={`rounded-xl border px-3 py-2 text-xs ${
+              hasPriorityItems
+                ? "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200"
+                : "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200"
+            }`}
+          >
+            {hasPriorityItems
+              ? "You have items that may need follow-up this week."
+              : "Everything looks up to date. No immediate follow-up needed."}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
