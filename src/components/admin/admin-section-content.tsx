@@ -10,6 +10,8 @@ import { AdminAnalytics } from "./admin-analytics";
 import { AdminCounselorSupportSection } from "./admin-counselor-support";
 import { AdminPeerSupportModerationSection } from "./admin-peer-support";
 import { AdminCommunicationsSection } from "./admin-communications";
+import { adminNavyCardClass } from "./admin-card-theme";
+import { NgoPartnershipSection } from "@/components/shared/ngo-partnership-section";
 import { useAuth } from "@/context/auth-context";
 import {
   defaultPreferences,
@@ -46,6 +48,8 @@ export function AdminSectionContent({ sectionId }: AdminSectionContentProps) {
         return AdminAnnouncementsSection;
       case "partnerships":
         return AdminPartnershipsSection;
+      case "ngo-partnerships":
+        return AdminNgoPartnershipSection;
       case "communications":
         return AdminCommunicationsSection;
       case "profile":
@@ -242,6 +246,7 @@ function AdminVerificationsSection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -366,6 +371,16 @@ function AdminVerificationsSection() {
     return date.toLocaleDateString();
   };
 
+  const renderNgoDecision = (ngoDecision?: string) => {
+    if (ngoDecision === "Success") {
+      return <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Success</span>;
+    }
+    if (ngoDecision === "Pending") {
+      return <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Pending</span>;
+    }
+    return <span className="text-xs text-slate-400">N/A</span>;
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-600 dark:text-slate-300">
@@ -377,42 +392,116 @@ function AdminVerificationsSection() {
           {error}
         </p>
       ) : null}
-      <Card>
-        <div className="grid grid-cols-6 gap-3 border-b border-slate-200 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:border-slate-800">
-          <span>Type</span>
-          <span>Role</span>
-          <span>Status</span>
-          <span>NGO Decision</span>
-          <span>Notes</span>
-          <span className="text-right">Action</span>
+      <div className="flex justify-end">
+        <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/70 p-1 text-xs dark:border-slate-700 dark:bg-slate-900/40">
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+              viewMode === "table"
+                ? "bg-primary text-white"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            }`}
+          >
+            Table view
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("card")}
+            className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+              viewMode === "card"
+                ? "bg-primary text-white"
+                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            }`}
+          >
+            Card view
+          </button>
         </div>
+      </div>
+      <Card className={adminNavyCardClass}>
         {loading ? (
           <p className="px-4 py-3 text-sm text-slate-500">Loading verification queue...</p>
         ) : items.length === 0 ? (
           <p className="px-4 py-3 text-sm text-slate-500">No verification items right now.</p>
+        ) : viewMode === "table" ? (
+          <>
+            <div className="grid grid-cols-6 gap-3 border-b border-slate-200 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:border-slate-800">
+              <span>Type</span>
+              <span>Role</span>
+              <span>Status</span>
+              <span>NGO Decision</span>
+              <span>Notes</span>
+              <span className="text-right">Action</span>
+            </div>
+            <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
+              {items.map((item) => {
+                const status = normalizeStatus(item.status);
+                const actionDisabled = updatingId === item.id || !canAction(item);
+                return (
+                  <div key={item.id} className="grid grid-cols-6 gap-3 px-4 py-3">
+                    <span className="font-medium">{item.type}</span>
+                    <span>{item.role}</span>
+                    <span className={`text-xs font-semibold ${statusStyle(item.status)}`}>{status}</span>
+                    <span>{renderNgoDecision(item.ngoDecision)}</span>
+                    <span className="text-slate-500 dark:text-slate-400">
+                      {item.note} {item.createdAt ? `(${formatDate(item.createdAt)})` : ""}
+                    </span>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-900/40 dark:text-emerald-300"
+                        onClick={() => applyDecision(item, "approve")}
+                        disabled={actionDisabled || status === "Approved"}
+                      >
+                        {updatingId === item.id ? "Updating..." : item.kind === "ngo" ? "Verify" : "Approve"}
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-rose-900/40 dark:text-rose-300"
+                        onClick={() => applyDecision(item, "reject")}
+                        disabled={actionDisabled || status === "Rejected"}
+                      >
+                        {updatingId === item.id ? "Updating..." : "Reject"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         ) : (
-          <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
+          <div className="grid gap-3 p-4 md:grid-cols-2">
             {items.map((item) => {
               const status = normalizeStatus(item.status);
               const actionDisabled = updatingId === item.id || !canAction(item);
               return (
-                <div key={item.id} className="grid grid-cols-6 gap-3 px-4 py-3">
-                  <span className="font-medium">{item.type}</span>
-                  <span>{item.role}</span>
-                  <span className={`text-xs font-semibold ${statusStyle(item.status)}`}>{status}</span>
-                  <span>
-                    {item.ngoDecision === "Success" ? (
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">✨ Success</span>
-                    ) : item.ngoDecision === "Pending" ? (
-                      <span className="text-xs font-medium text-amber-600 dark:text-amber-400">⏳ Pending</span>
-                    ) : (
-                      <span className="text-xs text-slate-400">N/A</span>
-                    )}
-                  </span>
-                  <span className="text-slate-500 dark:text-slate-400">
-                    {item.note} {item.createdAt ? `(${formatDate(item.createdAt)})` : ""}
-                  </span>
-                  <div className="flex items-center justify-end gap-2">
+                <article
+                  key={item.id}
+                  className="space-y-3 rounded-2xl border border-blue-200/70 bg-white/75 p-4 shadow-sm dark:border-blue-400/20 dark:bg-slate-900/40"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900 dark:text-white">{item.type}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{item.role}</p>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(item.status)}`}>
+                      {status}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                    <p>
+                      <span className="font-medium text-slate-700 dark:text-slate-200">NGO Decision:</span>{" "}
+                      {renderNgoDecision(item.ngoDecision)}
+                    </p>
+                    <p>
+                      <span className="font-medium text-slate-700 dark:text-slate-200">Notes:</span> {item.note}
+                    </p>
+                    <p>
+                      <span className="font-medium text-slate-700 dark:text-slate-200">Date:</span>{" "}
+                      {item.createdAt ? formatDate(item.createdAt) : "N/A"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-900/40 dark:text-emerald-300"
@@ -430,7 +519,7 @@ function AdminVerificationsSection() {
                       {updatingId === item.id ? "Updating..." : "Reject"}
                     </button>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
@@ -599,7 +688,7 @@ function AdminFinancialOversightSection() {
         Review and decide student aid requests by category. Changes here are reflected directly in student dashboards.
       </p>
 
-      <Card className="space-y-4 p-4">
+      <Card className={`space-y-4 p-4 ${adminNavyCardClass}`}>
         <div className="flex flex-wrap items-center gap-2">
           {filters.map((filter) => (
             <button
@@ -698,7 +787,7 @@ function AdminFinancialOversightSection() {
         )}
       </Card>
 
-      <Card className="space-y-4 p-4 mt-6">
+      <Card className={`mt-6 space-y-4 p-4 ${adminNavyCardClass}`}>
         <h3 className="text-base font-semibold text-slate-900 dark:text-white">NGO Funding Distribution</h3>
         <p className="text-sm text-slate-600 dark:text-slate-300">
           Verify funds allocated by NGOs before they are disbursed to student accounts.
@@ -750,7 +839,7 @@ function AdminFinancialOversightSection() {
         )}
       </Card>
 
-      <Card className="space-y-4 p-4 mt-6">
+      <Card className={`mt-6 space-y-4 p-4 ${adminNavyCardClass}`}>
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold text-emerald-700 dark:text-emerald-400">NGO Donation Alerts</h3>
           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 uppercase">Live</span>
@@ -958,7 +1047,7 @@ function AdminCareerServicesSection() {
         </p>
       ) : null}
 
-      <Card className="space-y-4 p-4">
+      <Card className={`space-y-4 p-4 ${adminNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Job postings moderation</h3>
         <div className="flex flex-wrap items-center gap-2">
           {filters.map((filter) => (
@@ -1222,7 +1311,7 @@ function AdminMentorshipProgramSection() {
         </p>
       ) : null}
 
-      <Card className="space-y-4 p-4">
+      <Card className={`space-y-4 p-4 ${adminNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Mentorship program queue</h3>
         <div className="flex flex-wrap items-center gap-2">
           {filters.map((filter) => (
@@ -1529,7 +1618,7 @@ function AdminReportsSection() {
         </p>
       ) : null}
 
-      <Card className="space-y-4 p-4">
+      <Card className={`space-y-4 p-4 ${adminNavyCardClass}`}>
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1.5">
@@ -1600,7 +1689,7 @@ function AdminReportsSection() {
         <StatCard label="Jobs awaiting moderation" value={loading ? "..." : String(report?.summary.jobModerationPending ?? 0)} description="Career queue" />
       </div>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${adminNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Available report templates</h3>
         <div className="grid gap-3 md:grid-cols-3">
           {templates.map((item) => (
@@ -1628,7 +1717,7 @@ function AdminReportsSection() {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="space-y-3 p-4">
+        <Card className={`space-y-3 p-4 ${adminNavyCardClass}`}>
           <h3 className="text-sm font-semibold">Aid category distribution</h3>
           {loading ? (
             <p className="text-sm text-slate-500">Loading category breakdown...</p>
@@ -1652,7 +1741,7 @@ function AdminReportsSection() {
           )}
         </Card>
 
-        <Card className="space-y-3 p-4">
+        <Card className={`space-y-3 p-4 ${adminNavyCardClass}`}>
           <h3 className="text-sm font-semibold">Mentorship and wellness status</h3>
           {loading ? (
             <p className="text-sm text-slate-500">Loading wellness and mentorship trends...</p>
@@ -1689,7 +1778,7 @@ function AdminReportsSection() {
         </Card>
       </div>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${adminNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Outcome snapshot</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading outcomes...</p>
@@ -1719,7 +1808,7 @@ function AdminReportsSection() {
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${adminNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Trend (period summary)</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading trends...</p>
@@ -2149,7 +2238,7 @@ function AdminAnnouncementsSection() {
         role-based notifications.
       </p>
 
-      <Card className="space-y-4 p-4">
+      <Card className={`space-y-4 p-4 ${adminNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Publish campus update</h3>
         <form className="space-y-3" onSubmit={submitCampusUpdate}>
           <div className="grid gap-3 md:grid-cols-2">
@@ -2342,7 +2431,7 @@ function AdminAnnouncementsSection() {
         />
       </div>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${adminNavyCardClass}`}>
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <h3 className="text-sm font-semibold">Content manager (archive / restore)</h3>
           <div className="flex flex-wrap items-center gap-2">
@@ -2453,7 +2542,7 @@ function AdminAnnouncementsSection() {
       </Card>
 
       {editDraft ? (
-        <Card className="space-y-3 p-4">
+        <Card className={`space-y-3 p-4 ${adminNavyCardClass}`}>
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">
               Edit {editDraft.type === "announcement" ? "announcement" : "event"}
@@ -2590,7 +2679,7 @@ function AdminAnnouncementsSection() {
         </Card>
       ) : null}
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${adminNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Recent announcements</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading announcements...</p>
@@ -2614,7 +2703,7 @@ function AdminAnnouncementsSection() {
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${adminNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Clubs and student discounts</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading clubs and discounts...</p>
@@ -2644,7 +2733,7 @@ function AdminAnnouncementsSection() {
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${adminNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Upcoming events and volunteer roles</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading campus feed...</p>
@@ -2996,7 +3085,7 @@ function AdminProfileSection() {
         </p>
       )}
 
-      <Card className="flex flex-wrap items-center justify-between gap-4 border-primary/20 bg-gradient-to-r from-primary/5 via-white to-emerald-50 p-5 dark:from-primary/10 dark:via-slate-900 dark:to-emerald-900/20">
+      <Card className={`flex flex-wrap items-center justify-between gap-4 p-5 ${adminNavyCardClass}`}>
         <div className="flex items-center gap-4">
           <div className="relative">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-slate-100 dark:border-primary/60 dark:bg-slate-800">
@@ -3027,7 +3116,7 @@ function AdminProfileSection() {
         </div>
       </Card>
 
-      <Card className="border-primary/20 bg-primary/5 p-4">
+      <Card className={`p-4 ${adminNavyCardClass}`}>
         <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
           Manage your own admin account settings. You cannot change other users from here.
         </p>
@@ -3065,7 +3154,7 @@ function AdminProfileSection() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${adminNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Personal details</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
@@ -3090,7 +3179,7 @@ function AdminProfileSection() {
               </Button>
             </Card>
 
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${adminNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Admin details</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Department and approval scope used for verification and finance reviews.
@@ -3158,7 +3247,7 @@ function AdminProfileSection() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${adminNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Privacy preferences</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Control what is shared with other university teams.
@@ -3210,7 +3299,7 @@ function AdminProfileSection() {
               </Button>
             </Card>
 
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${adminNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Notification settings</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Choose how you receive verification and request updates.
@@ -3295,7 +3384,7 @@ function AdminProfileSection() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-3 p-5">
+            <Card className={`space-y-3 p-5 ${adminNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Password and sign-in</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Send yourself a secure link to reset your password.
@@ -3308,7 +3397,7 @@ function AdminProfileSection() {
               </div>
             </Card>
 
-            <Card className="space-y-3 border-red-200 bg-red-50/60 p-5 dark:border-red-900 dark:bg-red-950/40">
+            <Card className={`space-y-3 p-5 ${adminNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">Delete account request</h3>
               <p className="text-sm text-red-800 dark:text-red-200">
                 Submit a request and the university admin team will review it.
@@ -3392,4 +3481,8 @@ function AdminPartnershipsSection() {
       )}
     </div>
   );
+}
+
+function AdminNgoPartnershipSection() {
+  return <NgoPartnershipSection viewerRole="admin" cardClassName={adminNavyCardClass} />;
 }

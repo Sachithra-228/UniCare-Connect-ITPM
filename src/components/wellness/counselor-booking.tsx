@@ -7,6 +7,7 @@ import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { Select } from "@/components/shared/Select";
 import { TextArea } from "@/components/shared/text-area";
+import { studentBlueCardClass } from "@/components/dashboard/student/student-card-theme";
 
 type Counselor = {
   _id: string;
@@ -142,7 +143,7 @@ export function CounselorBooking() {
 
   return (
     <div className="space-y-4">
-      <Card className="space-y-4 p-4">
+      <Card className={`space-y-4 p-4 ${studentBlueCardClass}`}>
         <h3 className="text-lg font-semibold">Counselor support</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading counselors...</p>
@@ -170,7 +171,7 @@ export function CounselorBooking() {
         )}
       </Card>
 
-      <Card className="space-y-4 p-4">
+      <Card className={`space-y-4 p-4 ${studentBlueCardClass}`}>
         <h3 className="text-lg font-semibold">Request a counseling slot</h3>
         <form className="space-y-3" onSubmit={submitBooking}>
           <div className="grid gap-3 md:grid-cols-3">
@@ -220,7 +221,7 @@ export function CounselorBooking() {
         </form>
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${studentBlueCardClass}`}>
         <h3 className="text-lg font-semibold">My counseling bookings</h3>
         {!bookings.length ? (
           <p className="text-sm text-slate-500">No bookings yet.</p>

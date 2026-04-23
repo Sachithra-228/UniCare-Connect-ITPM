@@ -6,6 +6,7 @@ import { Badge } from "@/components/shared/Badge";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { TextArea } from "@/components/shared/text-area";
+import { studentBlueCardClass } from "@/components/dashboard/student/student-card-theme";
 
 type PeerPost = {
   _id: string;
@@ -177,7 +178,7 @@ export function PeerSupport() {
 
   return (
     <div className="space-y-4">
-      <Card className="space-y-4 p-4">
+      <Card className={`space-y-4 p-4 ${studentBlueCardClass}`}>
         <h3 className="text-lg font-semibold">Peer support forum</h3>
         <p className="text-sm text-slate-600 dark:text-slate-300">
           Ask questions, share tips, and support each other. Keep discussions respectful and safe.
@@ -213,7 +214,7 @@ export function PeerSupport() {
         </form>
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${studentBlueCardClass}`}>
         <h3 className="text-lg font-semibold">Recent discussions</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading discussions...</p>

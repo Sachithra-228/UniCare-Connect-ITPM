@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/shared/Card";
+import { studentBlueCardClass } from "@/components/dashboard/student/student-card-theme";
 
 type CommunicationMessage = {
   _id: string;
@@ -69,7 +70,7 @@ export function StudentCommunications() {
 
   return (
     <div className="space-y-6">
-      <Card className="space-y-2 p-5">
+      <Card className={`space-y-2 p-5 ${studentBlueCardClass}`}>
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Donor communications</h3>
         <p className="text-sm text-slate-600 dark:text-slate-300">
           Messages sent by donors and CSR partners to students appear here.
@@ -85,7 +86,7 @@ export function StudentCommunications() {
         </p>
       ) : null}
 
-      <Card className="space-y-3 p-5">
+      <Card className={`space-y-3 p-5 ${studentBlueCardClass}`}>
         <h4 className="text-base font-semibold text-slate-900 dark:text-white">Inbox</h4>
         {loading ? (
           <p className="text-sm text-slate-500">Loading communications...</p>

@@ -278,6 +278,18 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         ]
       },
       {
+        id: "ngo-partnerships",
+        menuLabel: "NGO Partnership",
+        icon: "🤝",
+        title: "NGO Partnership",
+        items: [
+          "View NGO partnership requests",
+          "Review requests from NGOs",
+          "Accept or decline requests",
+          "Coordinate next steps with partners"
+        ]
+      },
+      {
         id: "communications",
         menuLabel: "Communications",
         icon: "💬",
@@ -286,6 +298,18 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Receive donor and CSR updates",
           "Review communication history by audience",
           "Track important partner announcements"
+        ]
+      },
+      {
+        id: "ngo-partnerships",
+        menuLabel: "NGO Partnership",
+        icon: "🤝",
+        title: "NGO Partnership",
+        items: [
+          "View NGO partnership requests",
+          "Review requests from NGOs",
+          "Accept or decline requests",
+          "Coordinate next steps with partners"
         ]
       },
       {
@@ -406,6 +430,18 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Receive donor and CSR updates",
           "Review communication history by audience",
           "Track important partner announcements"
+        ]
+      },
+      {
+        id: "ngo-partnerships",
+        menuLabel: "NGO Partnership",
+        icon: "🤝",
+        title: "NGO Partnership",
+        items: [
+          "View NGO partnership requests",
+          "Review requests from NGOs",
+          "Accept or decline requests",
+          "Coordinate next steps with partners"
         ]
       },
       {
@@ -603,6 +639,18 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         ]
       },
       {
+        id: "ngo-partnerships",
+        menuLabel: "NGO Partnership",
+        icon: "🤝",
+        title: "NGO Partnership",
+        items: [
+          "View NGO collaboration requests",
+          "Review opportunities from NGOs",
+          "Approve partnership involvement",
+          "Track partnership statuses"
+        ]
+      },
+      {
         id: "profile",
         menuLabel: "Profile",
         icon: "👤",
@@ -781,6 +829,18 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "University admin collaborations",
           "Corporate donor partners",
           "Joint initiatives tracking"
+        ]
+      },
+      {
+        id: "ngo-partnerships",
+        menuLabel: "NGO Partnership",
+        icon: "partnerships",
+        title: "NGO Partnership",
+        items: [
+          "Create NGO partnership requests",
+          "Select Admin staff and Donor CSR recipients",
+          "Track review and acceptance status",
+          "Coordinate responses from partners"
         ]
       },
       {
