@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -181,8 +181,11 @@ export function DonorSectionContent({ sectionId }: DonorSectionContentProps) {
         return DonorCommunicationsSection;
       case "profile":
         return DonorProfileSection;
+      case "partnerships":
+        return DonorPartnershipsSection;
       default:
         return DonorPartnerHomeSection;
+
     }
   }, [sectionId]);
 
@@ -2768,3 +2771,128 @@ function DonorProfileSection() {
   );
 }
 
+function StatusBadge({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+    pending: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+    canceled: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+    completed: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  };
+  const colorClass = colors[status] || colors.pending;
+  return (
+    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${colorClass}`}>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+}
+
+function DonorPartnershipsSection() {
+  const { user } = useAuth();
+  const [partnerships, setPartnerships] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const { getNgoPartnerships, getIncomingPartnershipRequests } = await import("@/lib/ngo-demo-store");
+    
+    // Active partnerships for this donor
+    const all = getNgoPartnerships();
+    setPartnerships(all.filter(p => p.status === "active" && p.partnerUserId === user?._id));
+    
+    // Incoming requests for this donor
+    if (user?._id) {
+      setRequests(getIncomingPartnershipRequests(user._id));
+    }
+    setLoading(false);
+  }, [user?._id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleResponse = async (id: string, action: 'accept' | 'reject') => {
+    const { acceptNgoPartnership, rejectNgoPartnership } = await import("@/lib/ngo-demo-store");
+    if (action === 'accept') {
+      acceptNgoPartnership(id);
+    } else {
+      rejectNgoPartnership(id);
+    }
+    loadData();
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white">NGO Partnerships</h2>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Collaborate with Non-Governmental Organizations to fund specific support programs and track their impact.
+        </p>
+      </div>
+
+      {requests.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
+            <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+            Pending Partnership Requests
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            {requests.map((req) => (
+              <Card key={req._id} className="p-5 border-primary/30 bg-primary/5 shadow-sm">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white">NGO Collaboration Proposal</h4>
+                    <p className="text-xs text-slate-500">Requested on {new Date(req.since).toLocaleDateString()}</p>
+                  </div>
+                  <StatusBadge status="pending" />
+                </div>
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm"><span className="font-semibold text-slate-700 dark:text-slate-300">Focus Area:</span> {req.focusArea}</p>
+                  <p className="text-sm"><span className="font-semibold text-slate-700 dark:text-slate-300">Collaboration Role:</span> {req.role}</p>
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-primary/10">
+                  <Button variant="primary" size="sm" onClick={() => handleResponse(req._id, 'accept')}>Accept & Partner</Button>
+                  <Button variant="outline" size="sm" onClick={() => handleResponse(req._id, 'reject')} className="text-rose-600 border-rose-200 hover:bg-rose-50">Decline</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Your Active NGO Partners</h3>
+        {loading ? (
+          <p className="text-sm text-slate-500 italic">Refreshing partnership data...</p>
+        ) : partnerships.length === 0 ? (
+          <Card className="p-8 text-center border-dashed border-slate-200 dark:border-slate-800">
+            <p className="text-sm text-slate-500">You don&apos;t have any active NGO partnerships yet.</p>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {partnerships.map((partner) => (
+              <Card key={partner._id} className="p-5 flex flex-col items-start hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start w-full mb-3">
+                  <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-700 dark:bg-violet-900/40 dark:text-violet-300">
+                    Active Partner
+                  </span>
+                  <StatusBadge status={partner.status} />
+                </div>
+                <h4 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-1">{partner.partnerName}</h4>
+                <p className="text-xs font-medium text-primary mb-4">{partner.focusArea}</p>
+                
+                <div className="w-full mt-auto space-y-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Our Shared Role</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300">{partner.role}</p>
+                  </div>
+                  <p className="text-[10px] text-slate-400 italic">Partners since {new Date(partner.since).toLocaleDateString()}</p>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -398,6 +398,17 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         ]
       },
       {
+        id: "partnerships",
+        menuLabel: "NGO Partnerships",
+        icon: "🤝",
+        title: "NGO Partnerships",
+        items: [
+          "Joint initiatives with NGOs",
+          "Collaboration tracking",
+          "External program administration"
+        ]
+      },
+      {
         id: "communications",
         menuLabel: "Communications",
         icon: "💬",
@@ -408,6 +419,7 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Track important partner announcements"
         ]
       },
+
       {
         id: "profile",
         menuLabel: "Profile",
@@ -602,6 +614,18 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Event invitations"
         ]
       },
+      {
+        id: "partnerships",
+        menuLabel: "NGO Partnerships",
+        icon: "🤝",
+        title: "NGO Partnerships",
+        items: [
+          "NGO collaboration requests",
+          "Joint funding programs",
+          "External impact tracking"
+        ]
+      },
+
       {
         id: "profile",
         menuLabel: "Profile",

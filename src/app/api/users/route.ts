@@ -103,6 +103,9 @@ export async function GET(request: NextRequest) {
     const usersCollection = database.collection<DbUserInput>("users");
     const email = request.nextUrl.searchParams.get("email")?.toLowerCase();
     const firebaseUid = request.nextUrl.searchParams.get("firebaseUid");
+    const roleParam = request.nextUrl.searchParams.get("role");
+
+    const rolesParam = request.nextUrl.searchParams.get("roles");
 
     if (firebaseUid) {
       if (!isAdmin && firebaseUid !== authResult.session.firebase.uid) {
@@ -126,17 +129,27 @@ export async function GET(request: NextRequest) {
       return jsonResponse({ user: mapUserDocument(user) });
     }
 
-    const roleCheck = requireRole(authResult.session.user?.role, ["admin", "faculty", "super_admin"]);
-    if (roleCheck) {
-      return roleCheck;
+    // Allow NGO users to search for partners (admins, faculty, donors)
+    const isNgo = authResult.session.user?.role === "ngo";
+    const requestedRoles = rolesParam ? rolesParam.split(",") : roleParam ? [roleParam] : null;
+    const isPartnerSearch = isNgo && requestedRoles && requestedRoles.every(r => ["admin", "faculty", "donor"].includes(r));
+
+    if (!isAdmin && !isPartnerSearch) {
+      return jsonResponse({ message: "Forbidden" }, 403);
+    }
+
+    const filter: any = {};
+    if (requestedRoles) {
+      filter.role = { $in: requestedRoles };
     }
 
     const users = await usersCollection
-      .find({})
+      .find(filter)
       .sort({ createdAt: -1 })
       .toArray();
 
     return jsonResponse(users.map(mapUserDocument));
+
   } catch (err) {
     if (isMongoTlsHandshakeError(err)) {
       resetMongoClient();

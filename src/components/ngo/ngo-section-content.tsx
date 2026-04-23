@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -31,7 +31,12 @@ import {
   deleteNgoProgram,
   disburseNgoPayment,
   addNgoPartnership,
+  updateNgoPartnership,
+  deleteNgoPartnership,
+  getEligiblePartners,
   addNgoCommunication,
+
+
   markReportGenerated,
   markNgoVerificationNotificationRead,
   markAllNgoVerificationNotificationsRead,
@@ -61,7 +66,9 @@ const STATUS_COLORS: Record<string, string> = {
   allocated:  "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
   disbursed:  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   pending:    "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+  canceled:   "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
   graduated:  "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+
   "on-track": "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   "at-risk":  "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
 };
@@ -200,6 +207,8 @@ function NgoProgramsSection() {
     status: "active" as NgoProgram["status"]
   });
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
 
   const filtered = programs.filter((p) => {
     const matchFilter = filter === "all" || p.status === filter;
@@ -210,9 +219,42 @@ function NgoProgramsSection() {
     return matchFilter && matchSearch;
   });
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!form.title.trim()) {
+      newErrors.title = "Title is required";
+    } else if (form.title.trim().length < 5) {
+      newErrors.title = "Title must be at least 5 characters";
+    }
+
+    if (!form.targetUniversity.trim()) {
+      newErrors.targetUniversity = "Target university is required";
+    }
+
+    if (!form.description.trim()) {
+      newErrors.description = "Description is required";
+    } else if (form.description.trim().length < 10) {
+      newErrors.description = "Description must be at least 10 characters";
+    }
+
+    if (!form.budget) {
+      newErrors.budget = "Budget is required";
+    } else if (Number(form.budget) <= 0) {
+      newErrors.budget = "Budget must be a positive number";
+    }
+
+    if (!form.eligibility.trim()) {
+      newErrors.eligibility = "Eligibility criteria are required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSave = () => {
-    if (!form.title.trim()) return;
+    if (!validate()) return;
     setSaving(true);
+
     setTimeout(() => {
       if (editingId) {
         const updated = updateNgoProgram(editingId, {
@@ -256,9 +298,11 @@ function NgoProgramsSection() {
 
   const resetForm = () => {
     setForm({ title: "", description: "", budget: "", eligibility: "", targetUniversity: "", category: "education", status: "active" });
+    setErrors({});
     setShowForm(false);
     setEditingId(null);
   };
+
 
   const openEdit = (p: NgoProgram) => {
     setEditingId(p._id);
@@ -306,8 +350,18 @@ function NgoProgramsSection() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">Title *</label>
-                  <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Program title" />
+                  <Input 
+                    value={form.title} 
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, title: e.target.value }));
+                      if (errors.title) setErrors(prev => { const n = {...prev}; delete n.title; return n; });
+                    }} 
+                    placeholder="Program title"
+                    className={errors.title ? "border-rose-500 focus:border-rose-500" : ""}
+                  />
+                  {errors.title && <p className="text-[10px] text-rose-500">{errors.title}</p>}
                 </div>
+
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">Category</label>
                   <select
@@ -334,25 +388,63 @@ function NgoProgramsSection() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">Target University</label>
-                  <Input value={form.targetUniversity} onChange={(e) => setForm((f) => ({ ...f, targetUniversity: e.target.value }))} placeholder="University name" />
+                  <Input 
+                    value={form.targetUniversity} 
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, targetUniversity: e.target.value }));
+                      if (errors.targetUniversity) setErrors(prev => { const n = {...prev}; delete n.targetUniversity; return n; });
+                    }} 
+                    placeholder="University name"
+                    className={errors.targetUniversity ? "border-rose-500 focus:border-rose-500" : ""}
+                  />
+                  {errors.targetUniversity && <p className="text-[10px] text-rose-500">{errors.targetUniversity}</p>}
                 </div>
+
                 <div className="space-y-1 sm:col-span-2">
                   <label className="text-xs font-medium text-slate-600">Description</label>
                   <textarea
                     value={form.description}
-                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                    className="min-h-[72px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900"
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, description: e.target.value }));
+                      if (errors.description) setErrors(prev => { const n = {...prev}; delete n.description; return n; });
+                    }}
+                    className={`min-h-[72px] w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:bg-slate-900 ${
+                      errors.description ? "border-rose-500 focus:border-rose-500" : "border-slate-200 dark:border-slate-700"
+                    }`}
                     placeholder="What does this program do?"
                   />
+                  {errors.description && <p className="text-[10px] text-rose-500">{errors.description}</p>}
                 </div>
+
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">Budget (LKR)</label>
-                  <Input type="number" value={form.budget} onChange={(e) => setForm((f) => ({ ...f, budget: e.target.value }))} placeholder="e.g. 1500000" />
+                  <Input 
+                    type="number" 
+                    value={form.budget} 
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, budget: e.target.value }));
+                      if (errors.budget) setErrors(prev => { const n = {...prev}; delete n.budget; return n; });
+                    }} 
+                    placeholder="e.g. 1500000"
+                    className={errors.budget ? "border-rose-500 focus:border-rose-500" : ""}
+                  />
+                  {errors.budget && <p className="text-[10px] text-rose-500">{errors.budget}</p>}
                 </div>
+
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">Eligibility Criteria</label>
-                  <Input value={form.eligibility} onChange={(e) => setForm((f) => ({ ...f, eligibility: e.target.value }))} placeholder="e.g. Financial need: High | GPA >= 2.5" />
+                  <Input 
+                    value={form.eligibility} 
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, eligibility: e.target.value }));
+                      if (errors.eligibility) setErrors(prev => { const n = {...prev}; delete n.eligibility; return n; });
+                    }} 
+                    placeholder="e.g. Financial need: High | GPA >= 2.5"
+                    className={errors.eligibility ? "border-rose-500 focus:border-rose-500" : ""}
+                  />
+                  {errors.eligibility && <p className="text-[10px] text-rose-500">{errors.eligibility}</p>}
                 </div>
+
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-xs text-slate-500">Student applications are routed to university admin verification.</p>
@@ -362,7 +454,7 @@ function NgoProgramsSection() {
                       Remove Program
                     </button>
                   )}
-                  <Button variant="primary" onClick={handleSave} disabled={saving || !form.title.trim()}>
+                  <Button variant="primary" onClick={handleSave} disabled={saving}>
                     {saving ? "Saving..." : editingId ? "Update Program" : "Create Program"}
                   </Button>
                 </div>
@@ -1285,46 +1377,161 @@ function NgoReportsSection() {
 }
 function NgoPartnershipsSection() {
   const [partnerships, setPartnerships] = useState(getNgoPartnerships());
+  const [eligiblePartners, setEligiblePartners] = useState<{_id: string; name: string; role: string; university?: string}[]>([]);
+  const [loadingPartners, setLoadingPartners] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ partnerName: "", partnerType: "admin" as NgoPartnership["partnerType"], role: "", focusArea: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    partnerUserId: "",
+    partnerName: "",
+    partnerType: "admin" as NgoPartnership["partnerType"],
+    role: "",
+    focusArea: "",
+    status: "pending" as NgoPartnership["status"]
+  });
   const [saving, setSaving] = useState(false);
 
-  const handleAdd = () => {
-    if (!form.partnerName.trim()) return;
+  useEffect(() => {
+    async function fetchPartners() {
+      setLoadingPartners(true);
+      try {
+        const res = await fetch("/api/users?roles=admin,faculty,donor");
+        if (res.ok) {
+          const data = await res.json();
+          // The API returns an array directly in demo mode, or a paginated object in some cases.
+          // Based on api/users/route.ts, it returns an array of mapped documents.
+          setEligiblePartners(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch real partners:", err);
+      } finally {
+        setLoadingPartners(false);
+      }
+    }
+    fetchPartners();
+  }, []);
+
+  // Filter eligible partners based on type
+  const filteredEligible = eligiblePartners.filter(p => 
+    (form.partnerType === "admin" && (p.role === "admin" || p.role === "faculty")) || 
+    (form.partnerType === "donor" && p.role === "donor")
+  );
+
+
+  const handleSave = () => {
+    if (!form.partnerName.trim() && !form.partnerUserId) return;
     setSaving(true);
+
+    // If selecting a user from the system, use their name
+    let finalPartnerName = form.partnerName;
+    if (form.partnerUserId) {
+      const selectedUser = eligiblePartners.find(u => u._id === form.partnerUserId);
+      if (selectedUser) finalPartnerName = selectedUser.name;
+    }
+
     setTimeout(() => {
-      const p = addNgoPartnership({ ...form, status: "pending", jointInitiatives: [], since: new Date().toISOString() });
-      setPartnerships((prev) => [p, ...prev]);
-      setForm({ partnerName: "", partnerType: "admin", role: "", focusArea: "" });
-      setShowForm(false);
+      if (editingId) {
+        const updated = updateNgoPartnership(editingId, {
+          partnerUserId: form.partnerUserId,
+          partnerName: finalPartnerName,
+          partnerType: form.partnerType,
+          role: form.role,
+          focusArea: form.focusArea,
+          status: form.status
+        });
+        if (updated) {
+          setPartnerships((prev) => prev.map((p) => (p._id === editingId ? updated : p)));
+        }
+      } else {
+        const p = addNgoPartnership({
+          partnerUserId: form.partnerUserId,
+          partnerName: finalPartnerName,
+          partnerType: form.partnerType,
+          role: form.role,
+          focusArea: form.focusArea,
+          status: "pending", 
+          jointInitiatives: [],
+          since: new Date().toISOString()
+        });
+        setPartnerships((prev) => [p, ...prev]);
+      }
+      resetForm();
       setSaving(false);
-    }, 500);
+    }, 800);
+  };
+
+  const handleDelete = () => {
+    if (!editingId || !window.confirm("Are you sure you want to remove this partnership?")) return;
+    deleteNgoPartnership(editingId);
+    setPartnerships((prev) => prev.filter((p) => p._id !== editingId));
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setForm({ partnerUserId: "", partnerName: "", partnerType: "admin", role: "", focusArea: "", status: "pending" });
+    setShowForm(false);
+    setEditingId(null);
+  };
+
+  const openEdit = (p: NgoPartnership) => {
+    setEditingId(p._id);
+    setForm({
+      partnerUserId: p.partnerUserId ?? "",
+      partnerName: p.partnerName,
+      partnerType: p.partnerType,
+      role: p.role,
+      focusArea: p.focusArea,
+      status: p.status
+    });
+    setShowForm(true);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <Button variant="primary" onClick={() => setShowForm((v) => !v)}>{showForm ? "Cancel" : "+ Add Partnership"}</Button>
+        <Button variant="primary" onClick={() => (showForm ? resetForm() : setShowForm(true))}>
+          {showForm ? "Cancel" : "+ Add Partnership"}
+        </Button>
       </div>
 
       <AnimatePresence>
         {showForm && (
           <motion.div key="pform" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
             <Card className="space-y-4 border-violet-200 bg-violet-50/30 p-5 dark:border-violet-800 dark:bg-violet-900/10">
-              <h3 className="text-sm font-semibold">New Partnership</h3>
+              <h3 className="text-sm font-semibold">{editingId ? "Update Partnership Request" : "New Partnership Request"}</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-600">Partner Name *</label>
-                  <Input value={form.partnerName} onChange={(e) => setForm((f) => ({ ...f, partnerName: e.target.value }))} placeholder="University office or donor organization" />
-                </div>
-                <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">Partner Type</label>
-                  <select value={form.partnerType} onChange={(e) => setForm((f) => ({ ...f, partnerType: e.target.value as NgoPartnership["partnerType"] }))}
+                  <select value={form.partnerType} onChange={(e) => setForm((f) => ({ ...f, partnerType: e.target.value as NgoPartnership["partnerType"], partnerUserId: "" }))}
                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900">
                     <option value="admin">University Admin</option>
                     <option value="donor">Donor / CSR</option>
                   </select>
                 </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-600">Select User from System</label>
+                  <select 
+                    value={form.partnerUserId} 
+                    onChange={(e) => setForm((f) => ({ ...f, partnerUserId: e.target.value, partnerName: "" }))}
+                    disabled={loadingPartners}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900"
+                  >
+                    <option value="">{loadingPartners ? "Loading users..." : "-- Choose an existing user --"}</option>
+                    {filteredEligible.map(u => (
+                      <option key={u._id} value={u._id}>{u.name} ({u.university && u.university !== "N/A" ? u.university : "Organization"})</option>
+                    ))}
+                    {!loadingPartners && <option value="manual">-- Manual Entry --</option>}
+                  </select>
+                </div>
+
+
+                {form.partnerUserId === "manual" && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-600">Partner Name *</label>
+                    <Input value={form.partnerName} onChange={(e) => setForm((f) => ({ ...f, partnerName: e.target.value }))} placeholder="Enter name manually" />
+                  </div>
+                )}
+
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">Role / Collaboration</label>
                   <Input value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))} placeholder="Joint program design & verification" />
@@ -1333,10 +1540,34 @@ function NgoPartnershipsSection() {
                   <label className="text-xs font-medium text-slate-600">Focus Area</label>
                   <Input value={form.focusArea} onChange={(e) => setForm((f) => ({ ...f, focusArea: e.target.value }))} placeholder="Emergency relief and tuition support" />
                 </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-600">Status</label>
+                  <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as NgoPartnership["status"] }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900">
+                    <option value="pending">Request Sent (Pending)</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="canceled">Canceled</option>
+                  </select>
+                </div>
               </div>
-              <Button variant="primary" onClick={handleAdd} disabled={saving || !form.partnerName.trim()}>
-                {saving ? "Adding..." : "Add Partnership"}
-              </Button>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-slate-500 italic">
+                  {form.partnerUserId && form.partnerUserId !== "manual" 
+                    ? "A partnership request will be sent to the selected user." 
+                    : "Manual entries are for tracking external partners."}
+                </p>
+                <div className="flex items-center gap-3">
+                  {editingId && (
+                    <button type="button" onClick={handleDelete} className="text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400">
+                      Remove Request
+                    </button>
+                  )}
+                  <Button variant="primary" onClick={handleSave} disabled={saving || (!form.partnerName.trim() && !form.partnerUserId)}>
+                    {saving ? "Sending..." : editingId ? "Update Request" : "Send Request"}
+                  </Button>
+                </div>
+              </div>
             </Card>
           </motion.div>
         )}
@@ -1344,10 +1575,15 @@ function NgoPartnershipsSection() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         {partnerships.map((p) => (
-          <motion.div key={p._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <Card className="space-y-3 p-5">
+          <motion.div key={p._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => openEdit(p)} className="cursor-pointer">
+            <Card className="space-y-3 p-5 transition-colors hover:border-primary/40">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{p.partnerName}</p>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{p.partnerName}</p>
+                  {p.partnerUserId && (
+                    <span className="text-[10px] text-primary font-medium">Verified System User</span>
+                  )}
+                </div>
                 <StatusBadge status={p.status} />
               </div>
               <p className="text-xs text-slate-500">{p.partnerType === "admin" ? "University Admin" : "Donor / CSR"}</p>
@@ -1368,6 +1604,8 @@ function NgoPartnershipsSection() {
           </motion.div>
         ))}
       </div>
+
+
     </div>
   );
 }

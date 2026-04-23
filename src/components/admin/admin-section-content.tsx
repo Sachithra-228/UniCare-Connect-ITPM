@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -3336,60 +3336,137 @@ function AdminProfileSection() {
   );
 }
 
+function StatusBadge({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+    pending: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+    canceled: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+    completed: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  };
+  const colorClass = colors[status] || colors.pending;
+  return (
+    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${colorClass}`}>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+}
+
 function AdminPartnershipsSection() {
+
+  const { user } = useAuth();
   const [partnerships, setPartnerships] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const { getNgoPartnerships, getIncomingPartnershipRequests } = await import("@/lib/ngo-demo-store");
+    
+    // Active partnerships for this university/admin
+    const all = getNgoPartnerships();
+    setPartnerships(all.filter(p => p.status === "active" && (p.partnerUserId === user?._id || p.partnerType === "admin")));
+    
+    // Incoming requests for this specific admin
+    if (user?._id) {
+      setRequests(getIncomingPartnershipRequests(user._id));
+    }
+    setLoading(false);
+  }, [user?._id]);
+
   useEffect(() => {
-    import("@/lib/ngo-demo-store").then(({ getNgoPartnerships }) => {
-      setPartnerships(getNgoPartnerships().filter(p => p.partnerType === "admin" || p.status === "active"));
-      setLoading(false);
-    });
-  }, []);
+    loadData();
+  }, [loadData]);
+
+  const handleResponse = async (id: string, action: 'accept' | 'reject') => {
+    const { acceptNgoPartnership, rejectNgoPartnership } = await import("@/lib/ngo-demo-store");
+    if (action === 'accept') {
+      acceptNgoPartnership(id);
+    } else {
+      rejectNgoPartnership(id);
+    }
+    loadData();
+  };
 
   return (
-    <div className="space-y-6">
-      <Card className="border-primary/20 bg-primary/5 p-4 dark:border-primary/10 dark:bg-primary/10">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-          Partner organizations collaborate with University Admins to co-manage scholarships, verify eligibility, 
-          and track resource distribution. View active joint initiatives below.
-        </p>
-      </Card>
-      
-      {loading ? (
-        <p className="text-sm text-slate-500">Loading active partnerships...</p>
-      ) : partnerships.length === 0 ? (
-        <p className="text-sm text-slate-500">No active partnerships found.</p>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {partnerships.map((partner) => (
-            <Card key={partner._id} className="p-5 flex flex-col items-start hover:shadow-md transition-shadow">
-              <span className="mb-2 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                {new Date(partner.since).getFullYear()} Partnership
-              </span>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-1">{partner.partnerName}</h3>
-              <p className="text-sm text-primary font-medium mb-3">{partner.focusArea}</p>
-              
-              <div className="w-full mt-auto space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Your Role</p>
-                  <p className="text-sm text-slate-700 dark:text-slate-300">{partner.role}</p>
-                </div>
-                {partner.jointInitiatives && partner.jointInitiatives.length > 0 && (
+    <div className="space-y-8">
+      {requests.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+            Incoming NGO Partnership Requests
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {requests.map((req) => (
+              <Card key={req._id} className="p-5 border-primary/30 bg-primary/5">
+                <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Joint Initiatives</p>
-                    <ul className="list-disc pl-4 text-sm text-slate-600 dark:text-slate-400">
-                      {partner.jointInitiatives.map((ji: string, i: number) => (
-                        <li key={i}>{ji}</li>
-                      ))}
-                    </ul>
+                    <h3 className="font-bold text-slate-900 dark:text-white">Collaboration Request</h3>
+                    <p className="text-xs text-slate-500">Sent on {new Date(req.since).toLocaleDateString()}</p>
                   </div>
-                )}
-              </div>
-            </Card>
-          ))}
+                  <StatusBadge status="pending" />
+                </div>
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm"><span className="font-semibold text-slate-700 dark:text-slate-300">Focus:</span> {req.focusArea}</p>
+                  <p className="text-sm"><span className="font-semibold text-slate-700 dark:text-slate-300">Proposed Role:</span> {req.role}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="primary" size="sm" onClick={() => handleResponse(req._id, 'accept')}>Accept Request</Button>
+                  <Button variant="outline" size="sm" onClick={() => handleResponse(req._id, 'reject')} className="text-rose-600 border-rose-200 hover:bg-rose-50">Decline</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
+
+      <div className="space-y-4">
+        <h2 className="text-lg font-bold">Active Partnerships</h2>
+        <Card className="border-primary/20 bg-primary/5 p-4 dark:border-primary/10 dark:bg-primary/10">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            Partner organizations collaborate with University Admins to co-manage scholarships, verify eligibility, 
+            and track resource distribution. View active joint initiatives below.
+          </p>
+        </Card>
+        
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading active partnerships...</p>
+        ) : partnerships.length === 0 ? (
+          <p className="text-sm text-slate-500">No active partnerships found.</p>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {partnerships.map((partner) => (
+              <Card key={partner._id} className="p-5 flex flex-col items-start hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start w-full mb-2">
+                  <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {new Date(partner.since).getFullYear()} Partnership
+                  </span>
+                  <StatusBadge status={partner.status} />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-1">{partner.partnerName}</h3>
+                <p className="text-sm text-primary font-medium mb-3">{partner.focusArea}</p>
+                
+                <div className="w-full mt-auto space-y-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Your Role</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300">{partner.role}</p>
+                  </div>
+                  {partner.jointInitiatives && partner.jointInitiatives.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Joint Initiatives</p>
+                      <ul className="list-disc pl-4 text-sm text-slate-600 dark:text-slate-400">
+                        {partner.jointInitiatives.map((ji: string, i: number) => (
+                          <li key={i}>{ji}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+

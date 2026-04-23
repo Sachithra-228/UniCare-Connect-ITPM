@@ -50,6 +50,8 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
   "peer-support": MessageCircle,
   reports: BarChart3,
   announcements: Megaphone,
+  partnerships: Handshake,
+
 
   // Mentor
   "mentor-home": Home,
@@ -68,6 +70,8 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
   "impact-reports": PieChart,
   recognition: Award,
   communications: MessageCircle,
+  partnerships: Handshake,
+
 
   // Employer
   "employer-home": Home,

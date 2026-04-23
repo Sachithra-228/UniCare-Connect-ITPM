@@ -119,11 +119,14 @@ export type NgoPartnership = {
   partnerName: string;
   partnerType: "admin" | "donor";
   role: string;
-  status: "active" | "pending" | "completed";
+  status: "active" | "pending" | "completed" | "canceled";
+
   focusArea: string;
   jointInitiatives: string[];
   since: string;
+  partnerUserId?: string;
 };
+
 
 export type NgoCommunication = {
   _id: string;
@@ -202,7 +205,60 @@ export function updateNgoFundingStatus(id: string, status: "pending" | "allocate
 }
 
 export function getNgoPartnerships() { return partnerships; }
+export function updateNgoPartnership(id: string, updates: Partial<NgoPartnership>) {
+  const idx = partnerships.findIndex((p) => p._id === id);
+  if (idx === -1) return null;
+  const updated = { ...partnerships[idx], ...updates };
+  partnerships = partnerships.slice();
+  partnerships[idx] = updated;
+  saveToStorage();
+  return updated;
+}
+
+export function deleteNgoPartnership(id: string) {
+  partnerships = partnerships.filter((p) => p._id !== id);
+  saveToStorage();
+}
+
+/**
+ * Simulates fetching existing users from the system that are available for partnership.
+ * In a real app, this would query the MongoDB 'users' collection.
+ */
+export function getEligiblePartners() {
+  return [
+    { _id: "u3", name: "University of Peradeniya Admin", role: "admin", university: "University of Peradeniya" },
+    { _id: "u4", name: "UOM Welfare Office", role: "admin", university: "University of Moratuwa" },
+    { _id: "u5", name: "Dialog Axiata CSR", role: "donor", university: "N/A" },
+    { _id: "u6", name: "Hayleys Group Philanthropy", role: "donor", university: "N/A" },
+    { _id: "u7", name: "Faculty of IT - UOM", role: "admin", university: "University of Moratuwa" },
+    { _id: "u8", name: "Standard Chartered Bank", role: "donor", university: "N/A" },
+  ];
+}
+
+export function getIncomingPartnershipRequests(userId: string) {
+  return partnerships.filter((p) => p.partnerUserId === userId && p.status === "pending");
+}
+
+export function acceptNgoPartnership(id: string) {
+  const idx = partnerships.findIndex((p) => p._id === id);
+  if (idx === -1) return null;
+  partnerships[idx] = { ...partnerships[idx], status: "active" };
+  saveToStorage();
+  return partnerships[idx];
+}
+
+export function rejectNgoPartnership(id: string) {
+  const idx = partnerships.findIndex((p) => p._id === id);
+  if (idx === -1) return null;
+  partnerships[idx] = { ...partnerships[idx], status: "canceled" };
+  saveToStorage();
+  return partnerships[idx];
+}
+
 export function getNgoCommunications() { return communications; }
+
+
+
 export function getNgoReports() { return reports; }
 export function getNgoImpactStories() { return impactStories; }
 export function getNgoApplications() { return applications; }
