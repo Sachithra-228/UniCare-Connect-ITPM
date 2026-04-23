@@ -127,48 +127,64 @@ function EmployerHomeSection() {
   const recommendedCount = Math.min(12, totalApplicants); // placeholder logic until matching exists
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 rounded-3xl bg-gradient-to-br from-[#1D4ED8] via-[#2563EB] to-[#38BDF8] p-4 md:p-5">
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard
+          className="border-blue-200/80 bg-white/85 shadow-sm shadow-blue-200/30 backdrop-blur-sm transition-colors hover:bg-white"
+          labelClassName="text-blue-700"
+          valueClassName="text-slate-900"
+          descriptionClassName="text-slate-600"
           label="Active postings"
           value={String(activeJobs)}
           description="Currently visible to students"
         />
         <StatCard
+          className="border-blue-200/80 bg-white/85 shadow-sm shadow-blue-200/30 backdrop-blur-sm transition-colors hover:bg-white"
+          labelClassName="text-blue-700"
+          valueClassName="text-slate-900"
+          descriptionClassName="text-slate-600"
           label="Recent applicants"
           value={String(totalApplicants)}
           description="Last sync from applications"
         />
         <StatCard
+          className="border-blue-200/80 bg-white/85 shadow-sm shadow-blue-200/30 backdrop-blur-sm transition-colors hover:bg-white"
+          labelClassName="text-blue-700"
+          valueClassName="text-slate-900"
+          descriptionClassName="text-slate-600"
           label="Recommended candidates"
           value={String(recommendedCount)}
           description="Based on skills & interests"
         />
         <StatCard
+          className="border-blue-200/80 bg-white/85 shadow-sm shadow-blue-200/30 backdrop-blur-sm transition-colors hover:bg-white"
+          labelClassName="text-blue-700"
+          valueClassName="text-slate-900"
+          descriptionClassName="text-slate-600"
           label="Upcoming interviews"
           value="-"
           description="Schedule managed in Interviews"
         />
       </div>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Recently posted jobs</h3>
+      <Card className="space-y-3 border-white/35 bg-white/95 p-4 shadow-lg shadow-blue-900/10">
+        <h3 className="text-sm font-semibold text-[#1D4ED8]">Recently posted jobs</h3>
         {error ? <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p> : null}
-        {loading ? <p className="text-sm text-slate-500">Loading jobs...</p> : null}
+        {loading ? <p className="text-sm text-slate-600">Loading jobs...</p> : null}
         <div className="space-y-2 text-sm">
           {jobs.slice(0, 5).map((job) => (
             <div
               key={job._id}
-              className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950"
+              className="flex flex-col gap-1 rounded-xl border border-blue-200/80 bg-white/85 p-3 shadow-sm shadow-blue-200/30 backdrop-blur-sm transition-colors hover:bg-white"
             >
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="font-medium">{job.title}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="font-medium text-slate-900">{job.title}</p>
+                  <p className="text-xs text-slate-600">
                     {job.location} - {job.type}
                   </p>
                 </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                <span className="rounded-full border border-blue-200 bg-blue-100 px-3 py-1 text-xs text-blue-800">
                   {job.status ?? "Active"}
                 </span>
                 <span
@@ -179,16 +195,16 @@ function EmployerHomeSection() {
                   {normalizeModerationStatus(job.moderationStatus)}
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-600">
                 {job.applicationsCount ?? 0} applicants - {job.views ?? 0} views
               </p>
               {job.reviewNote ? (
-                <p className="mt-1 text-xs text-slate-500">Review note: {job.reviewNote}</p>
+                <p className="mt-1 text-xs text-slate-600">Review note: {job.reviewNote}</p>
               ) : null}
             </div>
           ))}
           {!loading && !jobs.length && (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-600">
               No job postings yet. Create your first listing from the Job Listings section.
             </p>
           )}
@@ -281,25 +297,25 @@ function EmployerJobListingsSection() {
   };
 
   const renderList = (titleLabel: string, items: EmployerJob[]) => (
-    <Card className="space-y-3 p-4">
-      <h3 className="text-sm font-semibold">{titleLabel}</h3>
-      <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
+    <Card className="space-y-3 border-white/35 bg-white/95 p-4 shadow-lg shadow-blue-900/10">
+      <h3 className="text-sm font-semibold text-[#1D4ED8]">{titleLabel}</h3>
+      <div className="divide-y divide-blue-100 text-sm">
         {loading ? (
-          <p className="py-3 text-sm text-slate-500">Loading jobs...</p>
+          <p className="py-3 text-sm text-slate-600">Loading jobs...</p>
         ) : (
           items.map((job) => (
             <div
               key={job._id}
-              className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-1 rounded-xl border border-blue-200/80 bg-white/85 p-3 shadow-sm shadow-blue-200/30 backdrop-blur-sm transition-colors hover:bg-white sm:my-2 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <p className="font-medium">{job.title}</p>
-                <p className="text-xs text-slate-500">{job.location} - {job.type}</p>
+                <p className="font-medium text-slate-900">{job.title}</p>
+                <p className="text-xs text-slate-600">{job.location} - {job.type}</p>
                 {job.reviewNote ? (
-                  <p className="mt-1 text-xs text-slate-500">Review note: {job.reviewNote}</p>
+                  <p className="mt-1 text-xs text-slate-600">Review note: {job.reviewNote}</p>
                 ) : null}
               </div>
-              <div className="flex items-center gap-2 text-xs text-slate-500">
+              <div className="flex items-center gap-2 text-xs text-slate-600">
                 <span>{job.views ?? 0} views</span>
                 <span>{job.applicationsCount ?? 0} applications</span>
                 <span
@@ -314,20 +330,20 @@ function EmployerJobListingsSection() {
           ))
         )}
         {!loading && !items.length ? (
-          <p className="py-3 text-sm text-slate-500">No items in this state.</p>
+          <p className="py-3 text-sm text-slate-600">No items in this state.</p>
         ) : null}
       </div>
     </Card>
   );
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+    <div className="space-y-4 rounded-3xl bg-gradient-to-br from-[#1D4ED8] via-[#2563EB] to-[#38BDF8] p-4 md:p-5">
+      <p className="text-sm text-white/95">
         Create and manage job openings visible to students. Employer postings go through admin review before student visibility.
       </p>
       {error ? <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p> : null}
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">Job listings</h2>
+        <h2 className="text-sm font-semibold text-white">Job listings</h2>
         <button
           type="button"
           onClick={() => {
@@ -335,15 +351,15 @@ function EmployerJobListingsSection() {
             setSubmitError(null);
             setSubmitMessage(null);
           }}
-          className="rounded-full bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary/90"
+          className="rounded-full border border-white/40 bg-white/20 px-4 py-2 text-xs font-medium text-white backdrop-blur-sm hover:bg-white/30"
         >
           {showCreateForm ? "Close form" : "Create job posting"}
         </button>
       </div>
 
       {showCreateForm ? (
-        <Card className="space-y-3 p-4">
-          <h3 className="text-sm font-semibold">Create new job posting</h3>
+        <Card className="space-y-3 border-white/35 bg-white/95 p-4 shadow-lg shadow-blue-900/10">
+          <h3 className="text-sm font-semibold text-[#1D4ED8]">Create new job posting</h3>
           <form className="space-y-3" onSubmit={submitJobPosting}>
             <div className="grid gap-3 md:grid-cols-2">
               <input
@@ -443,14 +459,14 @@ function EmployerJobListingsSection() {
 
 function EmployerApplicantsSection() {
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+    <div className="space-y-4 rounded-3xl bg-gradient-to-br from-[#1D4ED8] via-[#2563EB] to-[#38BDF8] p-4 md:p-5">
+      <p className="text-sm text-white/95">
         Review applicants for your roles, shortlist candidates, and coordinate with students. Donors
         and NGOs do not access this workspace.
       </p>
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Applicants by job</h3>
-        <p className="text-sm text-slate-500">
+      <Card className="space-y-3 border-white/35 bg-white/95 p-4 shadow-lg shadow-blue-900/10">
+        <h3 className="text-sm font-semibold text-[#1D4ED8]">Applicants by job</h3>
+        <p className="text-sm text-slate-600">
           Hook this section into your applications collection once it exists. It will display
           applicants per job with actions to shortlist, reject with feedback, schedule interviews,
           and make offers - limited strictly to career-related information.
@@ -462,14 +478,14 @@ function EmployerApplicantsSection() {
 
 function EmployerTalentPoolSection() {
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+    <div className="space-y-4 rounded-3xl bg-gradient-to-br from-[#1D4ED8] via-[#2563EB] to-[#38BDF8] p-4 md:p-5">
+      <p className="text-sm text-white/95">
         Browse student talent based on skills and departments. Only students who have consented
         (e.g., by applying or opting in) will appear here; you cannot view unrelated profiles.
       </p>
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Talent pool</h3>
-        <p className="text-sm text-slate-500">
+      <Card className="space-y-3 border-white/35 bg-white/95 p-4 shadow-lg shadow-blue-900/10">
+        <h3 className="text-sm font-semibold text-[#1D4ED8]">Talent pool</h3>
+        <p className="text-sm text-slate-600">
           Connect this area to a student profiles API with filters for skills, department, and
           graduation year. It will support saving promising profiles, AI-matched recommendations,
           and contact options for interested students.
@@ -481,52 +497,52 @@ function EmployerTalentPoolSection() {
 
 function EmployerInterviewsSection() {
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+    <div className="space-y-4 rounded-3xl bg-gradient-to-br from-[#1D4ED8] via-[#2563EB] to-[#38BDF8] p-4 md:p-5">
+      <p className="text-sm text-white/95">
         Plan and track interviews with students. This section focuses only on career-related
         interactions and does not show sensitive wellness or financial details.
       </p>
-      <Card className="space-y-4 p-4">
-        <h3 className="text-sm font-semibold">Interview scheduler</h3>
+      <Card className="space-y-4 border-white/35 bg-white/95 p-4 shadow-lg shadow-blue-900/10">
+        <h3 className="text-sm font-semibold text-[#1D4ED8]">Interview scheduler</h3>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
+            <label className="text-xs font-medium text-slate-600">
               Role / job
             </label>
-            <select className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900">
+            <select className="w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-[#2563EB]/20 focus:ring-2">
               <option>Select job</option>
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
+            <label className="text-xs font-medium text-slate-600">
               Date
             </label>
             <input
               type="date"
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              className="w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-[#2563EB]/20 focus:ring-2"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
+            <label className="text-xs font-medium text-slate-600">
               Time slot
             </label>
             <input
               type="time"
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+              className="w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-[#2563EB]/20 focus:ring-2"
             />
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
+          <label className="text-xs font-medium text-slate-600">
             Interview instructions
           </label>
           <textarea
-            className="min-h-[100px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+            className="min-h-[100px] w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-[#2563EB]/20 focus:ring-2"
             placeholder="Add call details, virtual meeting links, or in-person location..."
           />
         </div>
         <div className="flex justify-end">
-          <button className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90">
+          <button className="rounded-full bg-[#1D4ED8] px-4 py-2 text-sm font-medium text-white hover:bg-[#1E40AF]">
             Send invitations
           </button>
         </div>
@@ -537,14 +553,14 @@ function EmployerInterviewsSection() {
 
 function EmployerCampusConnectSection() {
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+    <div className="space-y-4 rounded-3xl bg-gradient-to-br from-[#1D4ED8] via-[#2563EB] to-[#38BDF8] p-4 md:p-5">
+      <p className="text-sm text-white/95">
         Coordinate with the university on career fairs and campus recruitment events. This space is
         focused on employer-student interactions only.
       </p>
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Campus events</h3>
-        <p className="text-sm text-slate-500">
+      <Card className="space-y-3 border-white/35 bg-white/95 p-4 shadow-lg shadow-blue-900/10">
+        <h3 className="text-sm font-semibold text-[#1D4ED8]">Campus events</h3>
+        <p className="text-sm text-slate-600">
           Integrate upcoming fair dates and recruitment events from the university calendar. You can
           register, manage participation, and promote your employer brand to students.
         </p>
@@ -560,23 +576,39 @@ function EmployerAnalyticsSection() {
   const avgPerJob = jobs.length ? Math.round(totalApplications / jobs.length) : 0;
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+    <div className="space-y-4 rounded-3xl bg-gradient-to-br from-[#1D4ED8] via-[#2563EB] to-[#38BDF8] p-4 md:p-5">
+      <p className="text-sm text-white/95">
         High-level analytics to understand how students engage with your roles and how quickly
         hiring moves, without exposing individual student wellness or financial data.
       </p>
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
+          className="border-blue-200/80 bg-white/90 shadow-sm shadow-blue-200/30"
+          labelClassName="text-blue-700"
+          valueClassName="text-slate-900"
+          descriptionClassName="text-slate-600"
           label="Total applications"
           value={String(totalApplications)}
           description="Across all postings"
         />
         <StatCard
+          className="border-blue-200/80 bg-white/90 shadow-sm shadow-blue-200/30"
+          labelClassName="text-blue-700"
+          valueClassName="text-slate-900"
+          descriptionClassName="text-slate-600"
           label="Avg. applications per job"
           value={String(avgPerJob)}
           description="Interest per listing"
         />
-        <StatCard label="Time-to-hire" value="-" description="Add from offer data when ready" />
+        <StatCard
+          className="border-blue-200/80 bg-white/90 shadow-sm shadow-blue-200/30"
+          labelClassName="text-blue-700"
+          valueClassName="text-slate-900"
+          descriptionClassName="text-slate-600"
+          label="Time-to-hire"
+          value="-"
+          description="Add from offer data when ready"
+        />
       </div>
     </div>
   );

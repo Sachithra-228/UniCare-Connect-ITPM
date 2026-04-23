@@ -189,6 +189,7 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
   const ActiveSectionIcon = getSectionIcon(activeSection.id);
 
   const isHomeSection = activeSectionId === "home";
+  const isEmployerRole = routeRole === "employer";
 
   return (
     <div className="space-y-8">
@@ -224,21 +225,47 @@ export default function RoleDashboardPage({ params }: RoleDashboardPageProps) {
         </>
       )}
 
-      <Card className="overflow-hidden border-slate-200/80 shadow-sm dark:border-slate-700/50">
-        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-slate-800 dark:bg-slate-800/30">
+      <Card
+        className={`overflow-hidden shadow-sm ${
+          isEmployerRole
+            ? "border-[#60A5FA]/65 bg-white/95 shadow-blue-900/10"
+            : "border-slate-200/80 dark:border-slate-700/50"
+        }`}
+      >
+        <div
+          className={`flex items-center justify-between border-b px-6 py-4 ${
+            isEmployerRole
+              ? "border-white/20 bg-gradient-to-r from-[#1D4ED8] via-[#2563EB] to-[#38BDF8]"
+              : "border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-800/30"
+          }`}
+        >
           <div className="flex items-center gap-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <div
+              className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${
+                isEmployerRole ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+              }`}
+            >
               <ActiveSectionIcon className="size-6" />
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <p
+                className={`text-xs font-medium uppercase tracking-wide ${
+                  isEmployerRole ? "text-blue-100/95" : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
                 {activeSection.menuLabel}
               </p>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{activeSection.title}</h2>
+              <h2
+                className={`text-lg font-semibold ${
+                  isEmployerRole ? "text-white" : "text-slate-900 dark:text-white"
+                }`}
+              >
+                {activeSection.title}
+              </h2>
             </div>
           </div>
         </div>
-        <div className="p-6">
+        <div className={isEmployerRole ? "bg-gradient-to-b from-[#BFDBFE] via-[#DBEAFE] to-[#EFF6FF] p-6" : "p-6"}>
           {routeRole === "student" ? (
             <StudentSectionContent sectionId={activeSection.id} />
           ) : routeRole === "admin" ? (
