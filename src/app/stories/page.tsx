@@ -83,11 +83,16 @@ export default function StoriesPage() {
           };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-10 px-4 py-14">
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-[#0b1f45] via-[#102a59] to-[#0c1d3d]">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.07)_1px,transparent_1px)] bg-[size:34px_34px] opacity-35" />
+      <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 left-1/4 h-64 w-64 rounded-full bg-blue-400/12 blur-3xl" />
+
+      <div className="relative mx-auto w-full max-w-6xl space-y-10 px-4 py-14">
       <div className="mb-8 space-y-2 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">{text.eyebrow}</p>
-        <h1 className="text-3xl font-semibold">{text.title}</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-300">{text.subtitle}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">{text.eyebrow}</p>
+        <h1 className="text-3xl font-semibold text-white">{text.title}</h1>
+        <p className="text-sm text-blue-100/85">{text.subtitle}</p>
       </div>
       <TestimonialsCarousel
         testimonials={[
@@ -114,6 +119,7 @@ export default function StoriesPage() {
           }
         ]}
       />
+      </div>
     </div>
   );
 }

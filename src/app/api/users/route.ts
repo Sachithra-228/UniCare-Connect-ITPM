@@ -254,20 +254,16 @@ export async function POST(request: NextRequest) {
 
     const setFields: Partial<DbUserInput> & { updatedAt: Date } = {
       updatedAt: now,
-      email: normalizedEmail,
-      name: safeName ?? fallbackNameFromEmail(normalizedEmail),
-      ...(roleToSet != null && { role: roleToSet }),
-      firebaseUid: payload.firebaseUid,
-      university: payload.university,
-      contact: payload.contact,
-      ...(isNewUserWithoutRole && { needsProfileCompletion: true }),
-      ...(completingProfile && { needsProfileCompletion: false })
+      email: normalizedEmail
     };
 
+    if (payload.firebaseUid) setFields.firebaseUid = payload.firebaseUid;
     if (safeName) setFields.name = safeName;
     if (roleToSet != null) setFields.role = roleToSet;
-    if (payload.university) setFields.university = payload.university;
-    if (payload.contact) setFields.contact = payload.contact;
+    if (payload.university !== undefined) setFields.university = payload.university;
+    if (payload.contact !== undefined) setFields.contact = payload.contact;
+    if (isNewUserWithoutRole) setFields.needsProfileCompletion = true;
+    if (completingProfile) setFields.needsProfileCompletion = false;
     if (payload.profilePic !== undefined && isSelf) setFields.profilePic = payload.profilePic;
     if (payload.roleDetails) setFields.roleDetails = payload.roleDetails;
     if (payload.needsProfileCompletion === false) setFields.needsProfileCompletion = false;
@@ -315,21 +311,31 @@ export async function POST(request: NextRequest) {
 
     // No path may appear in both $set and $setOnInsert (MongoDB conflict). Use $setOnInsert only for
     // insert-only defaults; everything else goes in $set.
+    const setOnInsertFields: Pick<
+      DbUserInput,
+      "createdAt" | "status" | "isDeleted" | "subscription"
+    > &
+      Partial<Pick<DbUserInput, "name">> = {
+      createdAt: now,
+      status: "active",
+      isDeleted: false,
+      subscription: {
+        plan: "trial",
+        status: "trialing",
+        trialEndsAt: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+      }
+    };
+
+    if (setFields.name === undefined) {
+      setOnInsertFields.name = fallbackNameFromEmail(normalizedEmail);
+    }
+
     const update: {
       $set: Partial<DbUserInput> & { updatedAt: Date };
-      $setOnInsert: Pick<DbUserInput, "createdAt" | "status" | "isDeleted" | "subscription">;
+      $setOnInsert: typeof setOnInsertFields;
     } = {
       $set: setFields,
-      $setOnInsert: {
-        createdAt: now,
-        status: "active",
-        isDeleted: false,
-        subscription: {
-          plan: "trial",
-          status: "trialing",
-          trialEndsAt: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
-        }
-      }
+      $setOnInsert: setOnInsertFields
     };
 
     const upsertStart = shouldLogTiming ? Date.now() : 0;
@@ -424,4 +430,3 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
-

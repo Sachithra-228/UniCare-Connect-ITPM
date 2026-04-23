@@ -6,10 +6,10 @@ import { useLanguage } from "@/context/language-context";
 import { getUiTranslations } from "@/lib/ui-translations";
 
 const socialLinks = [
-  { label: "TikTok", href: "https://www.tiktok.com/", icon: Music2 },
-  { label: "LinkedIn", href: "https://www.linkedin.com/", icon: Linkedin },
-  { label: "YouTube", href: "https://www.youtube.com/", icon: Youtube },
-  { label: "GitHub", href: "https://github.com/", icon: Github }
+  { label: "TikTok", icon: Music2 },
+  { label: "LinkedIn", icon: Linkedin },
+  { label: "YouTube", icon: Youtube },
+  { label: "GitHub", icon: Github }
 ];
 
 export function Footer() {
@@ -81,17 +81,15 @@ export function Footer() {
                 const Icon = item.icon;
 
                 return (
-                  <Link
+                  <button
                     key={item.label}
-                    href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
+                    type="button"
                     aria-label={item.label}
                     title={item.label}
                     className="grid h-11 w-11 place-items-center rounded-full border border-slate-200 bg-slate-50 text-primary transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white hover:shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:hover:bg-slate-900"
                   >
                     <Icon className="h-5 w-5" />
-                  </Link>
+                  </button>
                 );
               })}
             </div>

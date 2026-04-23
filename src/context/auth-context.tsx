@@ -180,21 +180,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return null;
     }
 
-    const payload = JSON.stringify({
+    const payloadData: {
+      firebaseUid: string;
+      email: string;
+      name?: string;
+      role?: UserRole;
+      university?: string;
+      contact?: string;
+      roleDetails?: {
+        fieldA: string;
+        fieldB: string;
+        fieldC: string;
+      };
+    } = {
       firebaseUid: currentUser.uid,
-      email: currentUser.email.toLowerCase(),
-      name: profile?.name ?? currentUser.displayName ?? currentUser.email.split("@")[0],
-      role: profile?.role,
-      university: profile?.fieldA,
-      contact: profile?.fieldC,
-      roleDetails: profile
-        ? {
-            fieldA: profile.fieldA ?? "",
-            fieldB: profile.fieldB ?? "",
-            fieldC: profile.fieldC ?? ""
-          }
-        : undefined
-    });
+      email: currentUser.email.toLowerCase()
+    };
+
+    // Keep basic auth sync minimal so it doesn't overwrite profile edits on refresh/sign-in.
+    if (profile) {
+      payloadData.name = profile.name ?? currentUser.displayName ?? currentUser.email.split("@")[0];
+      payloadData.role = profile.role;
+      payloadData.university = profile.fieldA;
+      payloadData.contact = profile.fieldC;
+      payloadData.roleDetails = {
+        fieldA: profile.fieldA ?? "",
+        fieldB: profile.fieldB ?? "",
+        fieldC: profile.fieldC ?? ""
+      };
+    }
+
+    const payload = JSON.stringify(payloadData);
 
     const doSync = async () =>
       fetch("/api/users", {
@@ -510,5 +526,4 @@ export function useAuth() {
   }
   return context;
 }
-
 

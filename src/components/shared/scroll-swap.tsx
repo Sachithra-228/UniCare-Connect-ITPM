@@ -37,28 +37,35 @@ export function ScrollSwap({ first, second, className }: ScrollSwapProps) {
   }, []);
 
   return (
-    <section className={`relative min-h-[90vh] ${className ?? ""}`}>
-      <div ref={topRef} className="absolute top-0 h-12 w-full" />
-      <div ref={bottomRef} className="absolute bottom-0 h-12 w-full" />
-      <div className="sticky top-24">
-        <div className="relative">
-          <div
-            className={`transition-all duration-700 ${
-              showSecond
-                ? "opacity-0 pointer-events-none -translate-y-6"
-                : "opacity-100 translate-y-0"
-            }`}
-          >
-            {first}
-          </div>
-          <div
-            className={`absolute inset-0 transition-all duration-700 ${
-              showSecond
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 pointer-events-none translate-y-6"
-            }`}
-          >
-            {second}
+    <section className={`relative ${className ?? ""}`}>
+      <div className="grid gap-12 md:hidden">
+        <div>{first}</div>
+        <div>{second}</div>
+      </div>
+
+      <div className="hidden md:block">
+        <div ref={topRef} className="absolute top-0 h-12 w-full" />
+        <div ref={bottomRef} className="absolute bottom-0 h-12 w-full" />
+        <div className="sticky top-24">
+          <div className="relative">
+            <div
+              className={`transition-all duration-700 ${
+                showSecond
+                  ? "opacity-0 pointer-events-none -translate-y-6"
+                  : "opacity-100 translate-y-0"
+              }`}
+            >
+              {first}
+            </div>
+            <div
+              className={`absolute inset-0 transition-all duration-700 ${
+                showSecond
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 pointer-events-none translate-y-6"
+              }`}
+            >
+              {second}
+            </div>
           </div>
         </div>
       </div>
