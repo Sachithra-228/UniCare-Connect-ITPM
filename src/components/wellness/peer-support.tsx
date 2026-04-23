@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/shared/Card";
@@ -176,26 +176,49 @@ export function PeerSupport() {
   };
 
   return (
-    <div className="space-y-4">
-      <Card className="space-y-4 p-4">
-        <h3 className="text-lg font-semibold">Peer support forum</h3>
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          Ask questions, share tips, and support each other. Keep discussions respectful and safe.
-        </p>
+    <div className="space-y-5">
+      <Card className="space-y-5 border-slate-100 bg-gradient-to-br from-white via-sky-50 to-cyan-50 p-5 shadow-md dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-2">
+            <span className="inline-flex rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200">
+              Peer support forum
+            </span>
+            <div>
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Share safely with other students</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Ask questions, share tips, and support each other. Keep discussions respectful and safe.
+              </p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-sky-100 bg-white/80 px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300">
+            <p className="font-semibold text-slate-900 dark:text-white">{posts.length}</p>
+            <p>Active discussions</p>
+          </div>
+        </div>
 
-        <form className="space-y-3" onSubmit={publishPost}>
-          <Input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Post title"
-          />
-          <TextArea
-            rows={3}
-            value={body}
-            onChange={(event) => setBody(event.target.value)}
-            placeholder="Share your question or experience"
-          />
-          <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+        <form className="space-y-4" onSubmit={publishPost}>
+          <div className="grid gap-4">
+            <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span>Discussion title</span>
+              <Input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                className="min-h-11 border-slate-200 bg-white/90 dark:bg-slate-950"
+                placeholder="Post title"
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span>Your message</span>
+              <TextArea
+                rows={4}
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+                className="border-slate-200 bg-white/90 dark:bg-slate-950"
+                placeholder="Share your question or experience"
+              />
+            </label>
+          </div>
+          <label className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
             <input
               type="checkbox"
               checked={anonymousPost}
@@ -206,19 +229,30 @@ export function PeerSupport() {
           {error ? <p className="text-sm text-rose-600">{error}</p> : null}
           {message ? <p className="text-sm text-emerald-600">{message}</p> : null}
           <div className="flex justify-end">
-            <Button type="submit" disabled={creating}>
+            <Button
+              type="submit"
+              disabled={creating}
+              className="min-w-[160px] bg-sky-600 text-white shadow-sm hover:bg-sky-700"
+            >
               {creating ? "Publishing..." : "Publish post"}
             </Button>
           </div>
         </form>
       </Card>
 
-      <Card className="space-y-3 p-4">
-        <h3 className="text-lg font-semibold">Recent discussions</h3>
+      <Card className="space-y-4 border-slate-100 p-5 shadow-md dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recent discussions</h3>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            {posts.length} posts
+          </span>
+        </div>
         {loading ? (
           <p className="text-sm text-slate-500">Loading discussions...</p>
         ) : !posts.length ? (
-          <p className="text-sm text-slate-500">No discussions yet. Start the first one.</p>
+          <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/40">
+            No discussions yet. Start the first one.
+          </p>
         ) : (
           <ul className="space-y-3">
             {posts.map((post) => {
@@ -228,13 +262,13 @@ export function PeerSupport() {
               return (
                 <li
                   key={post._id}
-                  className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/30"
+                  className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:border-slate-700 dark:from-slate-800/50 dark:to-slate-900"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">{post.title}</p>
-                      <p className="text-sm text-slate-500">{post.body}</p>
-                      <p className="text-xs text-slate-500">
+                    <div className="max-w-2xl">
+                      <p className="font-semibold text-slate-900 dark:text-white">{post.title}</p>
+                      <p className="mt-1 text-sm text-slate-500">{post.body}</p>
+                      <p className="mt-2 text-xs text-slate-500">
                         By {post.authorName ?? "Student"} · {post.createdAt ? new Date(post.createdAt).toLocaleString() : "now"}
                       </p>
                     </div>
@@ -251,6 +285,7 @@ export function PeerSupport() {
                       ) : null}
                       <Button
                         variant="secondary"
+                        className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                         onClick={async () => {
                           if (isOpen) {
                             setOpenPostId(null);
@@ -266,7 +301,7 @@ export function PeerSupport() {
                   </div>
 
                   {isOpen ? (
-                    <div className="mt-3 space-y-3 border-t border-slate-200 pt-3 dark:border-slate-700">
+                    <div className="mt-4 space-y-4 border-t border-slate-200 pt-4 dark:border-slate-700">
                       {loadingReplies ? (
                         <p className="text-sm text-slate-500">Loading replies...</p>
                       ) : !replies.length ? (
@@ -276,10 +311,10 @@ export function PeerSupport() {
                           {replies.map((reply) => (
                             <li
                               key={reply._id}
-                              className="rounded-lg border border-slate-200 bg-white p-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                              className="rounded-2xl border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900"
                             >
                               <p className="text-slate-700 dark:text-slate-200">{reply.message}</p>
-                              <p className="text-xs text-slate-500">
+                              <p className="mt-2 text-xs text-slate-500">
                                 {reply.authorName ?? "Peer"} · {reply.createdAt ? new Date(reply.createdAt).toLocaleString() : "now"}
                               </p>
                             </li>
@@ -289,7 +324,7 @@ export function PeerSupport() {
 
                       <div className="space-y-2">
                         <TextArea
-                          rows={2}
+                          rows={3}
                           value={replyMessageByPostId[post._id] ?? ""}
                           onChange={(event) =>
                             setReplyMessageByPostId((prev) => ({
@@ -297,9 +332,10 @@ export function PeerSupport() {
                               [post._id]: event.target.value
                             }))
                           }
+                          className="border-slate-200 bg-white dark:bg-slate-950"
                           placeholder="Write a supportive reply"
                         />
-                        <label className="inline-flex items-center gap-2 text-xs text-slate-600">
+                        <label className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                           <input
                             type="checkbox"
                             checked={anonymousReplyByPostId[post._id] ?? true}
@@ -315,6 +351,7 @@ export function PeerSupport() {
                         <div className="flex justify-end">
                           <Button
                             disabled={postingReplyPostId === post._id}
+                            className="min-w-[140px] bg-sky-600 text-white shadow-sm hover:bg-sky-700"
                             onClick={() => postReply(post._id)}
                           >
                             {postingReplyPostId === post._id ? "Posting..." : "Post reply"}
