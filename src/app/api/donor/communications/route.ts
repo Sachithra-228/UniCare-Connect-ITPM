@@ -47,7 +47,8 @@ function normalizeAudience(value: unknown) {
 export async function GET(request: NextRequest) {
   const authResult = await requireSession(request);
   if (authResult.error) return authResult.error;
-  const roleCheck = requireRole(authResult.session.user?.role, ["donor", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["donor", "admin", "faculty", "super_admin"]);
+
   if (roleCheck) return roleCheck;
 
   const userId = authResult.session.user?._id;
@@ -98,7 +99,8 @@ export async function POST(request: NextRequest) {
   const payload = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const authResult = await requireSession(request);
   if (authResult.error) return authResult.error;
-  const roleCheck = requireRole(authResult.session.user?.role, ["donor", "super_admin"]);
+  const roleCheck = requireRole(authResult.session.user?.role, ["donor", "admin", "faculty", "super_admin"]);
+
   if (roleCheck) return roleCheck;
 
   const audience = normalizeAudience(payload.audience);

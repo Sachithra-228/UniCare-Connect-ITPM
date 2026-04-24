@@ -1800,11 +1800,13 @@ function DonorRecognitionSection() {
   );
 }
 function DonorCommunicationsSection() {
+  const [activeSubTab, setActiveSubTab] = useState<"inbox" | "sent">("inbox");
   const [audience, setAudience] = useState("students");
   const [messageType, setMessageType] = useState("General update");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [messages, setMessages] = useState<DonorCommunication[]>([]);
+  const [inbox, setInbox] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1833,9 +1835,33 @@ function DonorCommunicationsSection() {
     }
   }, []);
 
+  const loadInbox = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/communications");
+      const payload = (await response.json().catch(() => ({}))) as { messages?: any[]; message?: string };
+      if (!response.ok) {
+        setError(payload.message ?? "Unable to load inbox.");
+        setInbox([]);
+        return;
+      }
+      setInbox(Array.isArray(payload.messages) ? payload.messages : []);
+    } catch {
+      setError("Unable to load inbox.");
+      setInbox([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    void loadMessages();
-  }, [loadMessages]);
+    if (activeSubTab === "sent") {
+      void loadMessages();
+    } else {
+      void loadInbox();
+    }
+  }, [activeSubTab, loadMessages, loadInbox]);
 
   const sendMessage = async () => {
     if (!subject.trim() || !body.trim()) {
@@ -1957,156 +1983,217 @@ function DonorCommunicationsSection() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600 dark:text-slate-300">
-        Use this space to communicate with scholarship recipients and university admins. Students
-        cannot modify your messages.
-      </p>
-      {error ? (
-        <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">
-          {error}
-        </p>
-      ) : null}
-      {success ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300">
-          {success}
-        </p>
-      ) : null}
-      <Card className="space-y-4 p-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Audience</label>
-            <select
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-              value={audience}
-              onChange={(event) => setAudience(event.target.value)}
-            >
-              <option value="students">Students</option>
-              <option value="admin_faculty">University Admin / Faculty</option>
-              <option value="students_admin_faculty">Students + University Admin / Faculty</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Communication type</label>
-            <select
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-              value={messageType}
-              onChange={(event) => setMessageType(event.target.value)}
-            >
-              <option>General update</option>
-              <option>Interview / story request</option>
-              <option>Event invitation</option>
-            </select>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Subject</label>
-          <input
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-            value={subject}
-            onChange={(event) => setSubject(event.target.value)}
-            placeholder="Message subject"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Message</label>
-          <textarea
-            className="min-h-[120px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
-            value={body}
-            onChange={(event) => setBody(event.target.value)}
-            placeholder="Write a message to your recipients or the university team..."
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="space-y-1 text-xs text-slate-500">
-            <p>Students can reply but cannot edit your original messages.</p>
-            <p>You cannot message non-recipients from this workspace.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {editingId ? (
-              <Button
-                onClick={() => {
-                  setEditingId(null);
-                  setAudience("students");
-                  setMessageType("General update");
-                  setSubject("");
-                  setBody("");
-                }}
-              >
-                Cancel
-              </Button>
-            ) : null}
-            <button
-              onClick={editingId ? updateMessage : sendMessage}
-              disabled={sending || updating}
-              className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {editingId ? (updating ? "Saving..." : "Update") : sending ? "Sending..." : "Send"}
-            </button>
-          </div>
-        </div>
-      </Card>
+      <div className="flex border-b border-slate-200 dark:border-slate-800">
+        <button
+          onClick={() => setActiveSubTab("inbox")}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${activeSubTab === "inbox" ? "border-b-2 border-primary text-primary" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}
+        >
+          Inbox
+        </button>
+        <button
+          onClick={() => setActiveSubTab("sent")}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${activeSubTab === "sent" ? "border-b-2 border-primary text-primary" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}
+        >
+          Sent Messages & Compose
+        </button>
+      </div>
 
-      <Card className="space-y-3 p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Recent messages</h3>
-          <button
-            onClick={() => loadMessages()}
-            className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            Refresh
-          </button>
-        </div>
-        {loading ? (
-          <p className="text-sm text-slate-500">Loading messages...</p>
-        ) : !messages.length ? (
-          <p className="text-sm text-slate-500">No messages sent yet.</p>
-        ) : (
-          <div className="space-y-2 text-sm">
-            {messages.map((item) => (
-              <div
-                key={item._id ?? item.subject}
-                className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800"
+      {activeSubTab === "inbox" ? (
+        <div className="space-y-4">
+          <Card className="space-y-3 p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Incoming communications</h3>
+              <button
+                onClick={() => loadInbox()}
+                className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium">{item.subject ?? "Message"}</p>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                    {item.audience ?? "Recipients"}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500">{item.messageType ?? "General update"}</p>
-                <p className="mt-1 text-xs text-slate-500">{item.body}</p>
-                <div className="mt-1 flex items-center justify-between gap-2">
-                  <p className="text-xs text-slate-400">
-                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
-                  </p>
-                  {item._id ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(item)}
-                        className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteMessage(item._id as string)}
-                        disabled={deletingId === item._id}
-                        className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
-                      >
-                        {deletingId === item._id ? "Deleting..." : "Delete"}
-                      </button>
+                Refresh
+              </button>
+            </div>
+            {loading ? (
+              <p className="text-sm text-slate-500">Loading inbox...</p>
+            ) : !inbox.length ? (
+              <p className="text-sm text-slate-500">No incoming messages yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {inbox.map((item) => (
+                  <div key={item._id} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-slate-900 dark:text-white">{item.subject}</p>
+                        <p className="text-xs text-slate-500">
+                          From: {item.donorName} {item.donorOrganization ? `· ${item.donorOrganization}` : ""}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-medium capitalize text-primary">
+                        {item.messageType}
+                      </span>
                     </div>
-                  ) : null}
-                </div>
+                    <p className="mt-3 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{item.body}</p>
+                    <p className="mt-3 text-[10px] text-slate-400">
+                      {new Date(item.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </Card>
+            )}
+          </Card>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Use this space to communicate with scholarship recipients and university admins. Students
+            cannot modify your messages.
+          </p>
+          {error ? (
+            <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">
+              {error}
+            </p>
+          ) : null}
+          {success ? (
+            <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300">
+              {success}
+            </p>
+          ) : null}
+          <Card className="space-y-4 p-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Audience</label>
+                <select
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                  value={audience}
+                  onChange={(event) => setAudience(event.target.value)}
+                >
+                  <option value="students">Students</option>
+                  <option value="admin_faculty">University Admin / Faculty</option>
+                  <option value="students_admin_faculty">Students + University Admin / Faculty</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Communication type</label>
+                <select
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                  value={messageType}
+                  onChange={(event) => setMessageType(event.target.value)}
+                >
+                  <option>General update</option>
+                  <option>Interview / story request</option>
+                  <option>Event invitation</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Subject</label>
+              <input
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+                placeholder="Message subject"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Message</label>
+              <textarea
+                className="min-h-[120px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2 dark:border-slate-700 dark:bg-slate-900"
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+                placeholder="Write a message to your recipients or the university team..."
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 text-xs text-slate-500">
+                <p>Students can reply but cannot edit your original messages.</p>
+                <p>You cannot message non-recipients from this workspace.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {editingId ? (
+                  <Button
+                    onClick={() => {
+                      setEditingId(null);
+                      setAudience("students");
+                      setMessageType("General update");
+                      setSubject("");
+                      setBody("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                ) : null}
+                <button
+                  onClick={editingId ? updateMessage : sendMessage}
+                  disabled={sending || updating}
+                  className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {editingId ? (updating ? "Saving..." : "Update") : sending ? "Sending..." : "Send"}
+                </button>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="space-y-3 p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Sent messages</h3>
+              <button
+                onClick={() => loadMessages()}
+                className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Refresh
+              </button>
+            </div>
+            {loading ? (
+              <p className="text-sm text-slate-500">Loading messages...</p>
+            ) : !messages.length ? (
+              <p className="text-sm text-slate-500">No messages sent yet.</p>
+            ) : (
+              <div className="space-y-2 text-sm">
+                {messages.map((item) => (
+                  <div
+                    key={item._id ?? item.subject}
+                    className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium">{item.subject ?? "Message"}</p>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {item.audience ?? "Recipients"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">{item.messageType ?? "General update"}</p>
+                    <p className="mt-1 text-xs text-slate-500">{item.body}</p>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <p className="text-xs text-slate-400">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
+                      </p>
+                      {item._id ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(item)}
+                            className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteMessage(item._id as string)}
+                            disabled={deletingId === item._id}
+                            className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                          >
+                            {deletingId === item._id ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
+
 function DonorProfileSection() {
   const { user, refreshUser, updateUserProfile, requestPasswordReset } = useAuth();
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);

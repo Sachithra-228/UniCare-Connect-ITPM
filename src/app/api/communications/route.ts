@@ -26,14 +26,19 @@ type UserDoc = {
   roleDetails?: Record<string, unknown>;
 };
 
-const INBOX_ROLES: UserRole[] = ["student", "admin", "faculty", "super_admin"];
+const INBOX_ROLES: UserRole[] = ["student", "admin", "faculty", "super_admin", "donor"];
+
 
 function roleAudienceFallbackFilters(role: UserRole) {
   if (role === "student") {
     return [{ audience: { $regex: "student|recipient|beneficiar", $options: "i" } }];
   }
+  if (role === "donor") {
+    return [{ audience: { $regex: "donor|sponsor|partner", $options: "i" } }];
+  }
   return [{ audience: { $regex: "admin|faculty", $options: "i" } }];
 }
+
 
 function normalizeIsoDate(value: Date | string | undefined) {
   if (value instanceof Date) return value.toISOString();
@@ -65,7 +70,8 @@ export async function GET(request: NextRequest) {
   if (roleCheck) return roleCheck;
 
   if (isDemoMode()) {
-    const messages = listDemoDonorInboxMessages(userRole as UserRole).map((item) => ({
+    const userId = authResult.session.user?._id;
+    const donorMessages = listDemoDonorInboxMessages(userRole as UserRole).map((item) => ({
       _id: item._id,
       audience: item.audience,
       messageType: item.messageType || "General update",
@@ -76,8 +82,28 @@ export async function GET(request: NextRequest) {
       createdAt: item.createdAt,
       updatedAt: item.createdAt
     }));
+
+    // Add NGO messages
+    const { getNgoCommunicationsForUser } = await import("@/lib/ngo-demo-store");
+    const ngoMessages = getNgoCommunicationsForUser(userId, userRole).map((item: any) => ({
+      _id: item._id,
+      audience: item.audience === "direct-message" ? "Direct Message" : item.audience,
+      messageType: item.type || "Program Update",
+      subject: item.subject,
+      body: item.message,
+      donorName: "UniCare NGO (Partner)",
+      donorOrganization: "UniCare Connect",
+      createdAt: item.sentAt,
+      updatedAt: item.sentAt
+    }));
+
+    const messages = [...donorMessages, ...ngoMessages].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
     return jsonResponse({ messages });
   }
+
 
   const roleFilters: Record<string, unknown>[] = [
     { recipientRoles: userRole },
@@ -89,8 +115,18 @@ export async function GET(request: NextRequest) {
     const messageCollection = database.collection<MessageDoc>("donor_communications");
     const userCollection = database.collection<UserDoc>("users");
 
+    const userId = authResult.session.user?._id;
+    const firebaseUid = authResult.session.firebase.uid;
+
     const messages = await messageCollection
-      .find({ $or: roleFilters })
+      .find({
+        $or: [
+          ...roleFilters,
+          ...(userId ? [{ recipientId: userId }] : []),
+          ...(firebaseUid ? [{ recipientId: firebaseUid }] : [])
+        ]
+      })
+
       .sort({ createdAt: -1 })
       .limit(50)
       .toArray();

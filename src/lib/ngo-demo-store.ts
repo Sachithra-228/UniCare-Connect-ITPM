@@ -130,14 +130,17 @@ export type NgoPartnership = {
 
 export type NgoCommunication = {
   _id: string;
-  audience: "beneficiaries" | "donors" | "all-applicants";
-  type: "program-update" | "newsletter" | "feedback-request" | "awareness-campaign";
+  audience: "beneficiaries" | "donors" | "all-applicants" | "direct-message";
+  recipientId?: string; // For direct messages to specific admins/donors
+  recipientName?: string;
+  type: "program-update" | "newsletter" | "feedback-request" | "awareness-campaign" | "direct-message";
   subject: string;
   message: string;
   recipientCount: number;
   readRate: number; // 0-100
   sentAt: string;
 };
+
 
 export type NgoReport = {
   _id: string;
@@ -256,6 +259,18 @@ export function rejectNgoPartnership(id: string) {
 }
 
 export function getNgoCommunications() { return communications; }
+
+export function getNgoCommunicationsForUser(userId: string, role: string) {
+  return communications.filter(c => {
+    if (c.audience === "direct-message" && c.recipientId === userId) return true;
+    if (c.audience === "donors" && (role === "donor")) return true;
+    if (c.audience === "beneficiaries" && role === "student") return true;
+    // Admins usually see everything related to programs
+    if (c.audience === "beneficiaries" && (role === "admin" || role === "faculty")) return true;
+    return false;
+  });
+}
+
 
 
 

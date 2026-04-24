@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
 import { AnimatePresence, motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Card } from "@/components/shared/Card";
 import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
+import { Megaphone, Sparkles, MessageCircle, Calendar, Users } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+
 import {
   defaultPreferences,
   mergePreferences,
@@ -1610,167 +1613,320 @@ function NgoPartnershipsSection() {
   );
 }
 function NgoCommunicationsSection() {
-  const [history, setHistory] = useState(getNgoCommunications());
-  const [audience, setAudience] = useState<"beneficiaries" | "donors" | "all-applicants">("beneficiaries");
-  const [type, setType] = useState<"program-update" | "newsletter" | "feedback-request" | "awareness-campaign">("program-update");
+  const [history, setHistory] = useState<NgoCommunication[]>([]);
+  const [activePartners, setActivePartners] = useState<NgoPartnership[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const [audience, setAudience] = useState<NgoCommunication["audience"]>("beneficiaries");
+  const [selectedPartnerId, setSelectedPartnerId] = useState("");
+  const [type, setType] = useState<NgoCommunication["type"]>("program-update");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+
+  const loadHistory = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/ngo/communications");
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data.messages || []);
+      } else {
+        setHistory(getNgoCommunications());
+      }
+    } catch (err) {
+      console.error("Failed to load history:", err);
+      setHistory(getNgoCommunications());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+    setActivePartners(getNgoPartnerships().filter(p => p.status === "active"));
+  }, [loadHistory]);
+
 
   const templates = [
     {
       label: "Program Update",
       subject: "Program update - [Month]",
-      body: "Dear beneficiaries, we are pleased to share the latest update on your enrolled program..."
+      body: "Dear beneficiaries, we are pleased to share the latest update on your enrolled program...",
+      audience: "beneficiaries" as const
     },
     {
-      label: "Fund Acknowledgment",
-      subject: "Thank you for your generous contribution",
-      body: "Dear Donor, on behalf of all beneficiary students, we sincerely thank you for your support..."
+      label: "Partner Update",
+      subject: "Collaboration Status Update",
+      body: "Dear partner, we are writing to share progress on our joint initiatives...",
+      audience: "direct-message" as const
     },
     {
       label: "Impact Summary",
       subject: "Q[N] Impact Report - UniCare NGO",
-      body: "This quarter, your contributions enabled [X] students to continue their studies. Key highlights:..."
+      body: "This quarter, your contributions enabled [X] students to continue their studies. Key highlights:...",
+      audience: "donors" as const
     },
   ];
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!subject.trim() || !message.trim()) return;
+    if (audience === "direct-message" && !selectedPartnerId) return;
+
     setSending(true);
-    setTimeout(() => {
-      const comm = addNgoCommunication({
-        audience,
-        type,
-        subject,
-        message,
-        recipientCount: audience === "donors" ? 8 : audience === "beneficiaries" ? 135 : 200,
-        readRate: 0,
-        sentAt: new Date().toISOString(),
+    setSuccess(null);
+    setError(null);
+    
+    const partner = activePartners.find(p => p._id === selectedPartnerId);
+
+    try {
+      const response = await fetch("/api/ngo/communications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audience,
+          type,
+          subject,
+          message,
+          recipientId: audience === "direct-message" ? partner?.partnerUserId : undefined,
+          recipientName: audience === "direct-message" ? partner?.partnerName : undefined,
+        })
       });
-      setHistory((prev) => [comm, ...prev]);
-      setSubject("");
-      setMessage("");
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || "Failed to send message");
+      }
+
+      await loadHistory();
       setSending(false);
       setSent(true);
+      setSubject("");
+      setMessage("");
+      setSelectedPartnerId("");
       setTimeout(() => setSent(false), 3000);
-    }, 800);
+
+    } catch (err: any) {
+      setError(err.message || "Failed to send communication.");
+      setSending(false);
+    }
   };
 
-  const audienceLabels: Record<string, string> = {
-    beneficiaries: "Program Beneficiaries",
-    donors: "Donor Partners",
-    "all-applicants": "All Applicants",
+
+  const applyTemplate = (t: typeof templates[0]) => {
+    setSubject(t.subject);
+    setMessage(t.body);
+    setAudience(t.audience);
   };
-  const typeLabels: Record<string, string> = {
-    "program-update": "Program Update",
-    newsletter: "Newsletter",
-    "feedback-request": "Feedback Request",
-    "awareness-campaign": "Awareness Campaign",
-  };
+
+  if (loading) return <div className="py-20 text-center text-slate-500">Loading communications...</div>;
 
   return (
     <div className="space-y-6">
-      <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold">Send Communication</h3>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4">
+          <Card className="p-6 space-y-4 border-slate-200 dark:border-slate-800 shadow-sm">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Megaphone className="h-4 w-4" />
+              </span>
+              Compose New Message
+            </h3>
 
-        <div>
-          <p className="mb-2 text-xs font-medium text-slate-500">Quick templates</p>
-          <div className="flex flex-wrap gap-2">
-            {templates.map((t) => (
-              <button
-                key={t.label}
-                onClick={() => {
-                  setSubject(t.subject);
-                  setMessage(t.body);
-                }}
-                className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-primary hover:text-primary dark:border-slate-700 dark:text-slate-300"
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-600">Audience</label>
-            <select
-              value={audience}
-              onChange={(e) => setAudience(e.target.value as typeof audience)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900"
-            >
-              <option value="beneficiaries">Program Beneficiaries</option>
-              <option value="all-applicants">All Applicants</option>
-              <option value="donors">Donor Partners</option>
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-600">Type</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as typeof type)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900"
-            >
-              <option value="program-update">Program Update</option>
-              <option value="newsletter">Newsletter</option>
-              <option value="feedback-request">Feedback Request</option>
-              <option value="awareness-campaign">Awareness Campaign</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-600">Subject</label>
-          <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Message subject" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-600">Message</label>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="min-h-[100px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900"
-            placeholder="Write your message here..."
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-500">Messages are sent only to recipients mapped to your organization scope.</p>
-          <Button variant="primary" onClick={handleSend} disabled={sending || !subject.trim() || !message.trim()}>
-            {sending ? "Sending..." : "Send"}
-          </Button>
-        </div>
-        {sent && <p className="text-sm text-emerald-600 dark:text-emerald-400">Message sent successfully.</p>}
-      </Card>
-
-      <Card className="space-y-3 p-5">
-        <h3 className="text-sm font-semibold">Message History</h3>
-        {history.length === 0 ? (
-          <p className="py-4 text-center text-sm text-slate-500">No messages sent yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {history.map((item) => (
-              <div key={item._id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{item.subject}</p>
-                  <span className="shrink-0 text-[10px] text-slate-400">{fmtDate(item.sentAt)}</span>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
-                  <span>{audienceLabels[item.audience]}</span>
-                  <span>{typeLabels[item.type]}</span>
-                  <span>{item.recipientCount} recipients</span>
-                  {item.readRate > 0 && <span>{item.readRate}% read</span>}
-                </div>
-                <p className="mt-1.5 line-clamp-2 text-xs text-slate-500">{item.message}</p>
+            {error && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">
+                {error}
               </div>
-            ))}
-          </div>
-        )}
-      </Card>
+            )}
+            {success && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300">
+                {success}
+              </div>
+            )}
+
+            
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-600">Audience</label>
+                <select 
+                  value={audience} 
+                  onChange={(e) => setAudience(e.target.value as any)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 transition-colors"
+                >
+                  <option value="beneficiaries">Program Beneficiaries</option>
+                  <option value="donors">All Donors & Sponsors</option>
+                  <option value="all-applicants">All Past Applicants</option>
+                  <option value="direct-message">Direct Message to Partner</option>
+                </select>
+              </div>
+
+              {audience === "direct-message" ? (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-600">Select Active Partner</label>
+                  <select 
+                    value={selectedPartnerId} 
+                    onChange={(e) => setSelectedPartnerId(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 transition-colors"
+                  >
+                    <option value="">-- Choose a partner --</option>
+                    {activePartners.map(p => (
+                      <option key={p._id} value={p._id}>{p.partnerName}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-600">Message Type</label>
+                  <select 
+                    value={type} 
+                    onChange={(e) => setType(e.target.value as any)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 transition-colors"
+                  >
+                    <option value="program-update">Program Update</option>
+                    <option value="newsletter">Impact Newsletter</option>
+                    <option value="feedback-request">Feedback Request</option>
+                    <option value="awareness-campaign">Awareness Campaign</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-600">Subject Line</label>
+              <Input 
+                value={subject} 
+                onChange={(e) => setSubject(e.target.value)} 
+                placeholder="Important update regarding..." 
+                className="rounded-xl"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-600">Message Content</label>
+              <textarea 
+                value={message} 
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type your message here..."
+                className="min-h-[160px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 transition-colors"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-2">
+                <div className={`h-2 w-2 rounded-full ${sent ? 'bg-emerald-500 animate-pulse' : sending ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`}></div>
+                <p className="text-[10px] text-slate-500 italic">
+                  {sent ? "Message delivered successfully." : sending ? "Broadcasting message..." : "Messages are sent within your organization scope."}
+                </p>
+              </div>
+              <Button 
+                variant="primary" 
+                onClick={handleSend} 
+                disabled={sending || !subject.trim() || !message.trim() || (audience === "direct-message" && !selectedPartnerId)}
+                className="px-8"
+              >
+                {sending ? "Sending..." : "Deliver Message"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+
+        <div className="space-y-4">
+          <Card className="p-5 space-y-3 shadow-sm border-slate-200 dark:border-slate-800">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              Quick Templates
+            </h4>
+            <div className="space-y-2">
+              {templates.map((t) => (
+                <button 
+                  key={t.label} 
+                  onClick={() => applyTemplate(t)}
+                  className="w-full rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-left text-xs font-medium transition-all hover:border-primary/30 hover:bg-white hover:shadow-sm dark:border-slate-800 dark:bg-slate-900/50"
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-5 space-y-3 bg-primary/5 border-primary/20 shadow-sm">
+            <h4 className="text-sm font-bold text-primary flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Audience Reach
+            </h4>
+            <div className="space-y-3 text-xs text-slate-600 dark:text-slate-400">
+              <div className="flex justify-between items-center">
+                <span>Active Partners</span>
+                <span className="font-bold bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-primary/10 shadow-sm">{activePartners.length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Beneficiaries</span>
+                <span className="font-bold bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-primary/10 shadow-sm">135</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Direct Donors</span>
+                <span className="font-bold bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-primary/10 shadow-sm">8</span>
+              </div>
+            </div>
+            <p className="text-[10px] text-slate-400 pt-1 leading-relaxed">
+              Reach counts are based on users currently connected to your organization.
+            </p>
+          </Card>
+        </div>
+      </div>
+
+      <div className="space-y-4 pt-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            Communication History
+            <span className="text-xs font-normal text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{history.length} items</span>
+          </h3>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {history.length === 0 ? (
+            <Card className="col-span-full p-12 flex flex-col items-center justify-center text-slate-400 border-dashed">
+              <MessageCircle className="h-10 w-10 mb-2 opacity-20" />
+              <p className="text-sm italic">No communication history found.</p>
+            </Card>
+          ) : history.map((comm) => (
+            <Card key={comm._id} className="p-4 space-y-3 border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{comm.subject}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                      <span className="font-medium text-primary">To:</span> 
+                      {comm.audience === "direct-message" ? `Partner (${comm.recipientName})` : comm.audience.charAt(0).toUpperCase() + comm.audience.slice(1)}
+                    </p>
+                  </div>
+                </div>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300 uppercase shrink-0">
+                  {comm.type}
+                </span>
+              </div>
+              <p className="line-clamp-2 text-xs text-slate-600 dark:text-slate-400">{comm.message}</p>
+              <div className="flex items-center justify-between pt-3 text-[10px] text-slate-400 border-t border-slate-50 dark:border-slate-800/50">
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {fmtDate(comm.sentAt)}
+                </span>
+                <span className="flex items-center gap-1 font-medium text-slate-500">
+                  <Users className="h-3 w-3" />
+                  Reach: {comm.recipientCount} {comm.recipientCount === 1 ? 'user' : 'users'}
+                </span>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
+
 function NgoProfileSection() {
   const { user, refreshUser, updateUserProfile, requestPasswordReset } = useAuth();
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
