@@ -59,7 +59,6 @@ export function NgoPartnershipSection({ viewerRole, cardClassName }: NgoPartners
   const canReview =
     viewerRole === "admin" ||
     viewerRole === "faculty" ||
-    viewerRole === "super_admin" ||
     viewerRole === "donor";
 
   const loadRequests = useCallback(async () => {
