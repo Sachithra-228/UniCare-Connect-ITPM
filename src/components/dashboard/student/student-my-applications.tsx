@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/shared/Card";
 import { Badge } from "@/components/shared/Badge";
 import { Button } from "@/components/shared/Button";
+import { studentBlueCardClass } from "@/components/dashboard/student/student-card-theme";
 import type {
   ApplicationDocumentEntry,
   ApplicationEntry,
@@ -223,7 +224,7 @@ export function StudentMyApplications() {
 
   return (
     <div className="space-y-6">
-      <Card className="border-primary/20 bg-primary/5 p-4">
+      <Card className={`p-4 ${studentBlueCardClass}`}>
         <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
           Only you see all your applications in one place. University Admin, Employer, and Donor see only the
           applications sent to them.
@@ -273,7 +274,7 @@ export function StudentMyApplications() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                 All applications (scholarships, jobs, aid)
               </h3>
@@ -336,7 +337,7 @@ export function StudentMyApplications() {
               )}
             </Card>
 
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Log job or scholarship application</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Add applications you submitted externally so they are tracked in one place.
@@ -400,7 +401,7 @@ export function StudentMyApplications() {
             exit="exit"
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Aid requests</h3>
               {loading ? (
                 <p className="text-sm text-slate-500">Loading aid requests...</p>
@@ -444,7 +445,7 @@ export function StudentMyApplications() {
             exit="exit"
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Upload missing documents</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Upload requested documents and link them to an application note for quick review.
@@ -528,7 +529,7 @@ export function StudentMyApplications() {
             exit="exit"
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            <Card className="space-y-3 p-5">
+            <Card className={`space-y-3 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Feedback on rejections</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Reviewer feedback is listed here to help improve your next submission.

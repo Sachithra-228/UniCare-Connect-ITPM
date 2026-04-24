@@ -5,6 +5,7 @@ import { Card } from "@/components/shared/Card";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { Select } from "@/components/shared/Select";
+import { adminNavyCardClass } from "./admin-card-theme";
 
 type Counselor = {
   _id: string;
@@ -163,7 +164,7 @@ export function AdminCounselorSupportSection() {
 
   return (
     <div className="space-y-6">
-      <Card className="space-y-4 p-5">
+      <Card className={`space-y-4 p-5 ${adminNavyCardClass}`}>
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Counselor support</h3>
         <p className="text-sm text-slate-600 dark:text-slate-300">
           Add counselors and manage student counseling requests from one section.
@@ -191,7 +192,7 @@ export function AdminCounselorSupportSection() {
         </form>
       </Card>
 
-      <Card className="space-y-3 p-5">
+      <Card className={`space-y-3 p-5 ${adminNavyCardClass}`}>
         <h4 className="text-base font-semibold text-slate-900 dark:text-white">Available counselors</h4>
         {loading ? (
           <p className="text-sm text-slate-500">Loading counselors...</p>
@@ -212,7 +213,7 @@ export function AdminCounselorSupportSection() {
         )}
       </Card>
 
-      <Card className="space-y-3 p-5">
+      <Card className={`space-y-3 p-5 ${adminNavyCardClass}`}>
         <h4 className="text-base font-semibold text-slate-900 dark:text-white">Pending booking requests</h4>
         {loading ? (
           <p className="text-sm text-slate-500">Loading requests...</p>
@@ -249,7 +250,7 @@ export function AdminCounselorSupportSection() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="space-y-3 p-5">
+        <Card className={`space-y-3 p-5 ${adminNavyCardClass}`}>
           <h4 className="text-base font-semibold text-slate-900 dark:text-white">Confirmed bookings</h4>
           {!activeBookings.length ? (
             <p className="text-sm text-slate-500">No confirmed bookings.</p>
@@ -274,7 +275,7 @@ export function AdminCounselorSupportSection() {
           )}
         </Card>
 
-        <Card className="space-y-3 p-5">
+        <Card className={`space-y-3 p-5 ${adminNavyCardClass}`}>
           <h4 className="text-base font-semibold text-slate-900 dark:text-white">Recent closed bookings</h4>
           {!closedBookings.length ? (
             <p className="text-sm text-slate-500">No closed bookings yet.</p>

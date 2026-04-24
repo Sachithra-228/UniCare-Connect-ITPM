@@ -7,9 +7,10 @@ import mapData from "@svg-maps/sri-lanka";
 
 interface SriLankaDistrictMapProps {
   selectedDistricts: string[];
-  onSelectDistrict: (district: string) => void;
+  onSelectDistrict?: (district: string) => void;
   serviceDistricts?: string[];
   minimal?: boolean;
+  selectable?: boolean;
   className?: string;
 }
 
@@ -61,6 +62,7 @@ export function SriLankaDistrictMap({
   onSelectDistrict,
   serviceDistricts = [],
   minimal = false,
+  selectable = true,
   className
 }: SriLankaDistrictMapProps) {
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
@@ -76,6 +78,7 @@ export function SriLankaDistrictMap({
     [selectedDistricts]
   );
   const locations = mapData.locations as DistrictLocation[];
+  const isHeroPreviewMode = minimal && !selectable;
 
   const setHoverFromEvent = (district: string, event: ReactMouseEvent<SVGPathElement>) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
@@ -102,11 +105,15 @@ export function SriLankaDistrictMap({
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">District Explorer</p>
-            <p className="text-sm text-slate-600">Hover to preview, click to filter institutions.</p>
+            <p className="text-sm text-slate-600">
+              {selectable ? "Hover to preview, click to filter institutions." : "Hover districts to preview."}
+            </p>
           </div>
-          <div className="text-xs text-slate-500">
-            Selected: <span className="font-semibold text-slate-700">{selectedDistricts.length}</span>
-          </div>
+          {selectable ? (
+            <div className="text-xs text-slate-500">
+              Selected: <span className="font-semibold text-slate-700">{selectedDistricts.length}</span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -121,9 +128,25 @@ export function SriLankaDistrictMap({
             const hasService = serviceSet.size === 0 || serviceSet.has(district);
             const isHovered = hoveredDistrict === district;
 
-            const fill = isSelected ? "#dbeafe" : hasService ? "#f8fafc" : "#f8fafc";
-            const stroke = isSelected ? "#3b82f6" : isHovered ? "#93c5fd" : "#d1d5db";
-            const opacity = isSelected ? 0.98 : hasService ? 0.92 : 0.6;
+            const fill = isHeroPreviewMode
+              ? isHovered
+                ? "#93c5fd"
+                : "#f8fafc"
+              : isSelected
+                ? "#dbeafe"
+                : hasService
+                  ? "#f8fafc"
+                  : "#f8fafc";
+            const stroke = isHeroPreviewMode
+              ? isHovered
+                ? "rgba(2,6,23,0.82)"
+                : "rgba(2,6,23,0.48)"
+              : isSelected
+                ? "#3b82f6"
+                : isHovered
+                  ? "#93c5fd"
+                  : "#d1d5db";
+            const opacity = isHeroPreviewMode ? (isHovered ? 1 : 0.96) : isSelected ? 0.98 : hasService ? 0.92 : 0.6;
 
             return (
               <path
@@ -131,10 +154,10 @@ export function SriLankaDistrictMap({
                 d={location.path}
                 fill={fill}
                 stroke={stroke}
-                strokeWidth={isSelected || isHovered ? 1.35 : 1}
+                strokeWidth={isHeroPreviewMode ? (isHovered ? 1.4 : 1.05) : isSelected || isHovered ? 1.35 : 1}
                 opacity={opacity}
-                className="cursor-pointer transition-all duration-200"
-                onClick={() => onSelectDistrict(district)}
+                className={`${selectable ? "cursor-pointer" : "cursor-default"} transition-all duration-200`}
+                onClick={selectable && onSelectDistrict ? () => onSelectDistrict(district) : undefined}
                 onMouseEnter={(event) => setHoverFromEvent(district, event)}
                 onMouseMove={(event) => setHoverFromEvent(district, event)}
                 onMouseLeave={() => setHoveredDistrict(null)}
@@ -159,7 +182,11 @@ export function SriLankaDistrictMap({
             <div className="p-3">
               <p className="text-sm font-semibold text-slate-900">{hoveredDistrict}</p>
               <p className="mt-1 text-xs text-slate-500">
-                {selectedSet.has(hoveredDistrict) ? "Selected filter" : "Click marker to filter"}
+                {selectable
+                  ? selectedSet.has(hoveredDistrict)
+                    ? "Selected filter"
+                    : "Click marker to filter"
+                  : "Hover preview"}
               </p>
             </div>
           </div>

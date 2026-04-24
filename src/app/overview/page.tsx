@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { SectionHeading } from "@/components/shared/section-heading";
 import { ImpactStats } from "@/components/shared/impact-stats";
 import { EcosystemShowcase } from "@/components/shared/ecosystem-showcase";
 import { ScrollSwap } from "@/components/shared/scroll-swap";
@@ -74,8 +73,12 @@ export default function OverviewPage() {
           };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-16 px-4 py-14">
-      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-sky-50 via-white to-white p-8 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950 md:p-12">
+    <div className="w-full">
+      <div className="relative w-full overflow-hidden bg-gradient-to-br from-[#0b1f45] via-[#102a59] to-[#0c1d3d]">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.09)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:38px_38px] opacity-25" />
+
+        <div className="relative mx-auto w-full max-w-6xl px-4 pb-0 pt-10 sm:pt-12 md:pt-14">
+      <section className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/[0.04] p-5 shadow-[0_22px_60px_-36px_rgba(2,6,23,0.95)] sm:p-6 md:p-12">
         <div className="absolute inset-x-0 bottom-0 h-32">
           <svg
             viewBox="0 0 1200 120"
@@ -84,23 +87,23 @@ export default function OverviewPage() {
           >
             <path
               d="M0 40c120 40 240 40 360 0s240-40 360 0 240 40 360 0 240-40 360 0v80H0z"
-              fill="#2563EB"
-              opacity="0.08"
+              fill="#ffffff"
+              opacity="0.06"
             />
             <path
               d="M0 60c120 30 240 30 360 0s240-30 360 0 240 30 360 0 240-30 360 0v60H0z"
-              fill="#2563EB"
-              opacity="0.12"
+              fill="#93c5fd"
+              opacity="0.16"
             />
           </svg>
         </div>
-        <div className="relative grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <div className="relative grid gap-6 md:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-6">
-          <h1 className="text-4xl font-semibold leading-tight md:text-5xl">
-            <span className="block whitespace-nowrap">{text.hero1}</span>
+          <h1 className="text-3xl font-semibold leading-tight text-white sm:text-4xl md:text-5xl">
+            <span className="block md:whitespace-nowrap">{text.hero1}</span>
             <span className="block">{text.hero2}</span>
           </h1>
-          <p className="text-base italic text-slate-600 dark:text-slate-300">{text.heroBody}</p>
+          <p className="text-sm italic text-blue-100/90 sm:text-base">{text.heroBody}</p>
         </div>
         <div className="flex items-center justify-center">
           <Image
@@ -108,7 +111,7 @@ export default function OverviewPage() {
             alt="Student with laptop and bag"
             width={420}
             height={520}
-            className="h-auto w-full max-w-sm"
+            className="h-auto w-full max-w-[260px] sm:max-w-sm"
             priority
           />
         </div>
@@ -116,13 +119,13 @@ export default function OverviewPage() {
       </section>
 
       <ScrollSwap
-        className="mt-6"
+        className="mt-8"
         first={
-          <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="grid gap-6 md:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="space-y-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">{text.parents}</p>
-              <h2 className="text-2xl font-semibold">Stay informed and support with confidence</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-300">
+              <h2 className="text-2xl font-semibold text-slate-100">Stay informed and support with confidence</h2>
+              <p className="text-sm text-blue-100/90">
                 Parents can track student progress, see support milestones, and receive updates on
                 financial aid, wellness, and career guidance in one place.
               </p>
@@ -139,7 +142,7 @@ export default function OverviewPage() {
           </div>
         }
         second={
-          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div className="grid gap-6 md:gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div className="flex justify-center lg:justify-start">
               <Image
                 src="/teacher.png"
@@ -151,8 +154,8 @@ export default function OverviewPage() {
             </div>
             <div className="space-y-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">{text.staff}</p>
-              <h2 className="text-2xl font-semibold">Empower advisors with real-time visibility</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-300">
+              <h2 className="text-2xl font-semibold text-slate-100">Empower advisors with real-time visibility</h2>
+              <p className="text-sm text-blue-100/90">
                 Staff and mentors get a unified dashboard to triage requests, monitor wellbeing, and
                 connect students with the right resources quickly.
               </p>
@@ -160,9 +163,14 @@ export default function OverviewPage() {
           </div>
         }
       />
+        </div>
+      </div>
+
+      <div className="w-full bg-white">
+        <div className="mx-auto w-full max-w-6xl space-y-12 px-4 pb-14 pt-0 md:space-y-16">
 
       <section>
-        <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-white to-slate-50 p-8 shadow-sm dark:border-slate-800 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 md:p-10">
+        <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-white to-slate-50 p-5 shadow-sm dark:border-slate-800 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 sm:p-6 md:p-10">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold">{text.outcomes}</h2>
@@ -170,11 +178,11 @@ export default function OverviewPage() {
                 Real impact across financial aid, careers, and wellbeing.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
               {["All", "Financial Aid", "Careers", "Wellbeing"].map((item, index) => (
                 <button
                   key={item}
-                  className={`rounded-full border px-4 py-1 text-xs font-semibold transition-colors ${
+                  className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-1 text-xs font-semibold transition-colors ${
                     index === 0
                       ? "border-primary/40 bg-primary/10 text-primary"
                       : "border-slate-200 text-slate-500 hover:border-primary/40 hover:text-primary dark:border-slate-700 dark:text-slate-300"
@@ -271,69 +279,71 @@ export default function OverviewPage() {
 
       <EcosystemShowcase />
 
-      <section>
-        <div className="mx-auto max-w-2xl text-center">
-          <SectionHeading
-            title={text.core}
-            subtitle="Explore the four key features from the accordion on the right."
-          />
-        </div>
-        <div className="mt-8 rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm dark:border-slate-800 dark:from-slate-950 dark:to-slate-900 md:p-8">
-          <div className="relative">
-            <div className="absolute left-7 right-7 top-7 hidden h-0.5 bg-slate-200 dark:bg-slate-700 md:block" />
-            <div className="absolute left-7 right-7 top-7 hidden h-0.5 bg-gradient-to-r from-primary/80 via-primary/50 to-primary/20 md:block" />
+      <section className="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-hidden bg-gradient-to-br from-[#0b1f45] via-[#102a59] to-[#0c1d3d] py-12 text-white md:py-14">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-30" />
+        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-blue-400/10 blur-3xl" />
 
-            <div className="grid gap-7 md:grid-cols-3 md:gap-6">
-              {[
-                {
-                  step: "01",
-                  title: "Sign Up & Profile",
-                  description: "Create your account, set goals, and personalize your support journey."
-                },
-                {
-                  step: "02",
-                  title: "Personalized Dashboard",
-                  description:
-                    "Get curated aid options, career paths, and wellness resources in one view."
-                },
-                {
-                  step: "03",
-                  title: "Apply & Track",
-                  description:
-                    "Submit requests, monitor status updates, and follow every outcome in real time."
-                }
-              ].map((item, index) => (
-                <div key={item.step} className="relative">
-                  <div
-                    className={`relative z-10 mb-4 flex items-center gap-3 md:mb-5 md:flex-col ${
-                      index === 0 ? "md:items-start" : index === 1 ? "md:items-center" : "md:items-end"
-                    }`}
-                  >
-                    <div className="grid h-14 w-14 place-items-center rounded-full border-2 border-primary/30 bg-white text-sm font-bold text-primary shadow-sm dark:bg-slate-950">
-                      {item.step}
+        <div className="relative mx-auto w-full max-w-6xl px-4">
+          <div className="mx-auto max-w-2xl space-y-2 text-center">
+            <h2 className="text-2xl font-semibold text-slate-100">{text.core}</h2>
+            <p className="text-sm text-blue-100/80">Explore the four key features from the accordion on the right.</p>
+          </div>
+          <div className="mt-8 rounded-3xl border border-white/25 bg-white/5 p-6 shadow-[0_18px_44px_-26px_rgba(2,6,23,0.9)] md:p-8">
+            <div className="relative">
+              <div className="absolute left-7 right-7 top-7 hidden h-0.5 bg-white/20 md:block" />
+              <div className="absolute left-7 right-7 top-7 hidden h-0.5 bg-gradient-to-r from-blue-300/90 via-blue-300/55 to-blue-300/15 md:block" />
+
+              <div className="grid gap-7 md:grid-cols-3 md:gap-6">
+                {[
+                  {
+                    step: "01",
+                    title: "Sign Up & Profile",
+                    description: "Create your account, set goals, and personalize your support journey."
+                  },
+                  {
+                    step: "02",
+                    title: "Personalized Dashboard",
+                    description:
+                      "Get curated aid options, career paths, and wellness resources in one view."
+                  },
+                  {
+                    step: "03",
+                    title: "Apply & Track",
+                    description:
+                      "Submit requests, monitor status updates, and follow every outcome in real time."
+                  }
+                ].map((item, index) => (
+                  <div key={item.step} className="relative">
+                    <div
+                      className={`relative z-10 mb-4 flex items-center gap-3 md:mb-5 md:flex-col ${
+                        index === 0 ? "md:items-start" : index === 1 ? "md:items-center" : "md:items-end"
+                      }`}
+                    >
+                      <div className="grid h-14 w-14 place-items-center rounded-full border-2 border-white/45 bg-white text-sm font-bold text-slate-900 shadow-sm">
+                        {item.step}
+                      </div>
+                      {index < 2 ? (
+                        <div className="h-0.5 flex-1 bg-white/25 md:hidden" />
+                      ) : null}
                     </div>
-                    {index < 2 ? (
-                      <div className="h-0.5 flex-1 bg-slate-200 dark:bg-slate-700 md:hidden" />
-                    ) : null}
-                  </div>
 
-                  <h3 className="text-lg font-semibold">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
+                    <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-200">
+                      {item.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section>
-        <div className="mx-auto max-w-3xl text-center">
-          <SectionHeading
-            title={text.trusted}
-            subtitle="Collaboration across Sri Lanka with public and private institutions."
-          />
+        <div className="mx-auto max-w-3xl space-y-2 text-center">
+          <h2 className="text-2xl font-semibold text-slate-900">{text.trusted}</h2>
+          <p className="text-sm text-slate-600">Collaboration across Sri Lanka with public and private institutions.</p>
         </div>
         <div className="marquee-wrap mt-6 overflow-hidden py-5">
           <div className="marquee-track">
@@ -361,7 +371,7 @@ export default function OverviewPage() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden rounded-3xl border border-slate-800/70 bg-gradient-to-br from-slate-950 via-slate-900 to-[#102041] p-8 text-white shadow-[0_24px_60px_-32px_rgba(15,23,42,0.9)] md:p-10">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-800/70 bg-gradient-to-br from-slate-950 via-slate-900 to-[#102041] p-6 text-white shadow-[0_24px_60px_-32px_rgba(15,23,42,0.9)] sm:p-7 md:p-10">
         <div className="pointer-events-none absolute -right-12 -top-24 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.05)_1px,transparent_1px)] bg-[size:36px_36px] opacity-30" />
@@ -393,6 +403,8 @@ export default function OverviewPage() {
           </Link>
         </div>
       </section>
+      </div>
+    </div>
     </div>
   );
 }

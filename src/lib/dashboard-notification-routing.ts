@@ -29,6 +29,7 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
     "campus-life": ["campus", "club", "event", "announcement", "volunteer", "society"],
     "my-applications": ["application", "applied", "approval", "approved", "rejected", "pending"],
     communications: ["communication", "message", "donor", "csr", "partner", "announcement"],
+    "ngo-partnerships": ["ngo partnership", "partnership request", "ngo collaboration", "partnership"],
     profile: ["profile", "account", "settings"]
   },
   admin: {
@@ -50,6 +51,7 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
     reports: ["report", "analytics", "metric", "summary"],
     announcements: ["announcement", "notice", "alert", "broadcast"],
     communications: ["communication", "message", "donor", "csr", "partner", "announcement"],
+    "ngo-partnerships": ["ngo partnership", "partnership request", "ngo collaboration", "partnership"],
     profile: ["profile", "account", "settings"]
   },
   faculty: {
@@ -70,6 +72,7 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
     reports: ["report", "analytics", "metric", "summary"],
     announcements: ["announcement", "notice", "alert", "broadcast"],
     communications: ["communication", "message", "donor", "csr", "partner", "announcement"],
+    "ngo-partnerships": ["ngo partnership", "partnership request", "ngo collaboration", "partnership"],
     profile: ["profile", "account", "settings"]
   },
   mentor: {
@@ -88,6 +91,7 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
     "impact-reports": ["impact", "report", "metrics", "analytics"],
     recognition: ["recognition", "testimonial", "story", "thanks"],
     communications: ["message", "communication", "invite", "announcement"],
+    "ngo-partnerships": ["ngo partnership", "partnership request", "ngo collaboration", "partnership"],
     profile: ["profile", "account", "settings"]
   },
   employer: {
@@ -105,6 +109,7 @@ const ROLE_SECTION_KEYWORDS: Record<DashboardRole, Record<string, string[]>> = {
     beneficiaries: ["beneficiary", "student", "application"],
     reports: ["report", "analytics", "impact"],
     partnerships: ["partnership", "collaboration", "partner"],
+    "ngo-partnerships": ["ngo partnership", "partnership request", "ngo collaboration", "partnership"],
     communications: ["announcement", "communication", "message"],
     profile: ["profile", "account", "settings"]
   },

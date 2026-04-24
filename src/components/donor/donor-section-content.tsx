@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -7,6 +7,8 @@ import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { useAuth } from "@/context/auth-context";
+import { NgoPartnershipSection } from "@/components/shared/ngo-partnership-section";
+import { donorNavyCardClass, donorNavyStatClass } from "./donor-card-theme";
 import {
   defaultPreferences,
   mergePreferences,
@@ -179,6 +181,8 @@ export function DonorSectionContent({ sectionId }: DonorSectionContentProps) {
         return DonorRecognitionSection;
       case "communications":
         return DonorCommunicationsSection;
+      case "ngo-partnerships":
+        return DonorNgoPartnershipSection;
       case "profile":
         return DonorProfileSection;
       default:
@@ -334,29 +338,29 @@ function DonorPartnerHomeSection() {
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Active scholarships"
           value={loading ? "..." : String(summary?.activeScholarships ?? 0)}
           description="Currently accepting applications"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Total scholarships created"
           value={loading ? "..." : String(summary?.totalScholarships ?? 0)}
           description="Across all programs"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Emergency aid cases"
           value={loading ? "..." : String(summary?.emergencyAidCases ?? 0)}
           description="Approved emergency support cases"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Total contributed (LKR)"
           value={loading ? "..." : String(summary?.totalContributedLkr ?? 0)}
           description={loading ? "Loading..." : `Upcoming deadlines: ${summary?.upcomingDeadlines ?? 0}`}
         />
       </div>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <h3 className="text-lg font-semibold">Log new contribution</h3>
         <form className="space-y-3" onSubmit={logContribution}>
           <div className="grid gap-3 md:grid-cols-3">
@@ -420,7 +424,7 @@ function DonorPartnerHomeSection() {
         </form>
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <h3 className="text-lg font-semibold">Recent donations</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading recent donations...</p>
@@ -447,7 +451,7 @@ function DonorPartnerHomeSection() {
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <h3 className="text-lg font-semibold">Recent thank you messages</h3>
         <div className="space-y-3 text-sm">
           {thankYouMessages.map((t) => (
@@ -488,6 +492,7 @@ function DonorMyScholarshipsSection() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [scholarshipsView, setScholarshipsView] = useState<"table" | "card">("table");
 
   const activeCount = scholarships.filter(
     (item) => String(item.status ?? "").toLowerCase() !== "closed"
@@ -596,31 +601,57 @@ function DonorMyScholarshipsSection() {
         </p>
       ) : null}
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Total scholarships"
           value={String(scholarships.length)}
           description="Programs you created"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Active"
           value={String(activeCount)}
           description="Visible to students"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Closed"
           value={String(closedCount)}
           description="Not accepting new applications"
         />
       </div>
-      <Card className="space-y-3 p-4">
-        <div className="flex items-center justify-between gap-3">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-sm font-semibold">Scholarship listings</h3>
-          <button
-            onClick={() => setShowCreateForm((prev) => !prev)}
-            className="rounded-full bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary/90"
-          >
-            {showCreateForm ? "Cancel" : "Create scholarship"}
-          </button>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-1 rounded-full border border-blue-200/70 bg-white/65 p-1 text-xs dark:border-blue-400/25 dark:bg-slate-900/50">
+              <button
+                type="button"
+                onClick={() => setScholarshipsView("table")}
+                className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+                  scholarshipsView === "table"
+                    ? "bg-primary text-white"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                Table view
+              </button>
+              <button
+                type="button"
+                onClick={() => setScholarshipsView("card")}
+                className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+                  scholarshipsView === "card"
+                    ? "bg-primary text-white"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                Card view
+              </button>
+            </div>
+            <button
+              onClick={() => setShowCreateForm((prev) => !prev)}
+              className="rounded-full bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary/90"
+            >
+              {showCreateForm ? "Cancel" : "Create scholarship"}
+            </button>
+          </div>
         </div>
         {showCreateForm ? (
           <form
@@ -709,67 +740,135 @@ function DonorMyScholarshipsSection() {
             </div>
           </form>
         ) : null}
-        <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
-          {loading ? (
-            <p className="py-3 text-sm text-slate-500">Loading scholarships...</p>
-          ) : null}
-          {scholarships.map((s) => (
-            <div
-              key={s._id ?? s.title}
-              className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <p className="font-medium">{s.title ?? "Scholarship"}</p>
-                <p className="text-xs text-slate-500">
-                  Amount: {s.amount ?? "N/A"}
-                  {s.deadline ? ` | Deadline: ${s.deadline}` : ""}
-                </p>
-                {s.tags?.length ? (
-                  <p className="text-xs text-slate-500">Tags: {s.tags.join(", ")}</p>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                  {String(s.status ?? "active").toLowerCase() === "closed" ? "Closed" : "Active"}
-                </span>
-                {s._id ? (
-                  <>
-                    {String(s.status ?? "").toLowerCase() === "closed" ? (
-                      <button
-                        onClick={() => updateStatus(s._id as string, "active")}
-                        disabled={updatingId === s._id}
-                        className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        Reopen
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => updateStatus(s._id as string, "closed")}
-                        disabled={updatingId === s._id}
-                        className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        Close
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteScholarship(s._id as string)}
-                      disabled={deletingId === s._id}
-                      className="rounded-full border border-rose-300 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/20"
+        {loading ? (
+          <p className="py-3 text-sm text-slate-500">Loading scholarships...</p>
+        ) : !scholarships.length ? (
+          <p className="py-3 text-sm text-slate-500">
+            No scholarships found yet. Use &quot;Create scholarship&quot; to add your first
+            program.
+          </p>
+        ) : scholarshipsView === "table" ? (
+          <div className="overflow-x-auto rounded-xl border border-blue-200/60 bg-white/70 dark:border-blue-400/20 dark:bg-slate-900/45">
+            <table className="min-w-[900px] w-full text-sm">
+              <thead className="border-b border-blue-100/70 text-xs uppercase tracking-wide text-slate-500 dark:border-blue-400/15 dark:text-slate-400">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">Title</th>
+                  <th className="px-3 py-2 text-left font-medium">Amount</th>
+                  <th className="px-3 py-2 text-left font-medium">Deadline</th>
+                  <th className="px-3 py-2 text-left font-medium">Tags</th>
+                  <th className="px-3 py-2 text-left font-medium">Status</th>
+                  <th className="px-3 py-2 text-right font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-blue-100/60 dark:divide-blue-400/10">
+                {scholarships.map((s) => {
+                  const isClosed = String(s.status ?? "active").toLowerCase() === "closed";
+                  return (
+                    <tr key={s._id ?? s.title}>
+                      <td className="px-3 py-3 font-medium text-slate-900 dark:text-slate-100">
+                        {s.title ?? "Scholarship"}
+                      </td>
+                      <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{s.amount ?? "N/A"}</td>
+                      <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{s.deadline || "No deadline"}</td>
+                      <td className="px-3 py-3 text-slate-600 dark:text-slate-400">
+                        {s.tags?.length ? s.tags.join(", ") : "No tags"}
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-medium ${
+                            isClosed
+                              ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
+                              : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                          }`}
+                        >
+                          {isClosed ? "Closed" : "Active"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          {s._id ? (
+                            <>
+                              <button
+                                onClick={() => updateStatus(s._id as string, isClosed ? "active" : "closed")}
+                                disabled={updatingId === s._id}
+                                className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                              >
+                                {isClosed ? "Reopen" : "Close"}
+                              </button>
+                              <button
+                                onClick={() => deleteScholarship(s._id as string)}
+                                disabled={deletingId === s._id}
+                                className="rounded-full border border-rose-300 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/20"
+                              >
+                                {deletingId === s._id ? "Deleting..." : "Delete"}
+                              </button>
+                            </>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {scholarships.map((s) => {
+              const isClosed = String(s.status ?? "active").toLowerCase() === "closed";
+              return (
+                <article
+                  key={s._id ?? s.title}
+                  className="space-y-3 rounded-2xl border border-blue-200/75 bg-white/70 p-4 shadow-sm dark:border-blue-400/25 dark:bg-slate-900/45"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {s.title ?? "Scholarship"}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Amount: {s.amount ?? "N/A"}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+                        isClosed
+                          ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
+                          : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      }`}
                     >
-                      {deletingId === s._id ? "Deleting..." : "Delete"}
-                    </button>
-                  </>
-                ) : null}
-              </div>
-            </div>
-          ))}
-          {!loading && !scholarships.length && (
-            <p className="py-3 text-sm text-slate-500">
-              No scholarships found yet. Use &quot;Create scholarship&quot; to add your first
-              program.
-            </p>
-          )}
-        </div>
+                      {isClosed ? "Closed" : "Active"}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                    <p>Deadline: {s.deadline || "No deadline"}</p>
+                    <p>Tags: {s.tags?.length ? s.tags.join(", ") : "No tags"}</p>
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    {s._id ? (
+                      <>
+                        <button
+                          onClick={() => updateStatus(s._id as string, isClosed ? "active" : "closed")}
+                          disabled={updatingId === s._id}
+                          className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                          {isClosed ? "Reopen" : "Close"}
+                        </button>
+                        <button
+                          onClick={() => deleteScholarship(s._id as string)}
+                          disabled={deletingId === s._id}
+                          className="rounded-full border border-rose-300 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/20"
+                        >
+                          {deletingId === s._id ? "Deleting..." : "Delete"}
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -911,29 +1010,29 @@ function DonorFundedStudentsSection() {
         </p>
       ) : null}
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Funded students"
           value={loading ? "..." : String(summary?.fundedStudents ?? 0)}
           description="Students with approved support"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Consented profiles"
           value={loading ? "..." : String(summary?.consentedProfiles ?? 0)}
           description="Identity shared with consent"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Total funded (LKR)"
           value={loading ? "..." : String(summary?.totalFundedLkr ?? 0)}
           description="Approved support total"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Average progress"
           value={loading ? "..." : `${summary?.avgProgressScore ?? 0}%`}
           description="Aggregate progress signal"
         />
       </div>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Current scholars</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading funded students...</p>
@@ -983,7 +1082,7 @@ function DonorFundedStudentsSection() {
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <h3 className="text-sm font-semibold">{editingUpdateId ? "Edit update" : "Add update"}</h3>
         <div className="grid gap-3 md:grid-cols-2">
           <Input
@@ -1021,7 +1120,7 @@ function DonorFundedStudentsSection() {
         </div>
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Recent updates</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading updates...</p>
@@ -1069,6 +1168,7 @@ function DonorFundedStudentsSection() {
 }
 function DonorDonationsSection() {
   const { contributions, loading, error, reload } = useDonorContributions();
+  const [donationsView, setDonationsView] = useState<"table" | "card">("table");
   const [editingContributionId, setEditingContributionId] = useState<string | null>(null);
   const [editingContribution, setEditingContribution] = useState({
     contributionType: "general",
@@ -1080,6 +1180,21 @@ function DonorDonationsSection() {
   const [savingContribution, setSavingContribution] = useState(false);
   const [deletingContributionId, setDeletingContributionId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const formatContributionType = (type?: string) => {
+    switch (String(type ?? "").toLowerCase()) {
+      case "emergency_fund":
+        return "Emergency fund";
+      case "equipment":
+        return "Equipment";
+      case "scholarship":
+        return "Scholarship";
+      case "ngo_program":
+        return "NGO Program";
+      default:
+        return "General";
+    }
+  };
 
   const totals = contributions.reduce(
     (acc, item) => {
@@ -1194,14 +1309,14 @@ function DonorDonationsSection() {
         </p>
       ) : null}
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Total contributed" value={`LKR ${totals.total}`} description="All-time donations" />
-        <StatCard label="Emergency fund" value={`LKR ${totals.emergency}`} description="Crisis response" />
-        <StatCard label="Equipment" value={`LKR ${totals.equipment}`} description="Devices & materials" />
-        <StatCard label="Scholarships" value={`LKR ${totals.scholarship}`} description="Tuition & grants" />
+        <StatCard className={donorNavyStatClass} label="Total contributed" value={`LKR ${totals.total}`} description="All-time donations" />
+        <StatCard className={donorNavyStatClass} label="Emergency fund" value={`LKR ${totals.emergency}`} description="Crisis response" />
+        <StatCard className={donorNavyStatClass} label="Equipment" value={`LKR ${totals.equipment}`} description="Devices & materials" />
+        <StatCard className={donorNavyStatClass} label="Scholarships" value={`LKR ${totals.scholarship}`} description="Tuition & grants" />
       </div>
 
       {editingContributionId ? (
-        <Card className="space-y-3 p-4">
+        <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
           <h3 className="text-sm font-semibold">Edit contribution</h3>
           <div className="grid gap-3 md:grid-cols-2">
             <select
@@ -1247,10 +1362,34 @@ function DonorDonationsSection() {
         </Card>
       ) : null}
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold">Donation history</h3>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-1 rounded-full border border-blue-200/70 bg-white/65 p-1 text-xs dark:border-blue-400/25 dark:bg-slate-900/50">
+              <button
+                type="button"
+                onClick={() => setDonationsView("table")}
+                className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+                  donationsView === "table"
+                    ? "bg-primary text-white"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                Table view
+              </button>
+              <button
+                type="button"
+                onClick={() => setDonationsView("card")}
+                className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+                  donationsView === "card"
+                    ? "bg-primary text-white"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                Card view
+              </button>
+            </div>
             <button
               onClick={() => reload()}
               className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -1272,27 +1411,93 @@ function DonorDonationsSection() {
           <p className="text-sm text-slate-500">
             No donations logged yet. Use the Partner Home form to record new contributions.
           </p>
+        ) : donationsView === "table" ? (
+          <div className="overflow-x-auto rounded-xl border border-blue-200/60 bg-white/70 dark:border-blue-400/20 dark:bg-slate-900/45">
+            <table className="min-w-[980px] w-full text-sm">
+              <thead className="border-b border-blue-100/70 text-xs uppercase tracking-wide text-slate-500 dark:border-blue-400/15 dark:text-slate-400">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">Date</th>
+                  <th className="px-3 py-2 text-left font-medium">Receipt</th>
+                  <th className="px-3 py-2 text-left font-medium">Type</th>
+                  <th className="px-3 py-2 text-left font-medium">Program</th>
+                  <th className="px-3 py-2 text-left font-medium">Category</th>
+                  <th className="px-3 py-2 text-left font-medium">Amount</th>
+                  <th className="px-3 py-2 text-left font-medium">Note</th>
+                  <th className="px-3 py-2 text-right font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-blue-100/60 dark:divide-blue-400/10">
+                {contributions.map((item) => (
+                  <tr key={item._id ?? item.receiptNumber ?? item.program}>
+                    <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
+                      {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "-"}
+                    </td>
+                    <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{item.receiptNumber ?? "Pending"}</td>
+                    <td className="px-3 py-3 text-slate-700 dark:text-slate-300">
+                      {formatContributionType(item.contributionType)}
+                    </td>
+                    <td className="px-3 py-3 font-medium text-slate-900 dark:text-slate-100">
+                      {item.program ?? "Donation"}
+                    </td>
+                    <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{item.category ?? "General support"}</td>
+                    <td className="px-3 py-3 text-slate-900 dark:text-slate-100">LKR {item.amountLkr ?? 0}</td>
+                    <td className="px-3 py-3 text-slate-600 dark:text-slate-400">{item.note || "-"}</td>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        {item._id ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => startEdit(item)}
+                              className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteContribution(item._id as string)}
+                              disabled={deletingContributionId === item._id}
+                              className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                            >
+                              {deletingContributionId === item._id ? "Deleting..." : "Delete"}
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <div className="divide-y divide-slate-200 text-sm dark:divide-slate-800">
+          <div className="grid gap-3 md:grid-cols-2">
             {contributions.map((item) => (
-              <div
+              <article
                 key={item._id ?? item.receiptNumber ?? item.program}
-                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                className="space-y-2 rounded-2xl border border-blue-200/70 bg-white/70 p-4 shadow-sm dark:border-blue-400/25 dark:bg-slate-900/45"
               >
-                <div>
-                  <p className="font-medium">{item.program ?? "Donation"}</p>
-                  <p className="text-xs text-slate-500">
-                    {item.category ?? "General support"} | Receipt: {item.receiptNumber ?? "Pending"}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">{item.program ?? "Donation"}</p>
+                    <p className="text-xs text-slate-500">
+                      {formatContributionType(item.contributionType)} | {item.category ?? "General support"}
+                    </p>
+                  </div>
+                  <p className="shrink-0 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    LKR {item.amountLkr ?? 0}
                   </p>
+                </div>
+                <div className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                  <p>Receipt: {item.receiptNumber ?? "Pending"}</p>
                   <p className="text-xs text-slate-500">
                     {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
                   </p>
+                  {item.note ? <p>{item.note}</p> : null}
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold">LKR {item.amountLkr ?? 0}</p>
-                  {item.note ? <p className="text-xs text-slate-500">{item.note}</p> : null}
+                <div className="flex justify-end">
                   {item._id ? (
-                    <div className="mt-2 flex justify-end gap-2">
+                    <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => startEdit(item)}
@@ -1311,7 +1516,7 @@ function DonorDonationsSection() {
                     </div>
                   ) : null}
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         )}
@@ -1393,7 +1598,7 @@ function DonorImpactReportsSection() {
         </p>
       ) : null}
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-semibold">Impact summary</h3>
@@ -1422,22 +1627,22 @@ function DonorImpactReportsSection() {
           <p className="text-sm text-slate-500">Loading impact report...</p>
         ) : report ? (
           <div className="grid gap-4 md:grid-cols-4">
-            <StatCard
+            <StatCard className={donorNavyStatClass}
               label="Total contributed"
               value={`LKR ${report.summary.totalContributedLkr}`}
               description="Donations recorded"
             />
-            <StatCard
+            <StatCard className={donorNavyStatClass}
               label="Approved aid"
               value={`LKR ${report.summary.aidApprovedLkr}`}
               description="Aid disbursed"
             />
-            <StatCard
+            <StatCard className={donorNavyStatClass}
               label="Funded students"
               value={String(report.summary.fundedStudents)}
               description="Unique recipients"
             />
-            <StatCard
+            <StatCard className={donorNavyStatClass}
               label="Avg support/student"
               value={`LKR ${report.summary.avgSupportPerStudent}`}
               description="Average approved aid"
@@ -1446,7 +1651,7 @@ function DonorImpactReportsSection() {
         ) : null}
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Funding distribution</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading distribution...</p>
@@ -1470,7 +1675,7 @@ function DonorImpactReportsSection() {
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <h3 className="text-sm font-semibold">Highlights</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading highlights...</p>
@@ -1491,7 +1696,7 @@ function DonorImpactReportsSection() {
         )}
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <h3 className="text-sm font-semibold">NGO Impact Reports</h3>
         {loading ? (
           <p className="text-sm text-slate-500">Loading NGO reports...</p>
@@ -1674,29 +1879,29 @@ function DonorRecognitionSection() {
         </p>
       ) : null}
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Featured stories"
           value={loading ? "..." : String(metrics?.featuredStories ?? 0)}
           description="Published highlights"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Student testimonials"
           value={loading ? "..." : String(metrics?.studentTestimonials ?? 0)}
           description="Thank-you notes received"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Anonymized highlights"
           value={loading ? "..." : String(metrics?.anonymizedHighlights ?? 0)}
           description="Stories without identity"
         />
-        <StatCard
+        <StatCard className={donorNavyStatClass}
           label="Engagement rate"
           value={loading ? "..." : `${metrics?.engagementRate ?? 0}%`}
           description="Recipient engagement"
         />
       </div>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <h3 className="text-sm font-semibold">{editingStoryId ? "Edit story" : "Add story"}</h3>
         <div className="grid gap-3 md:grid-cols-2">
           <Input value={storyTitle} onChange={(event) => setStoryTitle(event.target.value)} placeholder="Story title" />
@@ -1733,7 +1938,7 @@ function DonorRecognitionSection() {
         </div>
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Featured stories</h3>
           <button
@@ -1968,7 +2173,7 @@ function DonorCommunicationsSection() {
           {success}
         </p>
       ) : null}
-      <Card className="space-y-4 p-4">
+      <Card className={`space-y-4 p-4 ${donorNavyCardClass}`}>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Audience</label>
@@ -2043,7 +2248,7 @@ function DonorCommunicationsSection() {
         </div>
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className={`space-y-3 p-4 ${donorNavyCardClass}`}>
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">Recent messages</h3>
           <button
@@ -2416,7 +2621,7 @@ function DonorProfileSection() {
         </p>
       )}
 
-      <Card className="flex flex-wrap items-center justify-between gap-4 border-primary/20 bg-gradient-to-r from-primary/5 via-white to-emerald-50 p-5 dark:from-primary/10 dark:via-slate-900 dark:to-emerald-900/20">
+      <Card className={`flex flex-wrap items-center justify-between gap-4 p-5 ${donorNavyCardClass}`}>
         <div className="flex items-center gap-4">
           <div className="relative">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-slate-100 dark:border-primary/60 dark:bg-slate-800">
@@ -2447,7 +2652,7 @@ function DonorProfileSection() {
         </div>
       </Card>
 
-      <Card className="border-primary/20 bg-primary/5 p-4">
+      <Card className={`p-4 ${donorNavyCardClass}`}>
         <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
           Manage your organization profile, branding, and team access.
         </p>
@@ -2485,7 +2690,7 @@ function DonorProfileSection() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${donorNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Personal details</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
@@ -2510,7 +2715,7 @@ function DonorProfileSection() {
               </Button>
             </Card>
 
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${donorNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Organization profile</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Update branding and contact details for your CSR or donor team.
@@ -2590,7 +2795,7 @@ function DonorProfileSection() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${donorNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Privacy preferences</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Control what is shared with university admins and NGOs.
@@ -2642,7 +2847,7 @@ function DonorProfileSection() {
               </Button>
             </Card>
 
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${donorNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Notification settings</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Choose how you receive updates about scholarships and impact.
@@ -2727,7 +2932,7 @@ function DonorProfileSection() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-3 p-5">
+            <Card className={`space-y-3 p-5 ${donorNavyCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Password and sign-in</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Send yourself a secure link to reset your password.
@@ -2768,3 +2973,6 @@ function DonorProfileSection() {
   );
 }
 
+function DonorNgoPartnershipSection() {
+  return <NgoPartnershipSection viewerRole="donor" cardClassName={donorNavyCardClass} />;
+}

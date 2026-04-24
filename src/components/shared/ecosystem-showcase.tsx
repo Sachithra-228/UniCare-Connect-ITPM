@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { FeatureOrbit, getOrbitFeatures, type OrbitFeature } from "@/components/shared/feature-orbit";
-import { SectionHeading } from "@/components/shared/section-heading";
 import { useLanguage } from "@/context/language-context";
 
 type FeatureKey = OrbitFeature["key"];
@@ -30,10 +29,10 @@ export function EcosystemShowcase() {
 
   return (
     <section>
-      <SectionHeading
-        title={sectionText.title}
-        subtitle={sectionText.subtitle}
-      />
+      <div className="space-y-2 text-center lg:text-left">
+        <h2 className="text-2xl font-semibold text-slate-900">{sectionText.title}</h2>
+        <p className="text-sm text-slate-600">{sectionText.subtitle}</p>
+      </div>
 
       <div className="mt-12 grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
         <FeatureOrbit
@@ -43,7 +42,7 @@ export function EcosystemShowcase() {
           className="mt-0"
         />
 
-        <div className="h-full min-h-[500px] rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="h-full min-h-0 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-950 lg:min-h-[500px]">
           {orbitFeatures.map((feature, index) => {
             const isActive = feature.key === activeKey;
             const isLast = index === orbitFeatures.length - 1;

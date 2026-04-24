@@ -23,6 +23,61 @@ type DirectorySection = {
   items: DirectoryItem[];
 };
 
+const instituteLogoByName: Record<string, string> = {
+  "Sri Lanka Institute of Advanced Technological Education (SLIATE)":
+    "/Sri Lanka Institute of Advanced Technological Education (SLIATE).jpg",
+  "National Institute of Business Management (NIBM)":
+    "/National Institute of Business Management (NIBM).jpg",
+  "Institute of Chemistry Ceylon": "/Institute of Chemistry Ceylon.jpg",
+  "Sri Lanka School of Agriculture": "/Sri Lanka School of Agriculture.jpg",
+  "National Institute of Fisheries and Nautical Engineering":
+    "/National Institute of Fisheries and Nautical Engineering.jpg",
+  "Sri Lanka Institute of Information Technology (SLIIT)":
+    "/Sri Lanka Institute of Information Technology (SLIIT).jpg",
+  "NSBM Green University": "/NSBM Green University.jpg",
+  "Informatics Institute of Technology (IIT)": "/Informatics Institute of Technology (IIT).jpg",
+  "International Institute of Health Sciences (IIHS)":
+    "/International Institute of Health Sciences (IIHS).jpg",
+  "CINEC Campus": "/CINEC Campus.jpg",
+  "ICBT Campus": "/ICBT Campus.jpg",
+  "Horizon Campus": "/Horizon Campus.jpg",
+  "Colombo International Nautical and Engineering College":
+    "/Colombo International Nautical and Engineering College.jpg",
+  "British College of Applied Studies (BCAS)":
+    "/British College of Applied Studies (BCAS).png",
+  "Australian College of Business and Technology (ACBT)":
+    "/Australian College of Business and Technology (ACBT).jpg",
+  "Academy of Design (AOD)": "/Academy of Design (AOD).png",
+  "Rajarata University External Degrees": "/Rajarata University External Degrees.jpg",
+  "University of Plymouth - SLIIT Campus": "/University of Plymouth - SLIIT Campus.jpg",
+  "University of Central Lancashire - Sri Lanka":
+    "/University of Central Lancashire - Sri Lanka.jpg",
+  "University of Wales - Sri Lanka Campus": "/University of Wales - Sri Lanka Campus.jpg",
+  "American College of Higher Education": "/American College of Higher Education.jpg",
+  "Lincoln University College (Sri Lanka Campus)": "/Lincoln University College (Sri Lanka Campus).jpg",
+  "Imperial College of Business Studies": "/Imperial College of Business Studies.jpg",
+  "European College of Business and Management":
+    "/European College of Business and Management.png",
+  "Sri Lanka Technological Campus": "/Sri Lanka Technological Campus.jpg",
+  "Institute of Bankers of Sri Lanka (IBSL)": "/Institute of Bankers of Sri Lanka (IBSL).jpg",
+  "Chartered Institute of Management Accountants (CIMA)":
+    "/Chartered Institute of Management Accountants (CIMA).png",
+  "Association of Accounting Technicians (AAT)":
+    "/Association of Accounting Technicians (AAT).jpg",
+  "Sri Lanka Institute of Marketing (SLIM)": "/Sri Lanka Institute of Marketing (SLIM).png",
+  "Institute of Chartered Accountants of Sri Lanka (CA Sri Lanka)":
+    "/Institute of Chartered Accountants of Sri Lanka (CA Sri Lanka).jpg",
+  "Sri Lanka Institute of Tourism and Hotel Management (SLITHM)":
+    "/Sri Lanka Institute of Tourism and Hotel Management (SLITHM).jpg"
+};
+
+function attachLogos(items: DirectoryItem[]) {
+  return items.map((item) => ({
+    ...item,
+    logo: item.logo ?? instituteLogoByName[item.name]
+  }));
+}
+
 const governmentUniversities: DirectoryItem[] = [
   { name: "University of Colombo", location: "Colombo", focus: "Medicine, Law, Arts, Science", logo: "/colombo.jpg" },
   { name: "University of Peradeniya", location: "Peradeniya", focus: "Engineering, Medicine, Agriculture", logo: "/peradeniya.jpg" },
@@ -98,7 +153,7 @@ const sections: DirectorySection[] = [
     title: "Applied and technical institutes",
     subtitle: "Select an institute card to view details.",
     fallbackImage: "/teacher.png",
-    items: governmentInstitutes
+    items: attachLogos(governmentInstitutes)
   },
   {
     id: "private-degree",
@@ -106,7 +161,7 @@ const sections: DirectorySection[] = [
     title: "Private and international pathways",
     subtitle: "Select an institute card to view details.",
     fallbackImage: "/hero-student.png",
-    items: privateInstitutes
+    items: attachLogos(privateInstitutes)
   },
   {
     id: "professional",
@@ -114,7 +169,7 @@ const sections: DirectorySection[] = [
     title: "Career-focused credential pathways",
     subtitle: "Select an institute card to view details.",
     fallbackImage: "/parent.png",
-    items: professionalInstitutes
+    items: attachLogos(professionalInstitutes)
   }
 ];
 
@@ -165,7 +220,6 @@ export default function UniversityConnectPage() {
           };
 
   const [activeSectionId, setActiveSectionId] = useState(sections[0].id);
-  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedBySection, setSelectedBySection] = useState<Record<string, string>>({});
 
   const activeSection = useMemo(
@@ -174,21 +228,10 @@ export default function UniversityConnectPage() {
   );
 
   const serviceDistricts = useMemo(
-    () =>
-      Array.from(
-        new Set(activeSection.items.flatMap((item) => getLocationDistricts(item.location)))
-      ),
+    () => Array.from(new Set(activeSection.items.flatMap((item) => getLocationDistricts(item.location)))),
     [activeSection]
   );
-
-  const visibleItems = useMemo(() => {
-    if (selectedDistricts.length === 0) return activeSection.items;
-
-    return activeSection.items.filter((item) => {
-      const locationDistricts = getLocationDistricts(item.location);
-      return locationDistricts.some((district) => selectedDistricts.includes(district));
-    });
-  }, [activeSection, selectedDistricts]);
+  const visibleItems = activeSection.items;
 
   const selectedName = selectedBySection[activeSection.id];
   const selectedItem =
@@ -200,160 +243,137 @@ export default function UniversityConnectPage() {
     setSelectedBySection((previous) => ({ ...previous, [activeSection.id]: item.name }));
   };
 
-  const toggleDistrict = (district: string) => {
-    setSelectedDistricts((previous) =>
-      previous.includes(district) ? previous.filter((item) => item !== district) : [...previous, district]
-    );
-  };
-
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-10">
-      <section className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="space-y-4">
-          <h1 className="text-4xl font-semibold leading-tight text-slate-900 md:text-5xl">
-            {text.heading}
-          </h1>
-          <p className="max-w-xl text-lg leading-relaxed text-slate-600">
-            {text.subheading}
-          </p>
-        </div>
-        <div className="w-full justify-self-center lg:justify-self-end">
-          <SriLankaDistrictMap
-            selectedDistricts={selectedDistricts}
-            serviceDistricts={serviceDistricts}
-            onSelectDistrict={toggleDistrict}
-            minimal
-          />
+    <div className="w-full pb-10 pt-0">
+      <section className="w-full bg-gradient-to-br from-[#0b1f45] via-[#102a59] to-[#0c1d3d]">
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-8 px-4 py-10 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="space-y-4">
+            <h1 className="text-4xl font-semibold leading-tight text-slate-100 md:text-5xl">
+              {text.heading}
+            </h1>
+            <p className="max-w-xl text-lg leading-relaxed text-blue-100/90">
+              {text.subheading}
+            </p>
+          </div>
+          <div className="w-full justify-self-center lg:justify-self-end">
+            <SriLankaDistrictMap
+              selectedDistricts={[]}
+              serviceDistricts={serviceDistricts}
+              selectable={false}
+              minimal
+            />
+          </div>
         </div>
       </section>
 
-      {selectedDistricts.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{text.districtFilters}</p>
-          {selectedDistricts.map((district) => (
-            <button
-              key={`district-chip-${district}`}
-              type="button"
-              onClick={() => toggleDistrict(district)}
-              className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700"
-            >
-              {district} x
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setSelectedDistricts([])}
-            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600"
-          >
-            {text.clearAll}
-          </button>
-        </div>
-      ) : null}
-
-      <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white/92 p-2 backdrop-blur">
-        {sections.map((section) => {
-          const isActive = section.id === activeSectionId;
-
-          return (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => setActiveSectionId(section.id)}
-              className={clsx(
-                "rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-white"
-                  : "border border-slate-200 text-slate-700 hover:border-primary/30 hover:text-primary"
-              )}
-            >
-              {section.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <section className="space-y-5">
-        <div className="space-y-2 text-center">
-          <h2 className="text-3xl font-semibold md:text-4xl">{activeSection.title}</h2>
-          <p className="text-slate-600">{activeSection.subtitle}</p>
-        </div>
-
-        {selectedItem ? (
-          <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-            <article className="relative min-h-[340px] overflow-hidden rounded-3xl">
-              <Image
-                src={selectedItem.logo ?? activeSection.fallbackImage}
-                alt={selectedItem.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 45vw"
-              />
-            </article>
-
-            <article className="rounded-3xl border border-white/65 bg-white/55 p-6 shadow-[0_16px_40px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">{text.profile}</p>
-              <h3 className="mt-2 text-2xl font-semibold">{selectedItem.name}</h3>
-              <p className="mt-1 text-slate-600">{selectedItem.location}</p>
-
-              <div className="mt-5 rounded-2xl border border-white/70 bg-white/70 p-4 backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">{text.focus}</p>
-                <ul className="mt-3 grid gap-2 text-sm text-slate-700">
-                  {selectedItem.focus.split(",").map((focus) => (
-                    <li
-                      key={`${selectedItem.name}-${focus.trim()}`}
-                      className="rounded-lg border border-blue-100/70 bg-blue-50/55 px-3 py-2"
-                    >
-                      {focus.trim()}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <p className="mt-5 text-sm text-slate-500">{text.clickHint}</p>
-            </article>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
-            {text.empty}
-          </div>
-        )}
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {visibleItems.map((item, index) => {
-            const isSelected = item.name === selectedItem?.name;
+      <div className="w-full bg-white py-8 text-slate-900">
+      <div className="mx-auto w-full max-w-6xl space-y-8 px-4">
+        <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2">
+          {sections.map((section) => {
+            const isActive = section.id === activeSectionId;
 
             return (
               <button
-                key={`${activeSection.id}-${item.name}`}
+                key={section.id}
                 type="button"
-                onClick={() => selectItem(index)}
+                onClick={() => setActiveSectionId(section.id)}
                 className={clsx(
-                  "rounded-2xl border p-4 text-left transition-all",
-                  isSelected
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-slate-200 bg-white hover:border-primary/35 hover:bg-slate-50"
+                  "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary text-white"
+                    : "border border-slate-200 text-slate-700 hover:border-primary/30 hover:text-primary"
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white">
-                    {item.logo ? (
-                      <Image src={item.logo} alt={`${item.name} logo`} fill className="object-cover" />
-                    ) : (
-                      <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-500">
-                        {initialsOf(item.name)}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">{item.name}</p>
-                    <p className="text-xs text-slate-500">{item.location}</p>
-                  </div>
-                </div>
+                {section.label}
               </button>
             );
           })}
         </div>
-      </section>
+
+        <section className="space-y-5">
+          <div className="space-y-2 text-center">
+            <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">{activeSection.title}</h2>
+            <p className="text-slate-600">{activeSection.subtitle}</p>
+          </div>
+
+          {selectedItem ? (
+            <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+              <article className="relative min-h-[340px] overflow-hidden rounded-3xl">
+                <Image
+                  src={selectedItem.logo ?? activeSection.fallbackImage}
+                  alt={selectedItem.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 45vw"
+                />
+              </article>
+
+              <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_16px_40px_-24px_rgba(15,23,42,0.25)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/80">{text.profile}</p>
+                <h3 className="mt-2 text-2xl font-semibold text-slate-900">{selectedItem.name}</h3>
+                <p className="mt-1 text-slate-600">{selectedItem.location}</p>
+
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">{text.focus}</p>
+                  <ul className="mt-3 grid gap-2 text-sm text-slate-700">
+                    {selectedItem.focus.split(",").map((focus) => (
+                      <li
+                        key={`${selectedItem.name}-${focus.trim()}`}
+                        className="rounded-lg border border-blue-100/70 bg-blue-50/55 px-3 py-2"
+                      >
+                        {focus.trim()}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <p className="mt-5 text-sm text-slate-500">{text.clickHint}</p>
+              </article>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
+              {text.empty}
+            </div>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {visibleItems.map((item, index) => {
+              const isSelected = item.name === selectedItem?.name;
+
+              return (
+                <button
+                  key={`${activeSection.id}-${item.name}`}
+                  type="button"
+                  onClick={() => selectItem(index)}
+                  className={clsx(
+                    "rounded-2xl border p-4 text-left transition-all",
+                    isSelected
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-slate-200 bg-white hover:border-primary/35 hover:bg-slate-50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white">
+                      {item.logo ? (
+                        <Image src={item.logo} alt={`${item.name} logo`} fill className="object-cover" />
+                      ) : (
+                        <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-500">
+                          {initialsOf(item.name)}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">{item.name}</p>
+                      <p className="text-xs text-slate-500">{item.location}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+      </div>
     </div>
   );
 }

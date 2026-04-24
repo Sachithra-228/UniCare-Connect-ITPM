@@ -1204,14 +1204,16 @@ export default function LoginPage() {
           <LanguageSwitcher />
         </div>
         <div className="absolute right-4 top-4 sm:right-8 sm:top-6 lg:right-12 lg:top-8">
-          <Image
-            src="/logo.png"
-            alt="UniCare Connect"
-            width={220}
-            height={88}
-            className="h-12 w-auto rounded-lg bg-white/90 p-1.5 shadow-sm sm:h-14 sm:p-2 lg:h-16"
-            priority
-          />
+          <Link href="/" aria-label="Go to landing page">
+            <Image
+              src="/logo.png"
+              alt="UniCare Connect"
+              width={220}
+              height={88}
+              className="h-12 w-auto rounded-lg bg-white/90 p-1.5 shadow-sm sm:h-14 sm:p-2 lg:h-16"
+              priority
+            />
+          </Link>
         </div>
         <div className="w-full max-w-xl">
           <div className="border-b border-slate-200 p-5 sm:p-6">
@@ -1310,8 +1312,33 @@ export default function LoginPage() {
                     variant="secondary"
                     onClick={handleGoogleSignIn}
                     disabled={signInBusy || pendingRedirect || loading}
+                    className="inline-flex items-center justify-center gap-2"
                   >
-                    {signInBusy || pendingRedirect || loading ? t.signingIn : t.signInWithGoogle}
+                    {signInBusy || pendingRedirect || loading ? (
+                      t.signingIn
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                          <path
+                            fill="#EA4335"
+                            d="M12 10.2v3.9h5.4c-.2 1.3-1.5 3.9-5.4 3.9-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.5 14.6 2.6 12 2.6a9.4 9.4 0 1 0 0 18.8c5.4 0 9-3.8 9-9.1 0-.6-.1-1.1-.2-1.6H12Z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M3.6 7.7 6.8 10c.9-1.8 2.8-3.1 5.2-3.1 1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.5 14.6 2.6 12 2.6c-3.6 0-6.7 2-8.4 5.1Z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M12 21.4c2.6 0 4.9-.9 6.5-2.4l-3-2.4c-.8.6-1.9 1-3.5 1-3 0-5.5-2-6.4-4.7l-3.1 2.4c1.7 3.2 5 5.1 9.5 5.1Z"
+                          />
+                          <path
+                            fill="#4285F4"
+                            d="M21 12.3c0-.6-.1-1.1-.2-1.6H12v3.9h5.4c-.2 1.1-.9 2.1-1.9 2.8l3 2.4c1.7-1.6 2.5-4 2.5-7.5Z"
+                          />
+                        </svg>
+                        <span>{t.signInWithGoogle}</span>
+                      </>
+                    )}
                   </Button>
                 </div>
                 <div className="flex items-center justify-between text-sm text-slate-500">

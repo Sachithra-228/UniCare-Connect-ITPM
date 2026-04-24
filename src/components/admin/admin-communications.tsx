@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/shared/Card";
+import { adminNavyCardClass } from "./admin-card-theme";
 
 type CommunicationMessage = {
   _id: string;
@@ -70,7 +71,7 @@ export function AdminCommunicationsSection() {
 
   return (
     <div className="space-y-6">
-      <Card className="space-y-2 p-5">
+      <Card className={`space-y-2 p-5 ${adminNavyCardClass}`}>
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Partner communications</h3>
         <p className="text-sm text-slate-600 dark:text-slate-300">
           Messages from donors and CSR partners for admin or faculty teams.
@@ -86,7 +87,7 @@ export function AdminCommunicationsSection() {
         </p>
       ) : null}
 
-      <Card className="space-y-3 p-5">
+      <Card className={`space-y-3 p-5 ${adminNavyCardClass}`}>
         <h4 className="text-base font-semibold text-slate-900 dark:text-white">Inbox</h4>
         {loading ? (
           <p className="text-sm text-slate-500">Loading communications...</p>

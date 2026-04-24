@@ -176,7 +176,7 @@ export function FeatureOrbit({ features = orbitFeatures, activeKey, onSelect, cl
   return (
     <div
       className={twMerge(
-        "relative mx-auto mt-8 flex h-[500px] w-full max-w-[520px] items-center justify-center",
+        "relative mx-auto mt-8 flex h-[360px] w-full max-w-[360px] items-center justify-center sm:h-[430px] sm:max-w-[430px] lg:h-[500px] lg:max-w-[520px]",
         className
       )}
     >

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/shared/Card";
 import { Button } from "@/components/shared/Button";
+import { studentBlueCardClass } from "@/components/dashboard/student/student-card-theme";
 import type {
   CampusAnnouncementItem,
   CampusClubItem,
@@ -174,7 +175,7 @@ export function StudentCampusLife() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Upcoming campus events</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 See what is happening on campus and mark events you are interested in.
@@ -239,7 +240,7 @@ export function StudentCampusLife() {
             exit="exit"
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Student clubs & societies</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Browse clubs across tech, community and creativity. Join or leave anytime.
@@ -291,7 +292,7 @@ export function StudentCampusLife() {
             exit="exit"
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            <Card className="space-y-3 p-5">
+            <Card className={`space-y-3 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Campus announcements</h3>
               {loading ? (
                 <p className="text-sm text-slate-500">Loading announcements...</p>
@@ -344,7 +345,7 @@ export function StudentCampusLife() {
             exit="exit"
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            <Card className="space-y-3 p-5">
+            <Card className={`space-y-3 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Local business discounts</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Student-only deals at cafes, bookshops and more.
@@ -397,7 +398,7 @@ export function StudentCampusLife() {
             exit="exit"
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            <Card className="space-y-3 p-5">
+            <Card className={`space-y-3 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Volunteer opportunities</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Get experience and give back through campus and community projects.

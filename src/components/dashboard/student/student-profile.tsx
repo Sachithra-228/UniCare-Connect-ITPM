@@ -6,6 +6,7 @@ import { Card } from "@/components/shared/Card";
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { useAuth } from "@/context/auth-context";
+import { studentBlueCardClass } from "@/components/dashboard/student/student-card-theme";
 
 type ProfileTab = "profile" | "settings" | "security";
 
@@ -380,7 +381,7 @@ export function StudentProfile() {
         </p>
       )}
 
-      <Card className="flex flex-wrap items-center justify-between gap-4 border-primary/20 bg-gradient-to-r from-primary/5 via-white to-emerald-50 p-5 dark:from-primary/10 dark:via-slate-900 dark:to-emerald-900/20">
+      <Card className={`flex flex-wrap items-center justify-between gap-4 p-5 ${studentBlueCardClass}`}>
         <div className="flex items-center gap-4">
           <div className="relative">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-primary/40 bg-slate-100 dark:border-primary/60 dark:bg-slate-800">
@@ -411,7 +412,7 @@ export function StudentProfile() {
         </div>
       </Card>
 
-      <Card className="border-primary/20 bg-primary/5 p-4">
+      <Card className={`p-4 ${studentBlueCardClass}`}>
         <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
           Profile visibility is controlled by privacy settings. Some fields are hidden from certain roles.
         </p>
@@ -449,7 +450,7 @@ export function StudentProfile() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Personal details</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
@@ -474,7 +475,7 @@ export function StudentProfile() {
               </Button>
             </Card>
 
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Academic info</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 University, degree, and year. Used for eligibility and recommendations.
@@ -522,7 +523,7 @@ export function StudentProfile() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Privacy preferences</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Control which roles can see which parts of your profile.
@@ -574,7 +575,7 @@ export function StudentProfile() {
               </Button>
             </Card>
 
-            <Card className="space-y-4 p-5">
+            <Card className={`space-y-4 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Notification settings</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Choose how you receive updates on applications, sessions, and deadlines.
@@ -659,7 +660,7 @@ export function StudentProfile() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-3 p-5">
+            <Card className={`space-y-3 p-5 ${studentBlueCardClass}`}>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Password and sign-in</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 Send yourself a secure link to reset your password. This uses your login email address.

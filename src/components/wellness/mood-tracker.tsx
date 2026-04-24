@@ -6,6 +6,7 @@ import { Button } from "@/components/shared/Button";
 import { Select } from "@/components/shared/Select";
 import { Input } from "@/components/shared/Input";
 import { useLanguage } from "@/context/language-context";
+import { studentBlueCardClass } from "@/components/dashboard/student/student-card-theme";
 
 type MoodTrackerProps = {
   onSaved?: () => void;
@@ -99,7 +100,7 @@ export function MoodTracker({ onSaved }: MoodTrackerProps) {
   };
 
   return (
-    <Card className="space-y-4">
+    <Card className={`space-y-4 ${studentBlueCardClass}`}>
       <h3 className="text-lg font-semibold">{text.title}</h3>
       <form className="space-y-3" onSubmit={handleSubmit}>
         <Select name="mood" aria-label={text.selectMood} required aria-required="true">
