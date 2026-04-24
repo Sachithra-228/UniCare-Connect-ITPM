@@ -8,7 +8,8 @@ type VerificationPayload = {
 };
 
 export async function POST(request: NextRequest) {
-  if (isDemoMode()) {
+  const explicitDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  if (explicitDemoMode && isDemoMode()) {
     return jsonResponse({ message: "Verification email sent (demo mode)." });
   }
 

@@ -8,7 +8,8 @@ import {
   signInWithPopup,
   signOut,
   createUserWithEmailAndPassword,
-  deleteUser
+  deleteUser,
+  sendEmailVerification
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { UserProfile, UserRole } from "@/types";
@@ -430,17 +431,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       saveRoleHint(credential.user.email, syncedUser.role);
 
-      const verificationResponse = await fetch("/api/auth/verification", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          continueUrl: `${window.location.origin}/login?mode=signin&verified=1`
-        })
-      });
-      if (!verificationResponse.ok) {
-        throw new Error("VERIFICATION_EMAIL_SEND_FAILED");
+      const continueUrl = `${window.location.origin}/login?mode=signin&verified=1`;
+      let verificationSent = false;
+
+      try {
+        await sendEmailVerification(credential.user, { url: continueUrl });
+        verificationSent = true;
+      } catch {
+        // Fallback to server endpoint when client-side send fails.
+      }
+
+      if (!verificationSent) {
+        const verificationResponse = await fetch("/api/auth/verification", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ continueUrl })
+        });
+
+        if (!verificationResponse.ok) {
+          throw new Error("VERIFICATION_EMAIL_SEND_FAILED");
+        }
+
+        try {
+          const verificationPayload = (await verificationResponse.json()) as { message?: string };
+          if (verificationPayload.message?.toLowerCase().includes("demo mode")) {
+            throw new Error("VERIFICATION_EMAIL_SEND_FAILED");
+          }
+        } catch (parseError) {
+          if (parseError instanceof Error && parseError.message === "VERIFICATION_EMAIL_SEND_FAILED") {
+            throw parseError;
+          }
+          // If parsing fails but request succeeded, continue.
+        }
       }
 
       setUser(syncedUser);
@@ -526,4 +550,3 @@ export function useAuth() {
   }
   return context;
 }
-
