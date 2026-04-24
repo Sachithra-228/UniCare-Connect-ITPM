@@ -8,7 +8,8 @@ type PasswordResetPayload = {
 };
 
 export async function POST(request: NextRequest) {
-  if (isDemoMode()) {
+  const explicitDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  if (explicitDemoMode && isDemoMode()) {
     return jsonResponse({ message: "Password reset link sent (demo mode)." });
   }
 

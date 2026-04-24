@@ -242,6 +242,42 @@ textarea:focus-visible {
   background: linear-gradient(180deg, #f7faff 0%, #ffffff 62%);
 }
 
+.stories-section {
+  isolation: isolate;
+  background: linear-gradient(135deg, #0b1f45 0%, #102a59 55%, #0c1d3d 100%);
+}
+
+.stories-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+.stories-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(125, 211, 252, 0.15) 1px, transparent 1.1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.09) 1px, transparent 1px),
+    linear-gradient(rgba(148, 163, 184, 0.09) 1px, transparent 1px);
+  background-size: 30px 30px, 30px 30px, 30px 30px;
+  background-position: 0 0, 0 0;
+  opacity: 0.55;
+}
+
+.dark .stories-section {
+  background: linear-gradient(135deg, #071735 0%, #0d2550 55%, #08162d 100%);
+}
+
+.dark .stories-section::before {
+  background-image:
+    radial-gradient(circle, rgba(147, 197, 253, 0.14) 1px, transparent 1.1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  opacity: 0.48;
+}
+
 .core-journey-grid {
   background-image:
     linear-gradient(to right, rgba(148, 163, 184, 0.2) 1px, transparent 1px),
@@ -367,6 +403,51 @@ textarea:focus-visible {
   }
 }
 
+.mobile-menu-float-in {
+  animation: mobile-menu-float-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes mobile-menu-float-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .marquee-track {
+    gap: 0.75rem;
+    padding-inline: 0.5rem;
+  }
+
+  .marquee-item {
+    min-width: 208px;
+    width: auto;
+  }
+
+  .marquee-name {
+    max-width: 132px;
+    opacity: 1;
+    transform: none;
+    white-space: normal;
+  }
+
+  .marquee-item:hover {
+    box-shadow: none;
+    min-width: 208px;
+    transform: none;
+    width: auto;
+  }
+
+  .marquee-item:hover .marquee-logo {
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .core-journey-grid,
   .core-journey-aurora-a,
@@ -375,7 +456,8 @@ textarea:focus-visible {
   .faq-left-up,
   .faq-left-down,
   .faq-right-down,
-  .faq-right-up {
+  .faq-right-up,
+  .mobile-menu-float-in {
     animation: none;
   }
 }

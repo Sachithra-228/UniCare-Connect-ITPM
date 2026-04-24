@@ -220,6 +220,10 @@ export function StudentFinancialAid() {
     { id: "tuition" as const, label: "Tuition support" },
     { id: "ngo-programs" as const, label: "NGO Support Programs" }
   ];
+  const tabPanelCardClass =
+    "border-blue-200/80 bg-gradient-to-br from-blue-50 via-white to-sky-50 dark:border-blue-500/30 dark:from-[#0f1f3f] dark:via-slate-900 dark:to-[#102a59]";
+  const formContainerClass =
+    "mt-6 rounded-xl border border-white/25 bg-gradient-to-br from-[#0b1f45] via-[#102a59] to-[#0c1d3d] p-4 text-white shadow-[0_14px_34px_-22px_rgba(2,6,23,0.95)]";
 
   const renderBalanceCardContent = (isPopup = false) => {
     const profileSize = isPopup ? 72 : 64;
@@ -347,8 +351,8 @@ export function StudentFinancialAid() {
               onClick={() => setActiveTab(tab.id)}
               className={`rounded-t-lg px-4 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? "border border-b-0 border-slate-200 bg-white text-primary dark:border-slate-700 dark:bg-slate-900 dark:text-primary"
-                  : "border border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                  ? "border border-b-0 border-blue-300 bg-blue-600 text-white dark:border-blue-300/40 dark:bg-blue-500/30 dark:text-blue-100"
+                  : "border border-transparent text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-300 dark:hover:bg-blue-500/15 dark:hover:text-blue-100"
               }`}
             >
               {tab.label}
@@ -358,7 +362,7 @@ export function StudentFinancialAid() {
       </div>
 
       {activeTab === "emergency-aid" && (
-        <Card className="overflow-hidden border-slate-200/80 p-5 dark:border-slate-700/50">
+        <Card className={`overflow-hidden p-5 ${tabPanelCardClass}`}>
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Emergency aid applications</h3>
           {loadingAid ? (
             <p className="mt-4 text-sm text-slate-500">Loading...</p>
@@ -400,8 +404,8 @@ export function StudentFinancialAid() {
             </div>
           )}
 
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-800/30">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Apply for emergency academic aid</h4>
+          <div className={formContainerClass}>
+            <h4 className="text-sm font-semibold text-white">Apply for emergency academic aid</h4>
             <AidRequestForm
               defaultCategory="emergency"
               lockCategory
@@ -420,14 +424,14 @@ export function StudentFinancialAid() {
       )}
 
       {activeTab === "equipment" && (
-        <Card className="border-slate-200/80 p-5 dark:border-slate-700/50">
+        <Card className={`p-5 ${tabPanelCardClass}`}>
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Equipment & resource support</h3>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             Request laptops, books, and lab equipment. Your requests are tracked with live status updates.
           </p>
 
-          <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/30">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Request equipment</h4>
+          <div className={formContainerClass}>
+            <h4 className="text-sm font-semibold text-white">Request equipment</h4>
             <AidRequestForm
               defaultCategory="equipment"
               lockCategory
@@ -446,8 +450,8 @@ export function StudentFinancialAid() {
 
       {activeTab === "meal-voucher" && (
         <div className="space-y-6">
-          <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-white to-white dark:from-primary/10 dark:via-slate-900/90 dark:to-slate-900/80">
-            <div className="border-b border-primary/10 bg-primary/5 px-5 py-4 dark:border-primary/20 dark:bg-primary/10">
+          <Card className={`overflow-hidden ${tabPanelCardClass}`}>
+            <div className="border-b border-blue-200/70 bg-blue-100/70 px-5 py-4 dark:border-blue-400/25 dark:bg-blue-500/10">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Meal voucher support</h3>
               <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">
                 Track your meal voucher balance and request top-ups when needed.
@@ -457,7 +461,7 @@ export function StudentFinancialAid() {
               <p className="p-6 text-sm text-slate-500">Loading...</p>
             ) : (
               <div className="p-5">
-                <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-primary/30 bg-white py-10 dark:border-primary/40 dark:bg-slate-800/50">
+                <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-blue-300/80 bg-white/90 py-10 dark:border-blue-300/40 dark:bg-slate-800/50">
                   <p className="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Current balance</p>
                   <p className="mt-2 text-4xl font-bold text-primary">
                     {currency} {mealBalance.toLocaleString()}
@@ -470,15 +474,17 @@ export function StudentFinancialAid() {
             )}
           </Card>
 
-          <Card className="border-slate-200/80 p-5 dark:border-slate-700/50">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Request meal voucher top-up</h4>
-            <AidRequestForm
-              defaultCategory="boarding"
-              lockCategory
-              submitLabel="Submit meal voucher request"
-              onSuccess={() => refreshAidAndSummary(false)}
-              onShowSuccessPopup={() => setShowSuccessPopup(true)}
-            />
+          <Card className={`p-5 ${tabPanelCardClass}`}>
+            <div className={formContainerClass}>
+              <h4 className="text-sm font-semibold text-white">Request meal voucher top-up</h4>
+              <AidRequestForm
+                defaultCategory="boarding"
+                lockCategory
+                submitLabel="Submit meal voucher request"
+                onSuccess={() => refreshAidAndSummary(false)}
+                onShowSuccessPopup={() => setShowSuccessPopup(true)}
+              />
+            </div>
 
             <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-700">
               <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Meal voucher request history</h4>
@@ -490,8 +496,8 @@ export function StudentFinancialAid() {
 
       {activeTab === "tuition" && (
         <div className="space-y-6">
-          <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-white to-white dark:from-primary/10 dark:via-slate-900/90 dark:to-slate-900/80">
-            <div className="border-b border-primary/10 bg-primary/5 px-5 py-4 dark:border-primary/20 dark:bg-primary/10">
+          <Card className={`overflow-hidden ${tabPanelCardClass}`}>
+            <div className="border-b border-blue-200/70 bg-blue-100/70 px-5 py-4 dark:border-blue-400/25 dark:bg-blue-500/10">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Tuition & maintenance support</h3>
               <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">
                 Monitor allocated support and submit new tuition assistance requests.
@@ -501,7 +507,7 @@ export function StudentFinancialAid() {
               <p className="p-6 text-sm text-slate-500">Loading...</p>
             ) : (
               <div className="p-5">
-                <div className="rounded-2xl border-2 border-primary/20 bg-white p-6 dark:border-primary/30 dark:bg-slate-800/50">
+                <div className="rounded-2xl border-2 border-blue-200 bg-white p-6 dark:border-blue-300/35 dark:bg-slate-800/50">
                   <p className="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Allocated support balance
                   </p>
@@ -516,15 +522,17 @@ export function StudentFinancialAid() {
             )}
           </Card>
 
-          <Card className="border-slate-200/80 p-5 dark:border-slate-700/50">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Apply for tuition aid</h4>
-            <AidRequestForm
-              defaultCategory="tuition"
-              lockCategory
-              submitLabel="Submit tuition request"
-              onSuccess={() => refreshAidAndSummary(false)}
-              onShowSuccessPopup={() => setShowSuccessPopup(true)}
-            />
+          <Card className={`p-5 ${tabPanelCardClass}`}>
+            <div className={formContainerClass}>
+              <h4 className="text-sm font-semibold text-white">Apply for tuition aid</h4>
+              <AidRequestForm
+                defaultCategory="tuition"
+                lockCategory
+                submitLabel="Submit tuition request"
+                onSuccess={() => refreshAidAndSummary(false)}
+                onShowSuccessPopup={() => setShowSuccessPopup(true)}
+              />
+            </div>
 
             <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-700">
               <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Tuition request history</h4>
@@ -535,7 +543,7 @@ export function StudentFinancialAid() {
       )}
 
       {activeTab === "ngo-programs" && (
-        <Card className="border-slate-200/80 p-5 dark:border-slate-700/50">
+        <Card className={`p-5 ${tabPanelCardClass}`}>
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Active NGO Support Programs</h3>
           <p className="mt-1 mb-4 text-sm text-slate-600 dark:text-slate-300">
             External organizations have partnered with the university to provide these support initiatives. Apply here, and your university admin will verify your eligibility with the NGO.
@@ -548,7 +556,7 @@ export function StudentFinancialAid() {
               ngoPrograms.map((prog) => {
                 const hasApplied = studentNgoApplications.some((application) => application.programId === prog._id);
                 return (
-                <div key={prog._id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                <div key={prog._id} className="rounded-xl border border-blue-200 bg-white/95 p-4 dark:border-blue-400/25 dark:bg-blue-500/10">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h4 className="font-semibold text-slate-900 dark:text-white">{prog.title}</h4>

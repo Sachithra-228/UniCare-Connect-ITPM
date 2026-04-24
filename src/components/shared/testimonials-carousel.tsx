@@ -86,7 +86,7 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
         })}
       </div>
 
-      <div className="grid gap-4 lg:hidden">
+      <div className="grid gap-5 lg:hidden">
         {testimonials.map((testimonial, index) => {
           const isActive = index === activeIndex;
 
@@ -97,16 +97,19 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
               onClick={() => setActiveIndex(index)}
               className={`overflow-hidden rounded-3xl border text-left transition-all duration-500 ${
                 isActive
-                  ? "border-primary/40 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white"
+                  ? "border-primary/40 bg-slate-950 text-white shadow-lg shadow-black/25"
+                  : "border-slate-200 bg-white shadow-sm"
               }`}
             >
-              <div className="relative h-64">
+              <div className="relative aspect-[4/5] min-h-[300px]">
                 <Image
-                  src={isActive ? testimonial.image : testimonial.avatar}
+                  src={testimonial.image}
                   alt={testimonial.name}
                   fill
-                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 33vw"
+                  className={`object-cover transition-transform duration-500 ${
+                    isActive ? "object-top" : "object-center"
+                  }`}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -115,7 +118,7 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
                 </div>
               </div>
               {isActive ? (
-                <p className="p-4 text-sm leading-6 text-white/90">&ldquo;{testimonial.quote}&rdquo;</p>
+                <p className="p-4 pt-3 text-[0.98rem] leading-7 text-white/90">&ldquo;{testimonial.quote}&rdquo;</p>
               ) : null}
             </button>
           );

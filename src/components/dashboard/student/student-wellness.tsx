@@ -6,6 +6,7 @@ import { Card } from "@/components/shared/Card";
 import { MoodTracker } from "@/components/wellness/mood-tracker";
 import { CounselorBooking } from "@/components/wellness/counselor-booking";
 import { PeerSupport } from "@/components/wellness/peer-support";
+import { studentBlueCardClass } from "@/components/dashboard/student/student-card-theme";
 
 type HealthLog = { _id: string; date: string; mood?: string; stressLevel?: number; sleepHours?: number };
 
@@ -90,7 +91,7 @@ export function StudentWellness() {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="space-y-4"
           >
-            <Card className="space-y-4 overflow-hidden border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-emerald-50 p-5 dark:from-primary/10 dark:via-slate-900 dark:to-emerald-900/20">
+            <Card className={`space-y-4 overflow-hidden p-5 ${studentBlueCardClass}`}>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -105,7 +106,7 @@ export function StudentWellness() {
             </Card>
 
             {logs.length > 0 && (
-              <Card className="space-y-3 p-5">
+              <Card className={`space-y-3 p-5 ${studentBlueCardClass}`}>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recent wellness trends</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-300">
                   A quick snapshot of your last few check‑ins.

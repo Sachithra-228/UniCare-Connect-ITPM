@@ -84,6 +84,7 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
   funding: CircleDollarSign,
   beneficiaries: Users,
   partnerships: Handshake,
+  "ngo-partnerships": Handshake,
 
   // Parent / guardian
   "parent-home": Home,

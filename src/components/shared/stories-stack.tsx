@@ -72,103 +72,109 @@ export function StoriesStack() {
   const stickyHeightVh = stories.length * 62;
 
   return (
-    <section id="stories" ref={sectionRef} className="mx-auto w-full max-w-6xl px-4 py-16">
-      <div className="mx-auto max-w-3xl text-center">
-        <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">{text.heading}</h2>
-        <p className="mt-3 text-base text-slate-600 md:text-lg">{text.description}</p>
-      </div>
+    <section id="stories" ref={sectionRef} className="stories-section w-full py-16">
+      <div className="mx-auto w-full max-w-6xl px-4">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">{text.heading}</h2>
+          <p className="mt-3 text-base text-blue-100/85 md:text-lg">{text.description}</p>
+        </div>
 
-      <div className="mt-10 grid gap-5 md:hidden">
-        {stories.map((story, index) => (
-          <article
-            key={`mobile-story-${story.name}`}
-            className={`rounded-3xl border border-slate-200 bg-gradient-to-br p-6 shadow-lg transition-all duration-700 ${
-              story.tone
-            } ${index === activeIndex ? "scale-[1.01]" : "opacity-90"}`}
-            style={{ transitionDelay: `${index * 180}ms` }}
-          >
-            <div className="grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
-              <div className="flex flex-col justify-between">
-                <p className="text-base italic leading-7">&ldquo;{story.quote}&rdquo;</p>
-                <div className="pt-4">
-                  <p
-                    className="text-2xl leading-none text-white"
-                    style={{ fontFamily: "'Brush Script MT', 'Segoe Script', cursive" }}
-                  >
-                    {story.name}
-                  </p>
-                  <p className="mt-1 text-xs text-white/85">{story.role}</p>
+        <div className="mt-10 grid gap-5 md:hidden">
+          {stories.map((story, index) => (
+            <article
+              key={`mobile-story-${story.name}`}
+              className={`rounded-3xl border border-slate-200 bg-gradient-to-br p-6 shadow-lg transition-all duration-700 ${
+                story.tone
+              } ${index === activeIndex ? "scale-[1.01]" : "opacity-90"}`}
+              style={{ transitionDelay: `${index * 180}ms` }}
+            >
+              <div className="flex flex-col gap-5">
+                <div className="relative mx-auto w-full max-w-[220px] overflow-hidden rounded-2xl border border-white/35 bg-white/20 shadow-md aspect-[3/4]">
+                  <Image
+                    src={story.image}
+                    alt={story.name}
+                    fill
+                    sizes="220px"
+                    className="object-cover object-top"
+                  />
                 </div>
-              </div>
-              <div>
-                <div className="relative h-32 overflow-hidden rounded-2xl border border-white/35 bg-white/20">
-                  <Image src={story.image} alt={story.name} fill className="object-cover" />
-                </div>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-
-      <div className="relative mt-10 hidden md:block" style={{ height: `${stickyHeightVh}vh` }}>
-        <div className="sticky top-24 h-[450px] overflow-visible">
-          <div className="relative h-full">
-            {stories.map((story, index) => {
-              const distance = index - activeIndex;
-              const absDistance = Math.abs(distance);
-              const clampedDistance = clamp(distance, -4, 4);
-              const translateX = clampedDistance * 132;
-              const scale =
-                absDistance === 0 ? 1.07 : absDistance === 1 ? 0.9 : absDistance === 2 ? 0.8 : 0.72;
-              const opacity = absDistance > 4 ? 0 : absDistance === 0 ? 1 : 0.22;
-              const blur = absDistance === 0 ? 0 : Math.min(5.5, absDistance * 1.6);
-              const rotate = clampedDistance * -2.5;
-              const zIndex = 100 - absDistance;
-
-              return (
-                <article
-                  key={`desktop-story-${story.name}`}
-                  className={`absolute left-1/2 top-6 w-[560px] max-w-[78vw] rounded-[22px] border border-white/45 bg-gradient-to-br p-7 shadow-[0_34px_60px_-34px_rgba(15,23,42,0.55)] transition-all duration-500 ${story.tone}`}
-                  style={{
-                    transform: `translateX(calc(-50% + ${translateX}px)) scale(${scale}) rotate(${rotate}deg)`,
-                    opacity,
-                    zIndex,
-                    filter: `blur(${blur}px)`
-                  }}
-                >
-                  <div className="grid h-full min-h-[320px] grid-cols-[1.14fr_0.86fr] gap-6">
-                    <div className="flex h-full flex-col justify-between">
-                      <p className="text-[1.45rem] italic font-medium leading-[1.45]">&ldquo;{story.quote}&rdquo;</p>
-                      <div className="pt-5">
-                        <p
-                          className="text-5xl leading-none text-white"
-                          style={{ fontFamily: "'Brush Script MT', 'Segoe Script', cursive" }}
-                        >
-                          {story.name}
-                        </p>
-                        <p className="mt-2 text-sm text-white/90">{story.role}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="relative h-full min-h-[320px] overflow-hidden rounded-2xl border border-white/35 bg-white/20">
-                        <Image src={story.image} alt={story.name} fill className="object-cover" />
-                      </div>
-                    </div>
+                <div className="space-y-4 text-center">
+                  <p className="text-[1.08rem] italic leading-7">&ldquo;{story.quote}&rdquo;</p>
+                  <div>
+                    <p
+                      className="text-4xl leading-none text-white"
+                      style={{ fontFamily: "'Brush Script MT', 'Segoe Script', cursive" }}
+                    >
+                      {story.name}
+                    </p>
+                    <p className="mt-2 text-sm text-white/90">{story.role}</p>
                   </div>
-                </article>
-              );
-            })}
-          </div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
 
-          <div className="absolute bottom-1 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white/85 px-4 py-2 shadow-sm">
-            {stories.map((_, index) => (
-              <span
-                key={`story-dot-${index}`}
-                className={`block h-2.5 rounded-full transition-all ${
-                  index === activeIndex ? "w-7 bg-primary" : "w-2.5 bg-slate-300"
-                }`}
-              />
-            ))}
+        <div className="relative mt-10 hidden md:block" style={{ height: `${stickyHeightVh}vh` }}>
+          <div className="sticky top-24 h-[450px] overflow-visible">
+            <div className="relative h-full">
+              {stories.map((story, index) => {
+                const distance = index - activeIndex;
+                const absDistance = Math.abs(distance);
+                const clampedDistance = clamp(distance, -4, 4);
+                const translateX = clampedDistance * 132;
+                const scale =
+                  absDistance === 0 ? 1.07 : absDistance === 1 ? 0.9 : absDistance === 2 ? 0.8 : 0.72;
+                const opacity = absDistance > 4 ? 0 : absDistance === 0 ? 1 : 0.22;
+                const blur = absDistance === 0 ? 0 : Math.min(5.5, absDistance * 1.6);
+                const rotate = clampedDistance * -2.5;
+                const zIndex = 100 - absDistance;
+
+                return (
+                  <article
+                    key={`desktop-story-${story.name}`}
+                    className={`absolute left-1/2 top-6 w-[560px] max-w-[78vw] rounded-[22px] border border-white/45 bg-gradient-to-br p-7 shadow-[0_34px_60px_-34px_rgba(15,23,42,0.55)] transition-all duration-500 ${story.tone}`}
+                    style={{
+                      transform: `translateX(calc(-50% + ${translateX}px)) scale(${scale}) rotate(${rotate}deg)`,
+                      opacity,
+                      zIndex,
+                      filter: `blur(${blur}px)`
+                    }}
+                  >
+                    <div className="grid h-full min-h-[320px] grid-cols-[1.14fr_0.86fr] gap-6">
+                      <div className="flex h-full flex-col justify-between">
+                        <p className="text-[1.45rem] italic font-medium leading-[1.45]">&ldquo;{story.quote}&rdquo;</p>
+                        <div className="pt-5">
+                          <p
+                            className="text-5xl leading-none text-white"
+                            style={{ fontFamily: "'Brush Script MT', 'Segoe Script', cursive" }}
+                          >
+                            {story.name}
+                          </p>
+                          <p className="mt-2 text-sm text-white/90">{story.role}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="relative h-full min-h-[320px] overflow-hidden rounded-2xl border border-white/35 bg-white/20">
+                          <Image src={story.image} alt={story.name} fill className="object-cover" />
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="absolute bottom-1 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white/85 px-4 py-2 shadow-sm">
+              {stories.map((_, index) => (
+                <span
+                  key={`story-dot-${index}`}
+                  className={`block h-2.5 rounded-full transition-all ${
+                    index === activeIndex ? "w-7 bg-primary" : "w-2.5 bg-slate-300"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>

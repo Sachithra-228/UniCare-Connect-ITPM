@@ -247,9 +247,9 @@ export function AidRequestForm({
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-4 text-slate-100" onSubmit={handleSubmit}>
       <div className="space-y-2">
-        <label className="text-sm font-medium" htmlFor="category">
+        <label className="text-sm font-medium text-slate-100" htmlFor="category">
           {text.category}
         </label>
         <Select
@@ -260,6 +260,7 @@ export function AidRequestForm({
           value={category}
           onChange={(event) => setCategory(event.target.value)}
           disabled={lockCategory}
+          className="border-white/25 bg-white/10 text-slate-100 focus-visible:ring-white/25 dark:border-white/25 dark:bg-white/10 dark:text-slate-100"
         >
           <option value="">{text.select}</option>
           <option value="emergency">{text.emergency}</option>
@@ -269,7 +270,7 @@ export function AidRequestForm({
         </Select>
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium" htmlFor="amount">
+        <label className="text-sm font-medium text-slate-100" htmlFor="amount">
           {text.amount}
         </label>
         <div className="flex items-center gap-2">
@@ -283,13 +284,13 @@ export function AidRequestForm({
             onChange={handleAmountChange}
             required
             aria-required="true"
-            className="flex-1"
+            className="flex-1 border-white/25 bg-white/10 text-slate-100 placeholder:text-slate-300 focus-visible:ring-white/25 dark:border-white/25 dark:bg-white/10 dark:text-slate-100"
           />
-          <span className="shrink-0 text-sm font-medium text-slate-500 dark:text-slate-400">SL LKR</span>
+          <span className="shrink-0 text-sm font-medium text-blue-100">SL LKR</span>
         </div>
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium" htmlFor="description">
+        <label className="text-sm font-medium text-slate-100" htmlFor="description">
           {text.summary}
         </label>
         <TextArea
@@ -299,15 +300,22 @@ export function AidRequestForm({
           required
           aria-required="true"
           placeholder={text.summaryPlaceholder}
+          className="border-white/25 bg-white/10 text-slate-100 placeholder:text-slate-300 focus-visible:ring-white/25 dark:border-white/25 dark:bg-white/10 dark:text-slate-100 dark:placeholder:text-slate-300"
         />
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-medium" htmlFor="document">
+        <label className="text-sm font-medium text-slate-100" htmlFor="document">
           {text.documents}
         </label>
-        <Input id="document" name="document" type="file" aria-label={text.uploadAria} />
+        <Input
+          id="document"
+          name="document"
+          type="file"
+          aria-label={text.uploadAria}
+          className="border-white/25 bg-white/10 text-slate-200 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-500 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-white hover:file:bg-blue-400 focus-visible:ring-white/25 dark:border-white/25 dark:bg-white/10 dark:text-slate-200 dark:file:bg-blue-500 dark:hover:file:bg-blue-400"
+        />
       </div>
-      {message ? <p className="text-sm text-secondary">{message}</p> : null}
+      {message ? <p className="text-sm text-blue-100">{message}</p> : null}
       <Button type="submit" disabled={submitting} className="block w-full text-center">
         {submitting ? text.submitting : submitLabel ?? text.submit}
       </Button>

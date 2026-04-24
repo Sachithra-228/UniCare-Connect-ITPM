@@ -40,6 +40,7 @@ import {
   type NgoPartnership,
   type NgoVerificationNotification,
 } from "@/lib/ngo-demo-store";
+import { NgoPartnershipSection } from "@/components/shared/ngo-partnership-section";
 
 
 function fmtLKR(n: number) {
@@ -98,6 +99,7 @@ export function NgoSectionContent({ sectionId }: NgoSectionContentProps) {
       case "beneficiaries":     return NgoBeneficiariesSection;
       case "reports":           return NgoReportsSection;
       case "partnerships":      return NgoPartnershipsSection;
+      case "ngo-partnerships":  return NgoManagedPartnershipRequestsSection;
       case "communications":    return NgoCommunicationsSection;
       case "profile":           return NgoProfileSection;
       default:                  return NgoOrganizationHomeSection;
@@ -1370,6 +1372,10 @@ function NgoPartnershipsSection() {
       </div>
     </div>
   );
+}
+
+function NgoManagedPartnershipRequestsSection() {
+  return <NgoPartnershipSection viewerRole="ngo" />;
 }
 function NgoCommunicationsSection() {
   const [history, setHistory] = useState(getNgoCommunications());
