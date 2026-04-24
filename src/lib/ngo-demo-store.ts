@@ -6,7 +6,8 @@
    Added: localStorage persistence to survive page refreshes.
    ----------------------------------------------------------------- */
 
-const STORAGE_KEY = "unicare_ngo_store_v2";
+const STORAGE_KEY = "unicare_ngo_store_v3";
+
 
 function saveToStorage() {
   if (typeof window === "undefined") return;
@@ -179,15 +180,127 @@ export type NgoApplication = {
 
 // ─── Seed data (CLEAN SLATE) ─────────────────────────────────────
 
-let programs: NgoProgram[] = [];
-let beneficiaries: NgoBeneficiary[] = [];
+const nowIso = new Date().toISOString();
+
+let programs: NgoProgram[] = [
+  {
+    _id: "np1",
+    title: "Mahapola Scholarship Support",
+    description: "Monthly financial aid for low-income university students.",
+    category: "education",
+    status: "active",
+    budget: 5000000,
+    disbursed: 1250000,
+    beneficiaryCount: 85,
+    eligibility: "GPA > 3.0, Household income < 500k/yr",
+    targetUniversity: "All National Universities",
+    connectedTo: ["student", "admin"],
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  },
+  {
+    _id: "np2",
+    title: "HEI Emergency Fund",
+    description: "One-time grants for students facing sudden financial crisis.",
+    category: "emergency",
+    status: "active",
+    budget: 2000000,
+    disbursed: 450000,
+    beneficiaryCount: 24,
+    eligibility: "Documented emergency (medical, loss of guardian)",
+    targetUniversity: "University of Colombo, UOM",
+    connectedTo: ["student", "admin"],
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  }
+];
+
+let beneficiaries: NgoBeneficiary[] = [
+  {
+    _id: "nb1",
+    programId: "np1",
+    programTitle: "Mahapola Scholarship Support",
+    initials: "A.B.C.",
+    university: "University of Colombo",
+    status: "active",
+    supportReceived: 45000,
+    supportRequested: 180000,
+    isDisbursed: true,
+    retentionIndicator: "on-track",
+    enrolledAt: nowIso,
+    consentRecorded: true,
+  },
+  {
+    _id: "nb2",
+    programId: "np2",
+    programTitle: "HEI Emergency Fund",
+    initials: "S.T.R.",
+    university: "University of Moratuwa",
+    status: "active",
+    supportReceived: 25000,
+    supportRequested: 25000,
+    isDisbursed: true,
+    retentionIndicator: "on-track",
+    enrolledAt: nowIso,
+    consentRecorded: false,
+  }
+];
+
 let ngoVerificationNotifications: NgoVerificationNotification[] = [];
 let disbursementNotifications: NgoDisbursementNotification[] = [];
-let fundingRecords: NgoFundingRecord[] = [];
+let fundingRecords: NgoFundingRecord[] = [
+  {
+    _id: "nf1",
+    donorName: "Ministry of Higher Education",
+    donorType: "government",
+    amount: 3500000,
+    allocatedTo: "Mahapola Scholarship Support",
+    programId: "np1",
+    status: "received",
+    date: nowIso,
+  },
+  {
+    _id: "nf2",
+    donorName: "University Grants Commission",
+    donorType: "government",
+    amount: 1500000,
+    allocatedTo: "HEI Emergency Fund",
+    programId: "np2",
+    status: "received",
+    date: nowIso,
+  },
+  {
+    _id: "nf3",
+    donorName: "Dialog Axiata",
+    donorType: "corporate",
+    amount: 1000000,
+    allocatedTo: "Mahapola Scholarship Support",
+    programId: "np1",
+    status: "allocated",
+    date: nowIso,
+  }
+];
+
 let partnerships: NgoPartnership[] = [];
 let communications: NgoCommunication[] = [];
 let reports: NgoReport[] = [];
-let impactStories: NgoImpactStory[] = [];
+let impactStories: NgoImpactStory[] = [
+  {
+    _id: "is1",
+    title: "Mahapola Support Success",
+    summary: "Sajini Perera was able to complete her semester thanks to timely Mahapola disbursement.",
+    connectedParty: "student",
+    date: nowIso,
+  },
+  {
+    _id: "is2",
+    title: "HEI Emergency Grant Impact",
+    summary: "A student from UOM received emergency medical support within 24 hours.",
+    connectedParty: "admin",
+    date: nowIso,
+  }
+];
+
 let applications: NgoApplication[] = [];
 
 // ─── Accessors ───────────────────────────────────────────────────
@@ -512,12 +625,13 @@ export function updateNgoApplicationStatus(id: string, status: NgoApplication["s
 export function getNgoSummaryStats() {
   const activeProgs = programs.filter((p) => p.status === "active").length;
   const totalBeneficiaries = beneficiaries.filter((b) => b.status !== "paused").length;
-  const totalFundsReceived = fundingRecords.reduce((s, f) => s + f.amount, 0);
+  const totalBudget = programs.reduce((s, p) => s + p.budget, 0);
+  const totalDonorContributions = fundingRecords.reduce((s, f) => s + f.amount, 0);
   const totalDisbursed = programs.reduce((s, p) => s + p.disbursed, 0);
   const pendingAllocations = fundingRecords.filter((f) => f.status === "pending" || f.status === "received").length;
   const onTrack = beneficiaries.filter((b) => b.retentionIndicator === "on-track" || b.retentionIndicator === "graduated").length;
   const retentionRate = beneficiaries.length > 0 ? Math.round((onTrack / beneficiaries.length) * 100) : 0;
-  return { activeProgs, totalBeneficiaries, totalFundsReceived, totalDisbursed, pendingAllocations, retentionRate };
+  return { activeProgs, totalBeneficiaries, totalBudget, totalDonorContributions, totalDisbursed, pendingAllocations, retentionRate };
 }
 
 // ─── Initialization ──────────────────────────────────────────────

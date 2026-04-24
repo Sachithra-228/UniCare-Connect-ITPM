@@ -38,6 +38,8 @@ import {
   deleteNgoPartnership,
   getEligiblePartners,
   addNgoCommunication,
+  addNgoFundingRecord,
+
 
 
   markReportGenerated,
@@ -137,9 +139,10 @@ function NgoOrganizationHomeSection() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Active Programs" value={String(stats.activeProgs)} description="Running support initiatives" />
         <StatCard label="Beneficiaries" value={String(stats.totalBeneficiaries)} description="Students receiving support" />
-        <StatCard label="Funds Received" value={fmtLKR(stats.totalFundsReceived)} description="Total donor contributions" />
-        <StatCard label="Retention Rate" value={`${stats.retentionRate}%`} description="Students on-track / graduated" />
+        <StatCard label="Total Budget" value={fmtLKR(stats.totalBudget)} description="Total allocated for programs" />
+        <StatCard label="Donor Contributions" value={fmtLKR(stats.totalDonorContributions)} description="Actual funds received" />
       </div>
+
 
       <div className="grid gap-4 sm:grid-cols-3">
         {[
@@ -506,8 +509,25 @@ function NgoProgramsSection() {
   );
 }
 function NgoFundingSection() {
-  const [records] = useState(getNgoFundingRecords());
+  const [records, setRecords] = useState(getNgoFundingRecords());
   const programs = getNgoPrograms();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newRecord, setNewRecord] = useState({
+    donorName: "",
+    donorType: "corporate" as const,
+    amount: 0,
+    programId: programs[0]?._id || "",
+    status: "received" as const,
+  });
+
+  useEffect(() => {
+    const sync = () => {
+      setRecords(getNgoFundingRecords());
+    };
+    sync();
+    const interval = window.setInterval(sync, 2000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const totalReceived = records.reduce((s, r) => s + r.amount, 0);
   const totalDisbursed = programs.reduce((s, p) => s + p.disbursed, 0);
@@ -518,6 +538,31 @@ function NgoFundingSection() {
     .filter((r) => r.status === "pending" || r.status === "received")
     .reduce((s, r) => s + r.amount, 0);
 
+  const handleAddRecord = () => {
+    if (!newRecord.donorName || newRecord.amount <= 0) return;
+    const prog = programs.find(p => p._id === newRecord.programId);
+    addNgoFundingRecord({
+      ...newRecord,
+      allocatedTo: prog?.title || "General Fund",
+      date: new Date().toISOString()
+    });
+    
+    // Refresh local state immediately
+    const updated = getNgoFundingRecords();
+    setRecords(updated);
+    setShowAddForm(false);
+    
+    // Reset form
+    setNewRecord({
+      donorName: "",
+      donorType: "corporate",
+      amount: 0,
+      programId: programs[0]?._id || "",
+      status: "received",
+    });
+  };
+
+
   const chartData = programs.map((p) => ({
     name: p.title.split(" ").slice(0, 3).join(" "),
     Budget: p.budget / 1000,
@@ -526,6 +571,53 @@ function NgoFundingSection() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold">Funding Overview</h3>
+        <Button variant="primary" size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+          {showAddForm ? "Cancel" : "Add Funding Record"}
+        </Button>
+      </div>
+
+      <AnimatePresence>
+        {showAddForm && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <Card className="space-y-4 p-5 border-primary/20 bg-primary/5">
+              <p className="text-sm font-semibold">New Funding Contribution</p>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Donor Name</label>
+                  <Input value={newRecord.donorName} onChange={e => setNewRecord({...newRecord, donorName: e.target.value})} placeholder="e.g. Dialog Axiata" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Type</label>
+                  <select className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900"
+                    value={newRecord.donorType} onChange={e => setNewRecord({...newRecord, donorType: e.target.value as any})}>
+                    <option value="corporate">Corporate</option>
+                    <option value="government">Government</option>
+                    <option value="individual">Individual</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Amount (LKR)</label>
+                  <Input type="number" value={newRecord.amount || ""} onChange={e => setNewRecord({...newRecord, amount: Number(e.target.value)})} placeholder="500000" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Program</label>
+                  <select className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900"
+                    value={newRecord.programId} onChange={e => setNewRecord({...newRecord, programId: e.target.value})}>
+                    <option value="">General Fund</option>
+                    {programs.map(p => <option key={p._id} value={p._id}>{p.title}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button variant="primary" onClick={handleAddRecord} disabled={!newRecord.donorName || newRecord.amount <= 0}>Save Contribution</Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="grid gap-4 sm:grid-cols-4">
         <StatCard label="Total Received" value={fmtLKR(totalReceived)} description="All donor contributions" />
         <StatCard label="Allocated" value={fmtLKR(totalAllocated)} description="Assigned to programs" />
@@ -547,7 +639,7 @@ function NgoFundingSection() {
       </Card>
 
       <Card className="space-y-3 p-5">
-        <p className="text-sm font-semibold">Donor Contributions</p>
+        <p className="text-sm font-semibold">Donor Contributions History</p>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
@@ -562,11 +654,11 @@ function NgoFundingSection() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {records.map((r) => (
                 <tr key={r._id}>
-                  <td className="py-2 font-medium text-slate-800 dark:text-slate-200">
+                  <td className="py-2 font-medium text-slate-800 dark:text-white">
                     <div>{r.donorName}</div>
                     <span className="text-[10px] capitalize text-slate-400">{r.donorType}</span>
                   </td>
-                  <td className="py-2 font-semibold">{fmtLKR(r.amount)}</td>
+                  <td className="py-2 font-semibold text-slate-900 dark:text-slate-100">{fmtLKR(r.amount)}</td>
                   <td className="max-w-[120px] truncate py-2 text-slate-600 dark:text-slate-300">{r.allocatedTo}</td>
                   <td className="py-2 text-slate-500">{fmtDate(r.date)}</td>
                   <td className="py-2"><StatusBadge status={r.status} /></td>
@@ -578,6 +670,7 @@ function NgoFundingSection() {
       </Card>
     </div>
   );
+
 }
 function NgoBeneficiariesSection() {
   const [beneficiaries, setBeneficiaries] = useState(getNgoBeneficiaries());
