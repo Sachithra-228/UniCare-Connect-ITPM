@@ -497,47 +497,210 @@ export function ParentLiveMyStudentSection() {
     }
   };
 
-  return (
-    <div className="space-y-5">
-      <SectionNotice text="Parent private tracker is visible only to parent accounts. Students cannot see these notes." />
-      {error ? <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</Card> : null}
-      {info ? <Card className={`p-3 text-sm ${info.type === "ok" ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200" : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"}`}>{info.text}</Card> : null}
+  const aidRequestsTotal = data?.stats.aidRequests ?? 0;
+  const pendingAidRequests = data?.stats.pendingAidRequests ?? 0;
+  const applicationsTotal = data?.stats.applications ?? 0;
+  const pendingApplications = data?.stats.pendingApplications ?? 0;
+  const mentorshipSessionsTotal = data?.stats.mentorshipSessions ?? 0;
 
-      <Card className="space-y-4 p-4">
-        <h3 className="text-sm font-semibold">Link student</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400">Enter student email, name, or student id to connect this parent profile with live student data.</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <Input value={linkInput} onChange={(event) => setLinkInput(event.target.value)} placeholder="student@email.com or full name" className="max-w-md" />
-          <Button variant="primary" onClick={linkStudent} disabled={linkSaving}>{linkSaving ? "Saving..." : "Save link"}</Button>
-          <Button variant="ghost" onClick={unlinkStudent} disabled={linkSaving || !data?.linkedStudent}>Remove link</Button>
-        </div>
-        {data?.linkedStudent ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-800 dark:bg-slate-950">
-            <p className="font-semibold text-slate-900 dark:text-slate-100">{data.linkedStudent.name}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {data.linkedStudent.email || "No email"}
-              {data.linkedStudent.university ? ` • ${data.linkedStudent.university}` : ""}
-              {data.linkedStudent.linkSource ? ` • linked by ${data.linkedStudent.linkSource}` : ""}
-            </p>
+  const studentOverviewCards = [
+    {
+      label: "Aid requests",
+      value: aidRequestsTotal,
+      description: `${pendingAidRequests} pending review`,
+      accent: "from-sky-500 to-blue-500"
+    },
+    {
+      label: "Applications",
+      value: applicationsTotal,
+      description: `${pendingApplications} awaiting updates`,
+      accent: "from-cyan-500 to-sky-500"
+    },
+    {
+      label: "Mentorship sessions",
+      value: mentorshipSessionsTotal,
+      description: "Live student-linked sessions",
+      accent: "from-indigo-500 to-blue-500"
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-700 via-indigo-700 to-sky-600 p-0 text-white shadow-xl">
+        <div className="relative space-y-4 p-5 sm:p-6">
+          <div className="pointer-events-none absolute inset-4 rounded-none bg-white/10" />
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="relative space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-100">
+                Parent Dashboard
+              </p>
+              <h2 className="text-xl font-semibold text-white sm:text-2xl">My Student</h2>
+              <p className="max-w-2xl text-sm text-sky-50/90">
+                Link and monitor your student with a cleaner workspace for support activity,
+                applications, and parent-only tracking notes.
+              </p>
+            </div>
+            <span className="relative rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+              Live data
+            </span>
           </div>
-        ) : <p className="text-sm text-slate-500">No linked student yet.</p>}
+
+          <div className="relative rounded-xl border border-white/20 bg-white/10 p-3 text-sm text-sky-50">
+            Parent private tracker is visible only to parent accounts. Students cannot see these notes.
+          </div>
+
+          {data?.linkedStudent ? (
+            <div className="relative rounded-2xl border border-white/20 bg-white/10 p-3 text-sm text-white">
+              <p>
+                <span className="font-semibold">Linked student:</span> {data.linkedStudent.name}
+              </p>
+              <p className="mt-1 text-xs text-sky-50/85">
+                {data.linkedStudent.email || "No email"}
+                {data.linkedStudent.university ? ` • ${data.linkedStudent.university}` : ""}
+                {data.linkedStudent.linkSource ? ` • linked by ${data.linkedStudent.linkSource}` : ""}
+              </p>
+            </div>
+          ) : (
+            <div className="relative rounded-2xl border border-white/20 bg-white/10 p-3 text-sm text-white">
+              No linked student yet. Add email, name, or student id below to connect live data.
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {error ? (
+        <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+          {error}
+        </Card>
+      ) : null}
+      {info ? (
+        <Card
+          className={`p-3 text-sm ${
+            info.type === "ok"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+              : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
+          }`}
+        >
+          {info.text}
+        </Card>
+      ) : null}
+
+      <Card className="space-y-4 border-slate-100 p-5 shadow-sm dark:border-slate-800">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Link student</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Enter student email, full name, or student id to connect this parent profile.
+          </p>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-[1fr,auto] lg:items-center">
+          <Input
+            value={linkInput}
+            onChange={(event) => setLinkInput(event.target.value)}
+            placeholder="student@email.com or full name"
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="primary"
+              onClick={linkStudent}
+              disabled={linkSaving}
+              className="min-w-[132px] shadow-sm"
+            >
+              {linkSaving ? "Saving..." : "Save link"}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={unlinkStudent}
+              disabled={linkSaving || !data?.linkedStudent}
+              className="min-w-[132px]"
+            >
+              Remove link
+            </Button>
+          </div>
+        </div>
       </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Aid requests" value={String(data?.stats.aidRequests ?? 0)} description={`${data?.stats.pendingAidRequests ?? 0} pending`} />
-        <StatCard label="Applications" value={String(data?.stats.applications ?? 0)} description={`${data?.stats.pendingApplications ?? 0} pending`} />
-        <StatCard label="Mentorship sessions" value={String(data?.stats.mentorshipSessions ?? 0)} description="Live student-linked sessions" />
+        {studentOverviewCards.map((item) => {
+          const progressMax = Math.max(item.value, 1);
+          const pendingCount =
+            item.label === "Aid requests"
+              ? pendingAidRequests
+              : item.label === "Applications"
+                ? pendingApplications
+                : 0;
+          const progress = Math.min(100, Math.round((pendingCount / progressMax) * 100));
+
+          return (
+            <Card
+              key={item.label}
+              className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-md dark:border-slate-800 dark:bg-slate-900"
+            >
+              <div className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${item.accent}`} />
+              <div className="relative space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                  {item.label}
+                </p>
+                <p className="text-3xl font-semibold leading-none text-slate-900 dark:text-white">
+                  {item.value}
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-300">{item.description}</p>
+                <div className="space-y-1.5">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {item.label === "Mentorship sessions"
+                      ? "Engagement indicator"
+                      : `${progress}% pending ratio`}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
       </div>
 
-      <Card className="space-y-4 p-4">
-        <h3 className="text-sm font-semibold">Private tracker (parent only)</h3>
+      <Card className="space-y-4 border-slate-100 p-5 shadow-sm dark:border-slate-800">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Private tracker (parent only)</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Add private notes for follow-ups, reminders, and meetings.
+          </p>
+        </div>
+
         <div className="grid gap-2 md:grid-cols-2">
           <Input value={noteTitle} onChange={(event) => setNoteTitle(event.target.value)} placeholder="Note title" />
           <Input value={noteTag} onChange={(event) => setNoteTag(event.target.value)} placeholder="Tag" />
         </div>
-        <textarea value={noteBody} onChange={(event) => setNoteBody(event.target.value)} placeholder="Private note" className="min-h-[90px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"><input type="checkbox" checked={notePinned} onChange={(event) => setNotePinned(event.target.checked)} className="rounded" />Pin this note</label>
-        <Button variant="primary" onClick={addPrivateNote} disabled={noteSaving || loading}>{noteSaving ? "Saving..." : "Add note"}</Button>
+        <textarea
+          value={noteBody}
+          onChange={(event) => setNoteBody(event.target.value)}
+          placeholder="Private note"
+          className="min-h-[90px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        />
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={notePinned}
+            onChange={(event) => setNotePinned(event.target.checked)}
+            className="rounded"
+          />
+          Pin this note
+        </label>
+        <div className="flex justify-start">
+          <Button
+            variant="primary"
+            onClick={addPrivateNote}
+            disabled={noteSaving || loading}
+            className="min-w-[132px] shadow-sm"
+          >
+            {noteSaving ? "Saving..." : "Add note"}
+          </Button>
+        </div>
 
         <div className="space-y-2">
           {(data?.trackerNotes ?? []).map((item) => (
@@ -548,29 +711,71 @@ export function ParentLiveMyStudentSection() {
                     <Input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} />
                     <Input value={editTag} onChange={(event) => setEditTag(event.target.value)} />
                   </div>
-                  <textarea value={editBody} onChange={(event) => setEditBody(event.target.value)} className="min-h-[80px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                  <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={editPinned} onChange={(event) => setEditPinned(event.target.checked)} className="rounded" />Pinned</label>
-                  <div className="flex gap-2"><Button variant="primary" onClick={saveEdit}>Save</Button><Button variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button></div>
+                  <textarea
+                    value={editBody}
+                    onChange={(event) => setEditBody(event.target.value)}
+                    className="min-h-[80px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                  <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={editPinned}
+                      onChange={(event) => setEditPinned(event.target.checked)}
+                      className="rounded"
+                    />
+                    Pinned
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="primary" onClick={saveEdit} className="min-w-[110px] shadow-sm">
+                      Save
+                    </Button>
+                    <Button variant="secondary" onClick={() => setEditingId(null)} className="min-w-[110px]">
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <>
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
-                    <div className="flex items-center gap-2">{item.isPinned ? <span className="text-xs font-medium text-primary">Pinned</span> : null}<span className="text-xs text-slate-500">{item.tag}</span></div>
+                    <div className="flex items-center gap-2">
+                      {item.isPinned ? (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                          Pinned
+                        </span>
+                      ) : null}
+                      <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {item.tag}
+                      </span>
+                    </div>
                   </div>
                   <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{item.note}</p>
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
                     <span>{formatDateTime(item.updatedAt || item.createdAt)}</span>
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => startEdit(item)} className="font-medium text-primary hover:underline">Edit</button>
-                      <button type="button" onClick={() => void deleteNote(item._id)} className="font-medium text-rose-600 hover:underline dark:text-rose-300">Delete</button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(item)}
+                        className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary transition hover:bg-primary/20"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteNote(item._id)}
+                        className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </>
               )}
             </div>
           ))}
-          {!loading && !(data?.trackerNotes?.length ?? 0) ? <p className="text-sm text-slate-500">No private tracking notes yet.</p> : null}
+          {!loading && !(data?.trackerNotes?.length ?? 0) ? (
+            <p className="text-sm text-slate-500">No private tracking notes yet.</p>
+          ) : null}
         </div>
       </Card>
     </div>
@@ -580,40 +785,141 @@ export function ParentLiveMyStudentSection() {
 export function ParentLiveFinancialOverviewSection() {
   const { data, loading, error } = useParentDashboard();
 
+  const aidRequests = data?.aidRequests ?? [];
+  const applications = data?.applications ?? [];
+  const financialStats = [
+    {
+      label: "Aid requests",
+      value: data?.stats.aidRequests ?? 0,
+      description: "Total",
+      accent: "from-sky-500 to-blue-500"
+    },
+    {
+      label: "Pending aid",
+      value: data?.stats.pendingAidRequests ?? 0,
+      description: "Needs review",
+      accent: "from-cyan-500 to-sky-500"
+    },
+    {
+      label: "Applications",
+      value: data?.stats.applications ?? 0,
+      description: "Jobs + scholarships",
+      accent: "from-indigo-500 to-blue-500"
+    },
+    {
+      label: "Pending applications",
+      value: data?.stats.pendingApplications ?? 0,
+      description: "Awaiting updates",
+      accent: "from-teal-500 to-sky-500"
+    }
+  ];
+
   return (
-    <div className="space-y-5">
-      <SectionNotice text="Financial overview is generated from live aid requests and student applications." />
-      {error ? <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">{error}</Card> : null}
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Aid requests" value={String(data?.stats.aidRequests ?? 0)} description="Total" />
-        <StatCard label="Pending aid" value={String(data?.stats.pendingAidRequests ?? 0)} description="Needs review" />
-        <StatCard label="Applications" value={String(data?.stats.applications ?? 0)} description="Jobs + scholarships" />
-        <StatCard label="Pending applications" value={String(data?.stats.pendingApplications ?? 0)} description="Awaiting updates" />
+    <div className="space-y-6">
+      <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-700 via-indigo-700 to-sky-600 p-0 text-white shadow-xl">
+        <div className="relative space-y-4 p-5 sm:p-6">
+          <div className="pointer-events-none absolute inset-4 rounded-none bg-white/10" />
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="relative space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-100">
+                Parent Dashboard
+              </p>
+              <h2 className="text-xl font-semibold text-white sm:text-2xl">
+                Financial Overview
+              </h2>
+              <p className="max-w-2xl text-sm text-sky-50/90">
+                Monitor student financial activity with a clearer summary of aid requests,
+                applications, and status progress.
+              </p>
+            </div>
+            <span className="relative rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+              Live financial data
+            </span>
+          </div>
+
+          <div className="relative rounded-xl border border-white/20 bg-white/10 p-3 text-sm text-sky-50">
+            Financial overview is generated from live aid requests and student applications.
+          </div>
+        </div>
+      </Card>
+
+      {error ? (
+        <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+          {error}
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {financialStats.map((item) => (
+          <Card
+            key={item.label}
+            className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-md dark:border-slate-800 dark:bg-slate-900"
+          >
+            <div className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${item.accent}`} />
+            <div className="relative space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                {item.label}
+              </p>
+              <p className="text-3xl font-semibold leading-none text-slate-900 dark:text-white">{item.value}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-300">{item.description}</p>
+            </div>
+          </Card>
+        ))}
       </div>
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Aid request timeline</h3>
-        <div className="space-y-2">
-          {(data?.aidRequests ?? []).map((item) => (
-            <div key={item._id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-800 dark:bg-slate-950">
-              <div className="flex items-center justify-between gap-2"><p className="font-medium text-slate-900 dark:text-slate-100">{item.category}</p><StatusPill value={item.status} /></div>
-              <p className="mt-1 text-xs text-slate-500">Submitted: {formatDate(item.submittedAt)}</p>
-            </div>
-          ))}
-          {!loading && !(data?.aidRequests?.length ?? 0) ? <p className="text-sm text-slate-500">No aid requests found for linked student.</p> : null}
-        </div>
-      </Card>
-      <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-semibold">Application timeline</h3>
-        <div className="space-y-2">
-          {(data?.applications ?? []).map((item) => (
-            <div key={item._id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-800 dark:bg-slate-950">
-              <div className="flex items-center justify-between gap-2"><p className="font-medium text-slate-900 dark:text-slate-100">{item.title}</p><StatusPill value={item.status} /></div>
-              <p className="mt-1 text-xs text-slate-500">{item.kind.toUpperCase()}{item.organization ? ` • ${item.organization}` : ""}{item.submittedAt ? ` • ${formatDate(item.submittedAt)}` : ""}</p>
-            </div>
-          ))}
-          {!loading && !(data?.applications?.length ?? 0) ? <p className="text-sm text-slate-500">No student applications found yet.</p> : null}
-        </div>
-      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="space-y-3 border-slate-100 p-4 shadow-sm dark:border-slate-800">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Aid request timeline</h3>
+            <span className="text-xs text-slate-500">{aidRequests.length} items</span>
+          </div>
+          <div className="space-y-2">
+            {aidRequests.map((item) => (
+              <div
+                key={item._id}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm transition hover:bg-white dark:border-slate-800 dark:bg-slate-950"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium text-slate-900 dark:text-slate-100">{item.category}</p>
+                  <StatusPill value={item.status} />
+                </div>
+                <p className="mt-1 text-xs text-slate-500">Submitted: {formatDate(item.submittedAt)}</p>
+              </div>
+            ))}
+            {!loading && !aidRequests.length ? (
+              <p className="text-sm text-slate-500">No aid requests found for linked student.</p>
+            ) : null}
+          </div>
+        </Card>
+
+        <Card className="space-y-3 border-slate-100 p-4 shadow-sm dark:border-slate-800">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Application timeline</h3>
+            <span className="text-xs text-slate-500">{applications.length} items</span>
+          </div>
+          <div className="space-y-2">
+            {applications.map((item) => (
+              <div
+                key={item._id}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm transition hover:bg-white dark:border-slate-800 dark:bg-slate-950"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium text-slate-900 dark:text-slate-100">{item.title}</p>
+                  <StatusPill value={item.status} />
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {item.kind.toUpperCase()}
+                  {item.organization ? ` • ${item.organization}` : ""}
+                  {item.submittedAt ? ` • ${formatDate(item.submittedAt)}` : ""}
+                </p>
+              </div>
+            ))}
+            {!loading && !applications.length ? (
+              <p className="text-sm text-slate-500">No student applications found yet.</p>
+            ) : null}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
