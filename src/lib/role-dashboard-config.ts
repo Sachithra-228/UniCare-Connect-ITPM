@@ -69,6 +69,17 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
         ]
       },
       {
+        id: "aid-matching",
+        menuLabel: "Smart Aid Matching",
+        icon: "✨",
+        title: "Smart Aid Matching",
+        items: [
+          "Check your financial-need index privately",
+          "See scholarships ranked for you with reasons",
+          "Optionally share your assessment with the welfare office"
+        ]
+      },
+      {
         id: "career",
         menuLabel: "Career",
         icon: "💼",
@@ -196,6 +207,28 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Fee waiver applications",
           "Equipment requests from students",
           "Disbursement tracking"
+        ]
+      },
+      {
+        id: "aid-prioritisation",
+        menuLabel: "Aid Prioritisation",
+        icon: "📊",
+        title: "Aid Prioritisation",
+        items: [
+          "AI-ranked queue of students by financial need",
+          "Explainable factors behind every score",
+          "Shortlist students for scholarship awards"
+        ]
+      },
+      {
+        id: "fund-ledger",
+        menuLabel: "Fund Ledger",
+        icon: "🔗",
+        title: "Blockchain Fund Ledger",
+        items: [
+          "Campaign funding and escrow balances",
+          "Milestone-based disbursement progress",
+          "Tamper-evident audit trail"
         ]
       },
       {
@@ -362,6 +395,28 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Fee waiver applications",
           "Equipment requests from students",
           "Disbursement tracking"
+        ]
+      },
+      {
+        id: "aid-prioritisation",
+        menuLabel: "Aid Prioritisation",
+        icon: "📊",
+        title: "Aid Prioritisation",
+        items: [
+          "AI-ranked queue of students by financial need",
+          "Explainable factors behind every score",
+          "Shortlist students for scholarship awards"
+        ]
+      },
+      {
+        id: "fund-ledger",
+        menuLabel: "Fund Ledger",
+        icon: "🔗",
+        title: "Blockchain Fund Ledger",
+        items: [
+          "Campaign funding and escrow balances",
+          "Milestone-based disbursement progress",
+          "Tamper-evident audit trail"
         ]
       },
       {
@@ -579,6 +634,17 @@ export const DASHBOARD_ROLE_CONFIG: Record<DashboardRole, DashboardRoleConfig> =
           "Application review queue",
           "Selected recipients",
           "Disbursement tracking"
+        ]
+      },
+      {
+        id: "fund-transparency",
+        menuLabel: "Fund Transparency",
+        icon: "🔗",
+        title: "Fund Transparency",
+        items: [
+          "See every payment recorded on the blockchain",
+          "Track milestone-based releases to students",
+          "Verify the audit trail yourself"
         ]
       },
       {

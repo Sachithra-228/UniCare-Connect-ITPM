@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-10-07T06:41:36.593Z",
+  "network": "hardhat (in-process)",
+  "solc": "0.8.24, optimizer 200 runs",
+  "target": {
+    "metric": "gas per disbursement",
+    "limit": 250000
+  },
+  "maxDisbursementGas": 150945,
+  "meetsTarget": true,
+  "latency": "not measured locally - must be measured on Sepolia (target < 30 s)",
+  "rows": [
+    {
+      "operation": "deploy ScholarshipEscrow",
+      "gas": 1641387
+    },
+    {
+      "operation": "createCampaign",
+      "gas": 139397
+    },
+    {
+      "operation": "topUpCampaign",
+      "gas": 38240
+    },
+    {
+      "operation": "awardScholarship (4 milestones)",
+      "gas": 218672
+    },
+    {
+      "operation": "verifyMilestone #1 (verify + auto-disburse)",
+      "gas": 150945
+    },
+    {
+      "operation": "verifyMilestone #2 (verify + auto-disburse)",
+      "gas": 74645
+    },
+    {
+      "operation": "verifyMilestone #3 (verify + auto-disburse)",
+      "gas": 74645
+    },
+    {
+      "operation": "verifyMilestone #4 (verify + auto-disburse)",
+      "gas": 71757
+    },
+    {
+      "operation": "revokeAward",
+      "gas": 42798
+    },
+    {
+      "operation": "closeCampaign",
+      "gas": 53006
+    }
+  ]
+}

@@ -59,3 +59,56 @@ paths:
       responses:
         "200":
           description: Analytics data
+
+  /api/c1/ledger:
+    get:
+      summary: "C1 - public blockchain audit ledger (read-only, pseudonymous)"
+      description: >
+        Totals, campaigns, awards and recent events derived from ScholarshipEscrow contract
+        events, plus a SHA-256 integrity fingerprint of the full event log. Source is "live"
+        when C1_RPC_URL and C1_ESCROW_ADDRESS are configured, otherwise a labelled local simulation.
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+          description: Number of most recent events to return
+      responses:
+        "200":
+          description: Ledger meta, summary, recent events and digest
+        "502":
+          description: Live chain unreachable or misconfigured
+  /api/c1/assessments:
+    get:
+      summary: "C1 - assessments (role dependent)"
+      description: >
+        student (default) returns the caller's saved assessment and ranked scholarships;
+        scope=catalogue returns rankable scholarships for on-device matching (student);
+        scope=queue returns students ranked by need with derived fields only (admin, faculty, super_admin).
+      parameters:
+        - in: query
+          name: scope
+          schema: { type: string, enum: [catalogue, queue] }
+      responses:
+        "200":
+          description: Assessment, catalogue or queue
+        "401":
+          description: Not signed in
+        "403":
+          description: Role not allowed
+    post:
+      summary: "C1 - save an assessment (student only, explicit consent required)"
+      description: >
+        Body { profile, consent: true }. The server validates ranges, recomputes the vulnerability
+        index (client-supplied values are ignored) and stores one record per student.
+      responses:
+        "201":
+          description: Saved; returns assessment and recommendations
+        "400":
+          description: Invalid values or missing consent
+        "403":
+          description: Not a student
+    delete:
+      summary: "C1 - erase the caller's stored assessment (withdraw consent)"
+      responses:
+        "200":
+          description: Deleted
