@@ -26,6 +26,8 @@ import {
   Bell,
   CalendarDays,
   ClipboardList,
+  Link2,
+  ListOrdered,
   type LucideIcon
 } from "lucide-react";
 
@@ -38,12 +40,15 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
   wellness: Heart,
   "campus-life": Calendar,
   "my-applications": FileStack,
+  "aid-matching": Sparkles,
   profile: User,
 
   // Admin / faculty
   overview: Home,
   verifications: ShieldCheck,
   "financial-oversight": CircleDollarSign,
+  "aid-prioritisation": ListOrdered,
+  "fund-ledger": Link2,
   "career-services": Briefcase,
   "mentorship-program": Users,
   "counselor-support": Heart,
@@ -63,6 +68,7 @@ const SECTION_ICONS: Record<string, LucideIcon> = {
   // Donor / CSR
   "partner-home": Home,
   "my-scholarships": CircleDollarSign,
+  "fund-transparency": Link2,
   "funded-students": GraduationCap,
   donations: HandCoins,
   "impact-reports": PieChart,

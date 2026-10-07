@@ -1,10 +1,13 @@
 ﻿"use client";
 
+import Link from "next/link";
 import { ModuleHero } from "@/components/shared/module-hero";
 import { useLanguage } from "@/context/language-context";
+import { getC1Text } from "@/lib/c1/i18n";
 
 export default function FinancialAidPage() {
   const { language } = useLanguage();
+  const c1 = getC1Text(language);
 
   const text =
     language === "si"
@@ -63,6 +66,23 @@ export default function FinancialAidPage() {
           { label: text.secondaryAction, href: "/career", variant: "ghost" }
         ]}
       />
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <Link
+          href="/aid-assessment"
+          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-800 dark:bg-slate-900"
+        >
+          <h2 className="text-lg font-semibold">{c1.toolTitle}</h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{c1.privacyNote}</p>
+        </Link>
+        <Link
+          href="/transparency"
+          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-slate-800 dark:bg-slate-900"
+        >
+          <h2 className="text-lg font-semibold">{c1.ledgerTitle}</h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{c1.ledgerSubtitle}</p>
+        </Link>
+      </div>
     </div>
   );
 }

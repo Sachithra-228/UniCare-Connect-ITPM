@@ -9,6 +9,7 @@ import { StudentCampusLife } from "./student-campus-life";
 import { StudentMyApplications } from "./student-my-applications";
 import { StudentCommunications } from "./student-communications";
 import { StudentProfile } from "./student-profile";
+import { StudentAidMatching } from "./student-aid-matching";
 
 const STUDENT_SECTIONS: Record<
   string,
@@ -16,6 +17,7 @@ const STUDENT_SECTIONS: Record<
 > = {
   home: StudentHome,
   "financial-aid": StudentFinancialAid,
+  "aid-matching": StudentAidMatching,
   career: StudentCareer,
   mentorship: StudentMentorship,
   wellness: StudentWellness,

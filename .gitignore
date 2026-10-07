@@ -33,3 +33,18 @@ playwright/.cache/
 
 # OS files
 Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Real or sensitive datasets must NEVER be committed (C1-C4). Folders stay via .gitkeep.
+ml/data/raw/*
+ml/data/private/*
+ml/c[2-4]/data/raw/*
+ml/c[2-4]/data/private/*
+!ml/data/raw/.gitkeep
+!ml/data/private/.gitkeep
+!ml/c[2-4]/data/raw/.gitkeep
+!ml/c[2-4]/data/private/.gitkeep

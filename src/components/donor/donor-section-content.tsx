@@ -9,6 +9,7 @@ import { Input } from "@/components/shared/Input";
 import { useAuth } from "@/context/auth-context";
 import { NgoPartnershipSection } from "@/components/shared/ngo-partnership-section";
 import { donorNavyCardClass, donorNavyStatClass } from "./donor-card-theme";
+import { DonorFundTransparencySection } from "@/components/c1/ledger-section";
 import {
   defaultPreferences,
   mergePreferences,
@@ -171,6 +172,8 @@ export function DonorSectionContent({ sectionId }: DonorSectionContentProps) {
         return DonorPartnerHomeSection;
       case "my-scholarships":
         return DonorMyScholarshipsSection;
+      case "fund-transparency":
+        return DonorFundTransparencySection;
       case "funded-students":
         return DonorFundedStudentsSection;
       case "donations":

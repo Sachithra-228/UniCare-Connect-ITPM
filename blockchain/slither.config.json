@@ -1,0 +1,6 @@
+{
+  "filter_paths": "node_modules|contracts/test",
+  "hardhat_ignore_compile": false,
+  "exclude_informational": false,
+  "exclude_low": false
+}

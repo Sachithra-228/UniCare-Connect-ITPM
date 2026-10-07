@@ -5,6 +5,7 @@ import {
   createDemoDonorScholarship,
   listDemoDonorScholarships
 } from "@/lib/donor-scholarships-demo-store";
+import { scholarshipCriteriaSchema } from "@/lib/c1/validation";
 import { getMongoDatabase } from "@/lib/mongodb";
 import { createNotification } from "@/lib/notifications";
 import { requireRole, requireSession } from "@/lib/session-auth";
@@ -152,6 +153,8 @@ export async function POST(request: NextRequest) {
   }
 
   const database = await getMongoDatabase();
+  // Optional structured criteria (C1): lets the AI matching engine rank this scholarship.
+  const structuredCriteria = scholarshipCriteriaSchema.safeParse(payload.criteria);
   const document = {
     title,
     provider: donorName,
@@ -160,6 +163,7 @@ export async function POST(request: NextRequest) {
     eligibilityCriteria,
     applicationLink,
     tags,
+    ...(structuredCriteria.success ? { criteria: structuredCriteria.data } : {}),
     status: "active",
     createdBy: userId ?? firebaseUid,
     createdByUserId: userId,
