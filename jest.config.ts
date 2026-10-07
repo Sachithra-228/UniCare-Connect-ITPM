@@ -7,6 +7,10 @@ const config: Config = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1"
   },
+  // tsconfig uses `jsx: preserve` for Next.js; Jest needs JSX compiled, so override it for tests only.
+  transform: {
+    "^.+\\.tsx?$": ["ts-jest", { tsconfig: { jsx: "react-jsx", esModuleInterop: true, resolveJsonModule: true } }]
+  },
   testMatch: ["<rootDir>/tests/**/*.test.ts", "<rootDir>/tests/**/*.test.tsx"]
 };
 

@@ -1,0 +1,34 @@
+{
+  "name": "unicare-connect-blockchain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "C1 - Solidity smart contracts for transparent, milestone-based scholarship disbursement (UniCare Connect, IT4010 J26-IT-345).",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:gas": "cross-env REPORT_GAS=true hardhat test",
+    "coverage": "hardhat coverage",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "simulate": "cross-env SIMULATE_START=2026-09-01T09:00:00Z hardhat run scripts/simulate-lifecycle.ts",
+    "benchmark": "hardhat run scripts/benchmark.ts",
+    "abi": "hardhat run scripts/export-abi.ts",
+    "seed:local": "hardhat run scripts/seed-demo.ts --network localhost",
+    "roles:sepolia": "hardhat run scripts/grant-roles.ts --network sepolia",
+    "latency:sepolia": "hardhat run scripts/measure-latency.ts --network sepolia",
+    "latency:local": "hardhat run scripts/measure-latency.ts",
+    "slither": "slither . --config-file slither.config.json"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.1.0"
+  }
+}

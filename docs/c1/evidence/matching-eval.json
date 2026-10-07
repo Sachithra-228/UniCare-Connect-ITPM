@@ -1,0 +1,38 @@
+{
+  "warning": "SYNTHETIC DATA - simulated expert relevance; validates the harness, not real-world quality.",
+  "generatedAt": "2026-10-07T06:20:43.910Z",
+  "studentsEvaluated": 286,
+  "scholarshipsInCatalogue": 24,
+  "ndcg": {
+    "@3": {
+      "proposed": 0.7897561790872683,
+      "ruleBasedBaseline": 0.5619937759558288,
+      "improvement": 0.22776240313143947
+    },
+    "@5": {
+      "proposed": 0.8157622414326638,
+      "ruleBasedBaseline": 0.5877833445540457,
+      "improvement": 0.22797889687861816
+    },
+    "@10": {
+      "proposed": 0.8628556261284218,
+      "ruleBasedBaseline": 0.6897844780400585,
+      "improvement": 0.17307114808836332
+    }
+  },
+  "precisionAt5_relevanceGte2": {
+    "proposed": 0.5944055944055945,
+    "ruleBasedBaseline": 0.41328671328671357
+  },
+  "pairedBootstrapNdcg5Difference": {
+    "mean": 0.22797889687861772,
+    "ci95": [
+      0.19370749349238578,
+      0.2623421365006857
+    ]
+  },
+  "proposalTarget": {
+    "NDCG@K": 0.88
+  },
+  "meetsTargetNdcg5": false
+}

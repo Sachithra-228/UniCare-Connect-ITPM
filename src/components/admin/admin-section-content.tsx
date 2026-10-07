@@ -10,6 +10,8 @@ import { AdminAnalytics } from "./admin-analytics";
 import { AdminCounselorSupportSection } from "./admin-counselor-support";
 import { AdminPeerSupportModerationSection } from "./admin-peer-support";
 import { AdminCommunicationsSection } from "./admin-communications";
+import { AdminAidPrioritisation } from "./admin-aid-prioritisation";
+import { AdminFundLedgerSection } from "@/components/c1/ledger-section";
 import { adminNavyCardClass } from "./admin-card-theme";
 import { NgoPartnershipSection } from "@/components/shared/ngo-partnership-section";
 import { useAuth } from "@/context/auth-context";
@@ -34,6 +36,10 @@ export function AdminSectionContent({ sectionId }: AdminSectionContentProps) {
         return AdminVerificationsSection;
       case "financial-oversight":
         return AdminFinancialOversightSection;
+      case "aid-prioritisation":
+        return AdminAidPrioritisation;
+      case "fund-ledger":
+        return AdminFundLedgerSection;
       case "career-services":
         return AdminCareerServicesSection;
       case "mentorship-program":
